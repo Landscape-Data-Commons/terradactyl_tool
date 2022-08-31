@@ -608,8 +608,8 @@ server <- function(input, output, session) {
                    needs_linekey <- (input$data_type == "lpi" & input$lpi_unit == "line") | (input$data_type == "gap" & input$gap_unit == "line") | (input$data_type == "height" & input$height_unit == "line")
                    if (needs_linekey) {
                      message("Including 'LineKey' in required variables.")
-                     current_required_vars <- c(workspace$required_vars[[input$data_type]],
-                                                "LineKey")
+                     current_required_vars <- unique(c(workspace$required_vars[[input$data_type]],
+                                                       "LineKey"))
                    } else {
                      current_required_vars <- workspace$required_vars[[input$data_type]]
                    }
