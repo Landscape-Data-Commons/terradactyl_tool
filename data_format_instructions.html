@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>data_format_instructions.knit</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+      .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+
+
+
+<p>This tool uses the package terradactyl which was built to use data
+from the <a href="https://blm.gov/aim">Bureau of Land Management’s
+Assessment, Inventory, and Monitoring program (AIM)</a>. This means that
+there are certain variables that are required in the input data. If you
+choose to upload data, you must ensure that these variables exist in
+your data or else the tool will be unable to calculate statistics from
+them. These variables are the bare minimum; you may have additional
+variables in your data. All of these are assumed to be in long format
+unless otherwise stated.</p>
+<div id="line-point-intercept" class="section level2">
+<h2>Line-Point Intercept</h2>
+<div id="primarykey" class="section level3">
+<h3>PrimaryKey</h3>
+<p><code>PrimaryKey</code> must contain the unique identifier for each
+sampling event at a sampling location, e.g. a plot visit. All records
+from the same sampling event must have the same primary key value. If a
+sampling location was visited more than once, each visit’s records
+should have a unique primary key value.</p>
+</div>
+<div id="code" class="section level3">
+<h3>code</h3>
+<p>The variable <code>code</code> (all lowercase) must contain the codes
+for what was intercepted by the pin in each layer at each point along
+the line/transect, either the species code (e.g., <code>&quot;ARTR2&quot;</code>)
+or surface code (e.g., <code>&quot;S&quot;</code>). Valid codes can be found in
+volume I of the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring
+Manual for Grassland, Shrubland, and Savanna Ecosystems</a> under the
+rules for the line-point intercept method.</p>
+</div>
+<div id="pointnbr" class="section level3">
+<h3>PointNbr</h3>
+<p><code>PointNbr</code> must contain the ordinal number for the pin
+drop along its transect, e.g., all records from the first pin drop on a
+transect would have the value <code>1</code> while all records from the
+second pin drop on that transect would have the value
+<code>2</code>.</p>
+</div>
+<div id="layer" class="section level3">
+<h3>layer</h3>
+<p>The variable <code>layer</code> (all lowercase) must contain the
+layer on the pin drop that the record comes from. Valid values include
+<code>&quot;TopCanopy&quot;</code>, <code>&quot;Lower#&quot;</code> where each subsequent
+lower canopy layer uses the next ordinal number (e.g.,
+<code>&quot;Lower1&quot;</code>), and <code>&quot;SoilSurface&quot;</code>.</p>
+</div>
+</div>
+<div id="height" class="section level2">
+<h2>Height</h2>
+<div id="primarykey-1" class="section level3">
+<h3>PrimaryKey</h3>
+<p>PrimaryKey must contain the unique identifier for each sampling event
+at a sampling location, e.g. a plot visit. All records from the same
+sampling event must have the same primary key value. If a sampling
+location was visited more than once, each visit’s records should have a
+unique primary key value.</p>
+</div>
+</div>
+<div id="gap" class="section level2">
+<h2>Gap</h2>
+<div id="primarykey-2" class="section level3">
+<h3>PrimaryKey</h3>
+<p>PrimaryKey must contain the unique identifier for each sampling event
+at a sampling location, e.g. a plot visit. All records from the same
+sampling event must have the same primary key value. If a sampling
+location was visited more than once, each visit’s records should have a
+unique primary key value.</p>
+</div>
+</div>
+<div id="soil-stability" class="section level2">
+<h2>Soil Stability</h2>
+<div id="primarykey-3" class="section level3">
+<h3>PrimaryKey</h3>
+<p>PrimaryKey must contain the unique identifier for each sampling event
+at a sampling location, e.g. a plot visit. All records from the same
+sampling event must have the same primary key value. If a sampling
+location was visited more than once, each visit’s records should have a
+unique primary key value.</p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+
+</body>
+</html>
