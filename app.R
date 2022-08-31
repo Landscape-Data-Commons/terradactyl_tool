@@ -122,9 +122,51 @@ ui <- fluidPage(
                            selectInput(inputId = "primarykey_var",
                                        label = "Variable containing primary key values",
                                        choices = c("")),
-                           conditionalPanel(condition = "input.data_type == 'gap' || input.lpi_unit == 'line' || input.height_unit == 'line'",
+                           # LineKey (potentially) matters to LPI, gap, and height
+                           conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
                                             selectInput(inputId = "linekey_var",
                                                         label = "Variable containing line key values",
+                                                        choices = c(""))),
+                           # LPI-specific variables
+                           conditionalPanel(condition = "input.data_type == 'lpi'",
+                                            selectInput(inputId = "code_var",
+                                                        label = "Variable containing hit codes (e.g., ARTR2, S)",
+                                                        choices = c("")),
+                                            selectInput(inputId = "pointnbr_var",
+                                                        label = "Variable containing the ordinal hit numbers",
+                                                        choices = c("")),
+                                            selectInput(inputId = "layer_var",
+                                                        label = "Variable containing layer for the hit records",
+                                                        choices = c(""))),
+                           # Gap-specific variables
+                           conditionalPanel(condition = "input.data_type == 'gap'",
+                                            selectInput(inputId = "linelengthamount_var",
+                                                        label = "Variable containing line lengths",
+                                                        choices = c("")),
+                                            selectInput(inputId = "measure_var",
+                                                        label = "Variable containing the measurement units",
+                                                        choices = c("")),
+                                            selectInput(inputId = "rectype_var",
+                                                        label = "Variable containing the type of gaps (i.e., 'C', 'B', 'P')",
+                                                        choices = c("")),
+                                            selectInput(inputId = "gap_var",
+                                                        label = "Variable containing gap sizes",
+                                                        choices = c(""))),
+                           # Height-specific variables
+                           conditionalPanel(condition = "input.data_type == 'height'",
+                                            selectInput(inputId = "height_var",
+                                                        label = "Variable containing heights",
+                                                        choices = c("")),
+                                            selectInput(inputId = "species_var",
+                                                        label = "Variable containing the species",
+                                                        choices = c(""))),
+                           # Soil-specific variables
+                           conditionalPanel(condition = "input.data_type == 'soil'",
+                                            selectInput(inputId = "rating_var",
+                                                        label = "Variable containing stability ratings",
+                                                        choices = c("")),
+                                            selectInput(inputId = "veg_var",
+                                                        label = "Variable containing vegetative cover type",
                                                         choices = c("")))
                            
                   ),
@@ -207,6 +249,8 @@ ui <- fluidPage(
                            actionButton(inputId = "calculate_button",
                                         label = "Calculate!")
                   ),
+                  tabPanel(title = "Data",
+                           DT::dataTableOutput(outputId = "data")),
                   tabPanel(title = "Results",
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
@@ -330,8 +374,8 @@ server <- function(input, output, session) {
                  if (input$keys != "") {
                    # Handle multiple requested ecosites at once!
                    current_key_vector <- stringr::str_split(string = input$keys,
-                                                           pattern = ",",
-                                                           simplify = TRUE)
+                                                            pattern = ",",
+                                                            simplify = TRUE)
                    current_key_vector <- trimws(current_key_vector)
                    
                    results <- fetch_ldc(keys = current_key_vector,
@@ -359,8 +403,8 @@ server <- function(input, output, session) {
                                     paste(workspace$missing_keys,
                                           collapse = ", ")))
                      key_error <- paste0("Data could not be retrieved from the LDC for the following keys: ",
-                                             paste(workspace$missing_keys,
-                                                   collapse = ", "))
+                                         paste(workspace$missing_keys,
+                                               collapse = ", "))
                      showNotification(ui = key_error,
                                       duration = NULL,
                                       closeButton = TRUE,
@@ -487,16 +531,25 @@ server <- function(input, output, session) {
   ##### When workspace$data updates #####
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
+                 # Display the data
+                 output$data <- DT::renderDataTable(workspace$data)
+                 
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
                    message("Updating key variable selectInput()s.")
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = c(""),
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = c(""),
-                                     selected = "")
+                   
+                   # Time to nullify all the variables
+                   all_required_variables <- unique(unlist(workspace$required_vars))
+                   
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste(tolower(required_var),
+                                             "_var")
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = c(""),
+                                       selected = "")
+                   }
+                   
                    if (input$data_type %in% c("lpi", "height")) {
                      updateSelectInput(inputId = paste0(input$data_type,
                                                         "_grouping_vars"),
@@ -510,20 +563,31 @@ server <- function(input, output, session) {
                    # Update the variable options
                    current_data_vars <- names(workspace$data)
                    
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
+                   # Time to nullify all the variables
+                   all_required_variables <- unique(unlist(workspace$required_vars))
                    
-                   if ("PrimaryKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "primarykey_var",
-                                       selected = "PrimaryKey")
-                   }
-                   if ("LineKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "linekey_var",
-                                       selected = "LineKey")
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste0(tolower(required_var),
+                                              "_var")
+                     message(paste0("Currently updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
+                     if (required_var %in% current_data_vars) {
+                       selected_var <- required_var
+                     } else {
+                       selected_var <- ""
+                     }
+                     
+                     message(paste0("Selected variable is ", selected_var))
+                     
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = current_data_vars,
+                                       selected = selected_var)
+                     message(paste0("Finished updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
                    }
                    
                    if (input$data_type %in% c("lpi", "height")) {
@@ -533,6 +597,7 @@ server <- function(input, output, session) {
                                        selected = "")
                    }
                    
+                   
                    # DATA SOUNDNESS CHECKS
                    # We need the variables required for the current data type
                    # Add in "LineKey" if it's called for
@@ -540,8 +605,8 @@ server <- function(input, output, session) {
                    needs_linekey <- (input$data_type == "lpi" & input$lpi_unit == "line") | (input$data_type == "gap" & input$gap_unit == "line") | (input$data_type == "height" & input$height_unit == "line")
                    if (needs_linekey) {
                      message("Including 'LineKey' in required variables.")
-                     current_required_vars <- c(workspace$required_vars[[input$data_type]],
-                                                "LineKey")
+                     current_required_vars <- unique(c(workspace$required_vars[[input$data_type]],
+                                                       "LineKey"))
                    } else {
                      current_required_vars <- workspace$required_vars[[input$data_type]]
                    }
@@ -564,29 +629,43 @@ server <- function(input, output, session) {
                  }
                })
   
-  ##### When input$primarykey_var changes #####
-  observeEvent(eventExpr = input$primarykey_var,
+  ##### When required variables update #####
+  observeEvent(eventExpr = c(input$primarykey_var,
+                             input$linekey_var,
+                             input$code_var,
+                             input$pointnbr_var,
+                             input$layer_var,
+                             input$linelengthamount_var,
+                             input$measure_var,
+                             input$rectype_var,
+                             input$gap_var,
+                             input$height_var,
+                             input$species_var,
+                             input$rating_var,
+                             input$veg_var),
                handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$PrimaryKey with values from workspace$data$",
-                                  input$primarykey_var))
-                   workspace$data[["PrimaryKey"]] <- workspace$data[[input$primarykey_var]]
-                 } else {
-                   message("No PrimaryKey variable provided (yet).")
+                 # Let's update the variables in workspace$data
+                 # This just looks at the required variables for the current data type
+                 all_required_variables <- workspace$required_vars[[input$data_type]]
+                 
+                 for (required_var in all_required_variables) {
+                   inputid_string <- paste0(tolower(required_var),
+                                            "_var")
+                   current_var_value <- input[[inputid_string]]
+                   
+                   if (current_var_value != "") {
+                     message(paste0("Writing contents of worskpace$",
+                                    current_var_value,
+                                    " to workspace$",
+                                    required_var))
+                     workspace$data[[required_var]] <- workspace$data[[current_var_value]]
+                   } else {
+                     message(paste0("No variable identified for ",
+                                    required_var))
+                   }
                  }
                })
   
-  ##### When input$linekey_var changes #####
-  observeEvent(eventExpr = input$linekey_var,
-               handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$LineKey with values from workspace$data$",
-                                  input$linekey_var))
-                   workspace$data[["LineKey"]] <- workspace$data[[input$linekey_var]]
-                 } else {
-                   message("No LineKey variable provided (yet).")
-                 }
-               })
   
   
   ##### Calculating #####
