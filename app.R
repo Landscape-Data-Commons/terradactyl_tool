@@ -86,9 +86,6 @@ ui <- fluidPage(
                        )
       ),
       
-      # conditionalPanel(condition = "input.data_source == 'upload'",
-      #                  
-      #                  ),
       conditionalPanel(condition = "input.data_source == 'ldc'",
                        selectInput(inputId = "key_type",
                                    label = "LDC search type",
@@ -276,26 +273,26 @@ server <- function(input, output, session) {
                  workspace$current_data_source <- "upload"
                })
   
-  # When input$species_data updates, look at its filepath and read in the CSV
+  # When input$header_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$header_data,
                handlerExpr = {
                  message("Reading in header info from uploaded CSV")
                  workspace[["headers"]] <- read.csv(input$header_data$datapath,
                                                     stringsAsFactors = FALSE)
                })
-  
+
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
                handlerExpr = {
                  message("Reading in species data from uploaded CSV")
                  workspace[["species_data"]] <- read.csv(input$species_data$datapath,
                                                          stringsAsFactors = FALSE)
-                 
+
                  # Set this variable so we can handle the data appropriately based on source
                  message("Species source set to upload")
                  workspace$current_species_source <- "upload"
                })
-  
+
   # When input$species_source is set to the default, handle that
   observeEvent(eventExpr = input$species_source,
                handlerExpr = {
