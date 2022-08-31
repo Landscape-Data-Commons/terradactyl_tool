@@ -125,9 +125,51 @@ ui <- fluidPage(
                            selectInput(inputId = "primarykey_var",
                                        label = "Variable containing primary key values",
                                        choices = c("")),
-                           conditionalPanel(condition = "input.data_type == 'gap' || input.lpi_unit == 'line' || input.height_unit == 'line'",
+                           # LineKey (potentially) matters to LPI, gap, and height
+                           conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
                                             selectInput(inputId = "linekey_var",
                                                         label = "Variable containing line key values",
+                                                        choices = c(""))),
+                           # LPI-specific variables
+                           conditionalPanel(condition = "input.data_type == 'lpi'",
+                                            selectInput(inputId = "code_var",
+                                                        label = "Variable containing hit codes (e.g., ARTR2, S)",
+                                                        choices = c("")),
+                                            selectInput(inputId = "pointnbr_var",
+                                                        label = "Variable containing the ordinal hit numbers",
+                                                        choices = c("")),
+                                            selectInput(inputId = "layer_var",
+                                                        label = "Variable containing layer for the hit records",
+                                                        choices = c(""))),
+                           # Gap-specific variables
+                           conditionalPanel(condition = "input.data_type == 'gap'",
+                                            selectInput(inputId = "linelengthamount_var",
+                                                        label = "Variable containing line lengths",
+                                                        choices = c("")),
+                                            selectInput(inputId = "measure_var",
+                                                        label = "Variable containing the measurement units",
+                                                        choices = c("")),
+                                            selectInput(inputId = "rectype_var",
+                                                        label = "Variable containing the type of gaps (i.e., 'C', 'B', 'P')",
+                                                        choices = c("")),
+                                            selectInput(inputId = "gap_var",
+                                                        label = "Variable containing gap sizes",
+                                                        choices = c(""))),
+                           # Height-specific variables
+                           conditionalPanel(condition = "input.data_type == 'height'",
+                                            selectInput(inputId = "height_var",
+                                                        label = "Variable containing heights",
+                                                        choices = c("")),
+                                            selectInput(inputId = "species_var",
+                                                        label = "Variable containing the species",
+                                                        choices = c(""))),
+                           # Soil-specific variables
+                           conditionalPanel(condition = "input.data_type == 'soil'",
+                                            selectInput(inputId = "rating_var",
+                                                        label = "Variable containing stability ratings",
+                                                        choices = c("")),
+                                            selectInput(inputId = "veg_var",
+                                                        label = "Variable containing vegetative cover type",
                                                         choices = c("")))
                            
                   ),
@@ -333,8 +375,8 @@ server <- function(input, output, session) {
                  if (input$keys != "") {
                    # Handle multiple requested ecosites at once!
                    current_key_vector <- stringr::str_split(string = input$keys,
-                                                           pattern = ",",
-                                                           simplify = TRUE)
+                                                            pattern = ",",
+                                                            simplify = TRUE)
                    current_key_vector <- trimws(current_key_vector)
                    
                    results <- fetch_ldc(keys = current_key_vector,
@@ -362,8 +404,8 @@ server <- function(input, output, session) {
                                     paste(workspace$missing_keys,
                                           collapse = ", ")))
                      key_error <- paste0("Data could not be retrieved from the LDC for the following keys: ",
-                                             paste(workspace$missing_keys,
-                                                   collapse = ", "))
+                                         paste(workspace$missing_keys,
+                                               collapse = ", "))
                      showNotification(ui = key_error,
                                       duration = NULL,
                                       closeButton = TRUE,
