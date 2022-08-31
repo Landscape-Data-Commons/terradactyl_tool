@@ -555,20 +555,31 @@ server <- function(input, output, session) {
                    # Update the variable options
                    current_data_vars <- names(workspace$data)
                    
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
+                   # Time to nullify all the variables
+                   all_required_variables <- unique(unlist(workspace$required_vars))
                    
-                   if ("PrimaryKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "primarykey_var",
-                                       selected = "PrimaryKey")
-                   }
-                   if ("LineKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "linekey_var",
-                                       selected = "LineKey")
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste0(tolower(required_var),
+                                              "_var")
+                     message(paste0("Currently updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
+                     if (required_var %in% current_data_vars) {
+                       selected_var <- required_var
+                     } else {
+                       selected_var <- ""
+                     }
+                     
+                     message(paste0("Selected variable is ", selected_var))
+                     
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = current_data_vars,
+                                       selected = selected_var)
+                     message(paste0("Finished updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
                    }
                    
                    if (input$data_type %in% c("lpi", "height")) {
@@ -577,6 +588,7 @@ server <- function(input, output, session) {
                                        choices = current_data_vars,
                                        selected = "")
                    }
+                   
                    
                    # DATA SOUNDNESS CHECKS
                    # We need the variables required for the current data type
