@@ -536,12 +536,18 @@ server <- function(input, output, session) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
                    message("Updating key variable selectInput()s.")
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = c(""),
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = c(""),
-                                     selected = "")
+                   
+                   # Time to nullify all the variables
+                   all_required_variables <- unique(unlist(workspace$required_vars))
+                   
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste(tolower(required_var),
+                                             "_var")
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = c(""),
+                                       selected = "")
+                   }
+                   
                    if (input$data_type %in% c("lpi", "height")) {
                      updateSelectInput(inputId = paste0(input$data_type,
                                                         "_grouping_vars"),
