@@ -632,29 +632,43 @@ server <- function(input, output, session) {
                  }
                })
   
-  ##### When input$primarykey_var changes #####
-  observeEvent(eventExpr = input$primarykey_var,
+  ##### When required variables update #####
+  observeEvent(eventExpr = c(input$primarykey_var,
+                             input$linekey_var,
+                             input$code_var,
+                             input$pointnbr_var,
+                             input$layer_var,
+                             input$linelengthamount_var,
+                             input$measure_var,
+                             input$rectype_var,
+                             input$gap_var,
+                             input$height_var,
+                             input$species_var,
+                             input$rating_var,
+                             input$veg_var),
                handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$PrimaryKey with values from workspace$data$",
-                                  input$primarykey_var))
-                   workspace$data[["PrimaryKey"]] <- workspace$data[[input$primarykey_var]]
-                 } else {
-                   message("No PrimaryKey variable provided (yet).")
+                 # Let's update the variables in workspace$data
+                 # This just looks at the required variables for the current data type
+                 all_required_variables <- workspace$required_vars[[input$data_type]]
+                 
+                 for (required_var in all_required_variables) {
+                   inputid_string <- paste0(tolower(required_var),
+                                            "_var")
+                   current_var_value <- input[[inputid_string]]
+                   
+                   if (current_var_value != "") {
+                     message(paste0("Writing contents of worskpace$",
+                                    current_var_value,
+                                    " to workspace$",
+                                    required_var))
+                     workspace$data[[required_var]] <- workspace$data[[current_var_value]]
+                   } else {
+                     message(paste0("No variable identified for ",
+                                    required_var))
+                   }
                  }
                })
   
-  ##### When input$linekey_var changes #####
-  observeEvent(eventExpr = input$linekey_var,
-               handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$LineKey with values from workspace$data$",
-                                  input$linekey_var))
-                   workspace$data[["LineKey"]] <- workspace$data[[input$linekey_var]]
-                 } else {
-                   message("No LineKey variable provided (yet).")
-                 }
-               })
   
   
   ##### Calculating #####
