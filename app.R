@@ -74,16 +74,16 @@ ui <- fluidPage(
                        fileInput(inputId = "raw_data",
                                  label = "Data CSV",
                                  multiple = FALSE,
-                                 accept = "CSV"),
-                       checkboxInput(inputId = "needs_header",
-                                     label = "Need to upload header information",
-                                     value = FALSE),
-                       conditionalPanel(condition = "input.needs_header",
-                                        fileInput(inputId = "header_data",
-                                                  label = "Header CSV",
-                                                  multiple = FALSE,
-                                                  accept = "CSV")
-                       )
+                                 accept = "CSV")#,
+                       # checkboxInput(inputId = "needs_header",
+                       #               label = "Need to upload header information",
+                       #               value = FALSE),
+                       # conditionalPanel(condition = "input.needs_header",
+                       #                  fileInput(inputId = "header_data",
+                       #                            label = "Header CSV",
+                       #                            multiple = FALSE,
+                       #                            accept = "CSV")
+                       # )
       ),
       
       conditionalPanel(condition = "input.data_source == 'ldc'",
@@ -317,13 +317,13 @@ server <- function(input, output, session) {
                  workspace$current_data_source <- "upload"
                })
   
-  # When input$header_data updates, look at its filepath and read in the CSV
-  observeEvent(eventExpr = input$header_data,
-               handlerExpr = {
-                 message("Reading in header info from uploaded CSV")
-                 workspace[["headers"]] <- read.csv(input$header_data$datapath,
-                                                    stringsAsFactors = FALSE)
-               })
+  # # When input$header_data updates, look at its filepath and read in the CSV
+  # observeEvent(eventExpr = input$header_data,
+  #              handlerExpr = {
+  #                message("Reading in header info from uploaded CSV")
+  #                workspace[["headers"]] <- read.csv(input$header_data$datapath,
+  #                                                   stringsAsFactors = FALSE)
+  #              })
 
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
@@ -461,72 +461,72 @@ server <- function(input, output, session) {
                    message("Current data source is the LDC, using workspace$raw_data as workspace$data")
                    workspace$data <- workspace$raw_data
                  } else if (workspace$current_data_source == "upload") {
-                   # If the data are uploaded, join to the header info first
-                   if (!is.null(workspace$headers) & input$needs_header) {
-                     # Get the number of observations so we can warn if we lose some
-                     n_observations <- nrow(workspace$raw_data)
-                     current_data <- dplyr::left_join(x = workspace$raw_data,
-                                                      y = workspace$headers)
-                     current_n_observations <- nrow(current_data)
-                     # Warn the user if not all observations made it through the
-                     # joining process
-                     if (n_observations != current_n_observations) {
-                       showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
-                                                    n_observations - current_n_observations,
-                                                    " observations."),
-                                        duration = NULL,
-                                        closeButton = TRUE,
-                                        id = "dropped_data",
-                                        type = "warning")
-                     }
-                     workspace$data <- current_data
-                   } else if (is.null(workspace$headers) & input$needs_header) {
-                     message("Needs header info, but the user has not supplied it")
-                     workspace$data <- NULL
-                     showNotification(ui = "Please supply header information.",
-                                      duration = NULL,
-                                      closeButton = TRUE,
-                                      id = "needs_headers_upload",
-                                      type = "warning")
-                   } else if (!input$needs_header) {
-                     message("No headers needed. Writing workspace$raw_data to workspace$data")
-                     workspace$data <- workspace$raw_data
-                   }
+                   # # If the data are uploaded, join to the header info first
+                   # if (!is.null(workspace$headers) & input$needs_header) {
+                   #   # Get the number of observations so we can warn if we lose some
+                   #   n_observations <- nrow(workspace$raw_data)
+                   #   current_data <- dplyr::left_join(x = workspace$raw_data,
+                   #                                    y = workspace$headers)
+                   #   current_n_observations <- nrow(current_data)
+                   #   # Warn the user if not all observations made it through the
+                   #   # joining process
+                   #   if (n_observations != current_n_observations) {
+                   #     showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
+                   #                                  n_observations - current_n_observations,
+                   #                                  " observations."),
+                   #                      duration = NULL,
+                   #                      closeButton = TRUE,
+                   #                      id = "dropped_data",
+                   #                      type = "warning")
+                   #   }
+                   #   workspace$data <- current_data
+                   # } else if (is.null(workspace$headers) & input$needs_header) {
+                   #   message("Needs header info, but the user has not supplied it")
+                   #   workspace$data <- NULL
+                   #   showNotification(ui = "Please supply header information.",
+                   #                    duration = NULL,
+                   #                    closeButton = TRUE,
+                   #                    id = "needs_headers_upload",
+                   #                    type = "warning")
+                   # } else if (!input$needs_header) {
+                   #   message("No headers needed. Writing workspace$raw_data to workspace$data")
+                   #   workspace$data <- workspace$raw_data
+                   # }
                  }
                })
   
-  ##### When headers update #####
-  observeEvent(eventExpr = workspace$headers,
-               handlerExpr = {
-                 if (workspace$current_data_source == "ldc") {
-                   message("Data are from the LDC and don't actually need header info. Ignoring workspace$headers.")
-                   showNotification(ui = "Data are from the LDC and the uploaded headers will be ignored because header information is already included with the data.",
-                                    duration = NULL,
-                                    closeButton = TRUE,
-                                    id = "unnecessary_headers",
-                                    type = "message")
-                 } else if (workspace$current_data_source == "upload") {
-                   if (!is.null(workspace$raw_data)) {
-                     # Get the number of observations so we can warn if we lose some
-                     n_observations <- nrow(workspace$raw_data)
-                     message("Joining data and headers.")
-                     current_data <- dplyr::left_join(x = workspace$raw_data,
-                                                      y = workspace$headers)
-                     current_n_observations <- nrow(current_data)
-                     if (n_observations != current_n_observations) {
-                       showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
-                                                    n_observations - current_n_observations,
-                                                    " observations."),
-                                        duration = NULL,
-                                        closeButton = TRUE,
-                                        id = "dropped_data",
-                                        type = "warning")
-                     }
-                     message("Updating workspace$data with the joined data")
-                     workspace$data <- current_data
-                   }
-                 }
-               })
+  # ##### When headers update #####
+  # observeEvent(eventExpr = workspace$headers,
+  #              handlerExpr = {
+  #                if (workspace$current_data_source == "ldc") {
+  #                  message("Data are from the LDC and don't actually need header info. Ignoring workspace$headers.")
+  #                  showNotification(ui = "Data are from the LDC and the uploaded headers will be ignored because header information is already included with the data.",
+  #                                   duration = NULL,
+  #                                   closeButton = TRUE,
+  #                                   id = "unnecessary_headers",
+  #                                   type = "message")
+  #                } else if (workspace$current_data_source == "upload") {
+  #                  if (!is.null(workspace$raw_data)) {
+  #                    # Get the number of observations so we can warn if we lose some
+  #                    n_observations <- nrow(workspace$raw_data)
+  #                    message("Joining data and headers.")
+  #                    current_data <- dplyr::left_join(x = workspace$raw_data,
+  #                                                     y = workspace$headers)
+  #                    current_n_observations <- nrow(current_data)
+  #                    if (n_observations != current_n_observations) {
+  #                      showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
+  #                                                   n_observations - current_n_observations,
+  #                                                   " observations."),
+  #                                       duration = NULL,
+  #                                       closeButton = TRUE,
+  #                                       id = "dropped_data",
+  #                                       type = "warning")
+  #                    }
+  #                    message("Updating workspace$data with the joined data")
+  #                    workspace$data <- current_data
+  #                  }
+  #                }
+  #              })
   
   ##### When workspace$data updates #####
   observeEvent(eventExpr = workspace$data,
