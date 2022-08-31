@@ -3,8 +3,8 @@ fetch_ldc <- function(keys,
                       data_type = "lpi",
                       verbose = FALSE){
   
-  if (!(data_type %in% c("lpi", "height", "gap", "soil", "species", "inventory", "header"))) {
-    stop("data_type must be 'lpi', 'height', 'gap', 'soil', 'species', 'inventory', or 'header'.")
+  if (!(data_type %in% c("lpi", "height", "gap", "soil", "species", "speciesinventory", "header"))) {
+    stop("data_type must be 'lpi', 'height', 'gap', 'soil', 'species', 'speciesinventory', or 'header'.")
   }
   current_data_source <- switch(data_type,
                                 "lpi" = {"datalpi"},
@@ -12,7 +12,7 @@ fetch_ldc <- function(keys,
                                 "gap" = {"datagap"},
                                 "soil" = {"datasoilstability"},
                                 "species" = "geospecies",
-                                "inventory" = "dataspeciesinventory",
+                                "speciesinventory" = "dataspeciesinventory",
                                 "header" = "dataheader")
   
   if (!(key_type %in% c("ecosite", "primarykey", "projectkey"))) {
