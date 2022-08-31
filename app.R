@@ -252,6 +252,8 @@ ui <- fluidPage(
                            actionButton(inputId = "calculate_button",
                                         label = "Calculate!")
                   ),
+                  tabPanel(title = "Data",
+                           DT::dataTableOutput(outputId = "data")),
                   tabPanel(title = "Results",
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
@@ -532,6 +534,9 @@ server <- function(input, output, session) {
   ##### When workspace$data updates #####
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
+                 # Display the data
+                 output$data <- DT::renderDataTable(workspace$data)
+                 
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
