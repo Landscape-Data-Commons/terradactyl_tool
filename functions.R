@@ -1,3 +1,10 @@
+#' Query the Landscape Data Commons
+#' @description Fetch data from the Landscape Data commons, querying by ecological site ID, PrimaryKey, or ProjectKey.
+#' @param keys Character vector. The character strings containing the values to match in the query/queries.
+#' @param key_type Character string. The type of key values being used. This determines which variable in the Landscape Data Commons to filter using the values \code{keys}. Must be \code{"ecosite"} for \code{EcologicalSiteId}, \code{"primarykey"} for \code{PrimaryKey}, or \code{"projectkey"} for \code{ProjectKey}. Defaults to \code{"ecosite"}.
+#' @param data_type Character string. Determines which table to download data from. Valid values are \code{"lpi"}, \code{"height"}, \code{"gap"}, \code{"soil"}, \code{"species"}, \code{"speciesinventory"}, and \code{"header"}. Defaults to \code{"lpi"}.
+#' @param verbose Logical. If \code{TRUE} then the function will report with diagnostic messages as it runs. Defaults to \code{FALSE}.
+#' @export
 fetch_ldc <- function(keys,
                       key_type = "ecosite",
                       data_type = "lpi",
