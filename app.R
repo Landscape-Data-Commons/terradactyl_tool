@@ -991,6 +991,18 @@ server <- function(input, output, session) {
                  # Just in case there are row names (which shouldn't be there)
                  row.names(workspace$results) <- NULL
                  
+                 # Let's update the variable names to reflect what they came in as
+                 current_results_vars <- names(workspace$results)
+                 current_required_vars <- workspace$required_vars[[input$data_type]]
+                 
+                 for (required_var in current_required_vars) {
+                   input_variable_name <- paste0(tolower(required_var),
+                                                 "_var")
+                   incoming_variable_name <- input[[input_variable_name]]
+                   names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                 }
+                 
+                 
                  removeNotification(session = session,
                                     id = "calculating")
                })
