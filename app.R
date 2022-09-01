@@ -99,17 +99,6 @@ ui <- fluidPage(
                                  placeholder = "R042XB012NM"),
                        actionButton(inputId = "fetch_data",
                                     label = "Fetch data")),
-      radioButtons(inputId = "species_source",
-                   label = "Species list source",
-                   choices = c("Default USDA Plants" = "default",
-                               "Upload" = "upload"),
-                   selected = 0),
-      conditionalPanel(condition = "input.species_source == 'upload'",
-                       fileInput(inputId = "species_data",
-                                 label = "Species CSV",
-                                 multiple = FALSE,
-                                 accept = "CSV")),
-      
       hr()
     ),
     
@@ -167,7 +156,41 @@ ui <- fluidPage(
                                                         choices = c("")),
                                             selectInput(inputId = "veg_var",
                                                         label = "Variable containing vegetative cover type",
-                                                        choices = c("")))
+                                                        choices = c(""))),
+                           hr(),
+                           # Species lookup table stuff
+                           conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
+                                            checkboxInput(inputId = "use_species",
+                                                          label = "Add species information",
+                                                          value = FALSE),
+                                            conditionalPanel(condition = "input.use_species",
+                                                             radioButtons(inputId = "species_source",
+                                                                          label = "Species lookup table source",
+                                                                          choices = c("Default USDA Plants" = "default",
+                                                                                      "Upload" = "upload"),
+                                                                          selected = 0),
+                                                             conditionalPanel(condition = "input.species_source == 'upload'",
+                                                                              fileInput(inputId = "species_data",
+                                                                                        label = "Species CSV",
+                                                                                        multiple = FALSE,
+                                                                                        accept = "CSV")),
+                                                               selectInput(inputId = "data_joining_var",
+                                                                           label = "Species joining variable in data",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                               selectInput(inputId = "species_joining_var",
+                                                                           label = "Species joining variable in lookup table",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                             conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
+                                                               actionButton(inputId = "join_species",
+                                                                            label = "Join species information to data")
+                                                             )
+                                                             
+                                                             )
+                                            )
                            
                   ),
                   tabPanel(title = "Indicator calculation",
@@ -272,6 +295,7 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data = NULL,
                               raw_data = NULL,
                               headers = NULL,
@@ -342,11 +366,35 @@ server <- function(input, output, session) {
                handlerExpr = {
                  if (input$species_source == "default") {
                    message("Species source set to default")
+                   defaults_species_filepath <- paste0(workspace$original_directory,
+                                                       "/",
+                                                       workspace$default_species_filename)
+                   workspace[["species_data"]] <- read.csv(defaults_species_filepath,
+                                                           stringsAsFactors = FALSE)
                    # TODO
                    # Set workspace$species_data to the default list (which doesn't exist yet)
                    # Set this variable so we can handle the data appropriately based on source
                    workspace$current_species_source <- "default"
                  }
+               })
+  
+  ##### When sorkspace$species_data updates #####
+  observeEvent(eventExpr = workspace$species_data,
+               handlerExpr = {
+                 current_species_data_vars <- names(workspace$species_data)
+                 
+                 if ("code" %in% current_species_data_vars) {
+                   selection <- "code"
+                 } else {
+                   selection <- ""
+                 }
+                 
+                 
+                 updateSelectInput(session = session,
+                                   inputId = "species_joining_var",
+                                   choices = c("",
+                                               current_species_data_vars),
+                                   selected = selection)
                })
   
   ##### Fetching data from the LDC #####
@@ -489,8 +537,8 @@ server <- function(input, output, session) {
                    #                    id = "needs_headers_upload",
                    #                    type = "warning")
                    # } else if (!input$needs_header) {
-                   #   message("No headers needed. Writing workspace$raw_data to workspace$data")
-                   #   workspace$data <- workspace$raw_data
+                     message("No headers needed. Writing workspace$raw_data to workspace$data")
+                     workspace$data <- workspace$raw_data
                    # }
                  }
                })
@@ -537,9 +585,15 @@ server <- function(input, output, session) {
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
-                   message("Updating key variable selectInput()s.")
                    
                    # Time to nullify all the variables
+                   message("Updating data_joining_var selectInput().")
+                   updateSelectInput(session = session,
+                                     inputId = "data_joining_var",
+                                     choices = c(""),
+                                     selected = "")
+                   
+                   message("Updating key variable selectInput()s.")
                    all_required_variables <- unique(unlist(workspace$required_vars))
                    
                    for (required_var in all_required_variables) {
@@ -559,10 +613,32 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("workspace$data contains data.")
-                   message("Updating key variable selectInput()s.")
+                   
                    # Update the variable options
                    current_data_vars <- names(workspace$data)
                    
+                   message("Updating data_joining_var selectInput().")
+                   expected_data_joining_var <- switch(input$data_type,
+                                                       "lpi" = "code",
+                                                       "height" = "species",
+                                                       "gap" = "",
+                                                       "soil" = "")
+                   
+                   if (expected_data_joining_var %in% current_data_vars) {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = expected_data_joining_var)
+                   } else {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = "")
+                   }
+                   
+                   message("Updating key variable selectInput()s.")
                    # Time to nullify all the variables
                    all_required_variables <- unique(unlist(workspace$required_vars))
                    
@@ -628,6 +704,18 @@ server <- function(input, output, session) {
                    }
                  }
                })
+  
+  ##### When join_species is clicked
+  observeEvent(eventExpr = input$join_species,
+               handlerExpr = {
+                 message("Joining species information to data.")
+                 by_vector <- c(input$species_joining_var)
+                 names(by_vector) <- input$data_joining_var
+                 workspace$data <- dplyr::left_join(x = workspace$data,
+                                                    y = workspace$species_data,
+                                                    by = by_vector)
+               })
+  
   
   ##### When required variables update #####
   observeEvent(eventExpr = c(input$primarykey_var,
