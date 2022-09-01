@@ -585,9 +585,15 @@ server <- function(input, output, session) {
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
-                   message("Updating key variable selectInput()s.")
                    
                    # Time to nullify all the variables
+                   message("Updating data_joining_var selectInput().")
+                   updateSelectInput(session = session,
+                                     inputId = "data_joining_var",
+                                     choices = c(""),
+                                     selected = "")
+                   
+                   message("Updating key variable selectInput()s.")
                    all_required_variables <- unique(unlist(workspace$required_vars))
                    
                    for (required_var in all_required_variables) {
