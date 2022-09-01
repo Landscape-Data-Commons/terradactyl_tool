@@ -99,17 +99,6 @@ ui <- fluidPage(
                                  placeholder = "R042XB012NM"),
                        actionButton(inputId = "fetch_data",
                                     label = "Fetch data")),
-      radioButtons(inputId = "species_source",
-                   label = "Species list source",
-                   choices = c("Default USDA Plants" = "default",
-                               "Upload" = "upload"),
-                   selected = 0),
-      conditionalPanel(condition = "input.species_source == 'upload'",
-                       fileInput(inputId = "species_data",
-                                 label = "Species CSV",
-                                 multiple = FALSE,
-                                 accept = "CSV")),
-      
       hr()
     ),
     
@@ -353,6 +342,25 @@ server <- function(input, output, session) {
                    # Set this variable so we can handle the data appropriately based on source
                    workspace$current_species_source <- "default"
                  }
+               })
+  
+  ##### When sorkspace$species_data updates #####
+  observeEvent(eventExpr = workspace$species_data,
+               handlerExpr = {
+                 current_species_data_vars <- names(workspace$species_data)
+                 
+                 if ("code" %in% current_species_data_vars) {
+                   selection <- "code"
+                 } else {
+                   selection <- ""
+                 }
+                 
+                 
+                 updateSelectInput(session = session,
+                                   inputId = "species_joining_var",
+                                   choices = c("",
+                                               current_species_data_vars),
+                                   selected = selection)
                })
   
   ##### Fetching data from the LDC #####
