@@ -74,21 +74,18 @@ ui <- fluidPage(
                        fileInput(inputId = "raw_data",
                                  label = "Data CSV",
                                  multiple = FALSE,
-                                 accept = "CSV"),
-                       checkboxInput(inputId = "needs_header",
-                                     label = "Need to upload header information",
-                                     value = FALSE),
-                       conditionalPanel(condition = "input.needs_header",
-                                        fileInput(inputId = "header_data",
-                                                  label = "Header CSV",
-                                                  multiple = FALSE,
-                                                  accept = "CSV")
-                       )
+                                 accept = "CSV")#,
+                       # checkboxInput(inputId = "needs_header",
+                       #               label = "Need to upload header information",
+                       #               value = FALSE),
+                       # conditionalPanel(condition = "input.needs_header",
+                       #                  fileInput(inputId = "header_data",
+                       #                            label = "Header CSV",
+                       #                            multiple = FALSE,
+                       #                            accept = "CSV")
+                       # )
       ),
       
-      # conditionalPanel(condition = "input.data_source == 'upload'",
-      #                  
-      #                  ),
       conditionalPanel(condition = "input.data_source == 'ldc'",
                        selectInput(inputId = "key_type",
                                    label = "LDC search type",
@@ -102,17 +99,6 @@ ui <- fluidPage(
                                  placeholder = "R042XB012NM"),
                        actionButton(inputId = "fetch_data",
                                     label = "Fetch data")),
-      radioButtons(inputId = "species_source",
-                   label = "Species list source",
-                   choices = c("Default USDA Plants" = "default",
-                               "Upload" = "upload"),
-                   selected = 0),
-      conditionalPanel(condition = "input.species_source == 'upload'",
-                       fileInput(inputId = "species_data",
-                                 label = "Species CSV",
-                                 multiple = FALSE,
-                                 accept = "CSV")),
-      
       hr()
     ),
     
@@ -125,10 +111,86 @@ ui <- fluidPage(
                            selectInput(inputId = "primarykey_var",
                                        label = "Variable containing primary key values",
                                        choices = c("")),
-                           conditionalPanel(condition = "input.data_type == 'gap' || input.lpi_unit == 'line' || input.height_unit == 'line'",
+                           # LineKey (potentially) matters to LPI, gap, and height
+                           conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
                                             selectInput(inputId = "linekey_var",
                                                         label = "Variable containing line key values",
-                                                        choices = c("")))
+                                                        choices = c(""))),
+                           # LPI-specific variables
+                           conditionalPanel(condition = "input.data_type == 'lpi'",
+                                            selectInput(inputId = "code_var",
+                                                        label = "Variable containing hit codes (e.g., ARTR2, S)",
+                                                        choices = c("")),
+                                            selectInput(inputId = "pointnbr_var",
+                                                        label = "Variable containing the ordinal hit numbers",
+                                                        choices = c("")),
+                                            selectInput(inputId = "layer_var",
+                                                        label = "Variable containing layer for the hit records",
+                                                        choices = c(""))),
+                           # Gap-specific variables
+                           conditionalPanel(condition = "input.data_type == 'gap'",
+                                            selectInput(inputId = "linelengthamount_var",
+                                                        label = "Variable containing line lengths",
+                                                        choices = c("")),
+                                            selectInput(inputId = "measure_var",
+                                                        label = "Variable containing the measurement units",
+                                                        choices = c("")),
+                                            selectInput(inputId = "rectype_var",
+                                                        label = "Variable containing the type of gaps (i.e., 'C', 'B', 'P')",
+                                                        choices = c("")),
+                                            selectInput(inputId = "gap_var",
+                                                        label = "Variable containing gap sizes",
+                                                        choices = c(""))),
+                           # Height-specific variables
+                           conditionalPanel(condition = "input.data_type == 'height'",
+                                            selectInput(inputId = "height_var",
+                                                        label = "Variable containing heights",
+                                                        choices = c("")),
+                                            selectInput(inputId = "species_var",
+                                                        label = "Variable containing the species",
+                                                        choices = c(""))),
+                           # Soil-specific variables
+                           conditionalPanel(condition = "input.data_type == 'soil'",
+                                            selectInput(inputId = "rating_var",
+                                                        label = "Variable containing stability ratings",
+                                                        choices = c("")),
+                                            selectInput(inputId = "veg_var",
+                                                        label = "Variable containing vegetative cover type",
+                                                        choices = c(""))),
+                           hr(),
+                           # Species lookup table stuff
+                           conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
+                                            checkboxInput(inputId = "use_species",
+                                                          label = "Add species information",
+                                                          value = FALSE),
+                                            conditionalPanel(condition = "input.use_species",
+                                                             radioButtons(inputId = "species_source",
+                                                                          label = "Species lookup table source",
+                                                                          choices = c("Default USDA Plants" = "default",
+                                                                                      "Upload" = "upload"),
+                                                                          selected = 0),
+                                                             conditionalPanel(condition = "input.species_source == 'upload'",
+                                                                              fileInput(inputId = "species_data",
+                                                                                        label = "Species CSV",
+                                                                                        multiple = FALSE,
+                                                                                        accept = "CSV")),
+                                                               selectInput(inputId = "data_joining_var",
+                                                                           label = "Species joining variable in data",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                               selectInput(inputId = "species_joining_var",
+                                                                           label = "Species joining variable in lookup table",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                             conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
+                                                               actionButton(inputId = "join_species",
+                                                                            label = "Join species information to data")
+                                                             )
+                                                             
+                                                             )
+                                            )
                            
                   ),
                   tabPanel(title = "Indicator calculation",
@@ -210,6 +272,8 @@ ui <- fluidPage(
                            actionButton(inputId = "calculate_button",
                                         label = "Calculate!")
                   ),
+                  tabPanel(title = "Data",
+                           DT::dataTableOutput(outputId = "data")),
                   tabPanel(title = "Results",
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
@@ -231,10 +295,12 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data = NULL,
                               raw_data = NULL,
                               headers = NULL,
                               required_vars = list("lpi" = c("PrimaryKey",
+                                                             "LineKey",
                                                              "code",
                                                              "PointNbr",
                                                              "layer"),
@@ -245,6 +311,7 @@ server <- function(input, output, session) {
                                                              "LineKey",
                                                              "Gap"),
                                                    "height" = c("PrimaryKey",
+                                                                "LineKey",
                                                                 "Height",
                                                                 "Species"),
                                                    "soil" = c("PrimaryKey",
@@ -274,36 +341,60 @@ server <- function(input, output, session) {
                  workspace$current_data_source <- "upload"
                })
   
-  # When input$species_data updates, look at its filepath and read in the CSV
-  observeEvent(eventExpr = input$header_data,
-               handlerExpr = {
-                 message("Reading in header info from uploaded CSV")
-                 workspace[["headers"]] <- read.csv(input$header_data$datapath,
-                                                    stringsAsFactors = FALSE)
-               })
-  
+  # # When input$header_data updates, look at its filepath and read in the CSV
+  # observeEvent(eventExpr = input$header_data,
+  #              handlerExpr = {
+  #                message("Reading in header info from uploaded CSV")
+  #                workspace[["headers"]] <- read.csv(input$header_data$datapath,
+  #                                                   stringsAsFactors = FALSE)
+  #              })
+
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
                handlerExpr = {
                  message("Reading in species data from uploaded CSV")
                  workspace[["species_data"]] <- read.csv(input$species_data$datapath,
                                                          stringsAsFactors = FALSE)
-                 
+
                  # Set this variable so we can handle the data appropriately based on source
                  message("Species source set to upload")
                  workspace$current_species_source <- "upload"
                })
-  
+
   # When input$species_source is set to the default, handle that
   observeEvent(eventExpr = input$species_source,
                handlerExpr = {
                  if (input$species_source == "default") {
                    message("Species source set to default")
+                   defaults_species_filepath <- paste0(workspace$original_directory,
+                                                       "/",
+                                                       workspace$default_species_filename)
+                   workspace[["species_data"]] <- read.csv(defaults_species_filepath,
+                                                           stringsAsFactors = FALSE)
                    # TODO
                    # Set workspace$species_data to the default list (which doesn't exist yet)
                    # Set this variable so we can handle the data appropriately based on source
                    workspace$current_species_source <- "default"
                  }
+               })
+  
+  ##### When sorkspace$species_data updates #####
+  observeEvent(eventExpr = workspace$species_data,
+               handlerExpr = {
+                 current_species_data_vars <- names(workspace$species_data)
+                 
+                 if ("code" %in% current_species_data_vars) {
+                   selection <- "code"
+                 } else {
+                   selection <- ""
+                 }
+                 
+                 
+                 updateSelectInput(session = session,
+                                   inputId = "species_joining_var",
+                                   choices = c("",
+                                               current_species_data_vars),
+                                   selected = selection)
                })
   
   ##### Fetching data from the LDC #####
@@ -331,8 +422,8 @@ server <- function(input, output, session) {
                  if (input$keys != "") {
                    # Handle multiple requested ecosites at once!
                    current_key_vector <- stringr::str_split(string = input$keys,
-                                                           pattern = ",",
-                                                           simplify = TRUE)
+                                                            pattern = ",",
+                                                            simplify = TRUE)
                    current_key_vector <- trimws(current_key_vector)
                    
                    results <- fetch_ldc(keys = current_key_vector,
@@ -360,8 +451,8 @@ server <- function(input, output, session) {
                                     paste(workspace$missing_keys,
                                           collapse = ", ")))
                      key_error <- paste0("Data could not be retrieved from the LDC for the following keys: ",
-                                             paste(workspace$missing_keys,
-                                                   collapse = ", "))
+                                         paste(workspace$missing_keys,
+                                               collapse = ", "))
                      showNotification(ui = key_error,
                                       duration = NULL,
                                       closeButton = TRUE,
@@ -418,86 +509,101 @@ server <- function(input, output, session) {
                    message("Current data source is the LDC, using workspace$raw_data as workspace$data")
                    workspace$data <- workspace$raw_data
                  } else if (workspace$current_data_source == "upload") {
-                   # If the data are uploaded, join to the header info first
-                   if (!is.null(workspace$headers) & input$needs_header) {
-                     # Get the number of observations so we can warn if we lose some
-                     n_observations <- nrow(workspace$raw_data)
-                     current_data <- dplyr::left_join(x = workspace$raw_data,
-                                                      y = workspace$headers)
-                     current_n_observations <- nrow(current_data)
-                     # Warn the user if not all observations made it through the
-                     # joining process
-                     if (n_observations != current_n_observations) {
-                       showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
-                                                    n_observations - current_n_observations,
-                                                    " observations."),
-                                        duration = NULL,
-                                        closeButton = TRUE,
-                                        id = "dropped_data",
-                                        type = "warning")
-                     }
-                     workspace$data <- current_data
-                   } else if (is.null(workspace$headers) & input$needs_header) {
-                     message("Needs header info, but the user has not supplied it")
-                     workspace$data <- NULL
-                     showNotification(ui = "Please supply header information.",
-                                      duration = NULL,
-                                      closeButton = TRUE,
-                                      id = "needs_headers_upload",
-                                      type = "warning")
-                   } else if (!input$needs_header) {
+                   # # If the data are uploaded, join to the header info first
+                   # if (!is.null(workspace$headers) & input$needs_header) {
+                   #   # Get the number of observations so we can warn if we lose some
+                   #   n_observations <- nrow(workspace$raw_data)
+                   #   current_data <- dplyr::left_join(x = workspace$raw_data,
+                   #                                    y = workspace$headers)
+                   #   current_n_observations <- nrow(current_data)
+                   #   # Warn the user if not all observations made it through the
+                   #   # joining process
+                   #   if (n_observations != current_n_observations) {
+                   #     showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
+                   #                                  n_observations - current_n_observations,
+                   #                                  " observations."),
+                   #                      duration = NULL,
+                   #                      closeButton = TRUE,
+                   #                      id = "dropped_data",
+                   #                      type = "warning")
+                   #   }
+                   #   workspace$data <- current_data
+                   # } else if (is.null(workspace$headers) & input$needs_header) {
+                   #   message("Needs header info, but the user has not supplied it")
+                   #   workspace$data <- NULL
+                   #   showNotification(ui = "Please supply header information.",
+                   #                    duration = NULL,
+                   #                    closeButton = TRUE,
+                   #                    id = "needs_headers_upload",
+                   #                    type = "warning")
+                   # } else if (!input$needs_header) {
                      message("No headers needed. Writing workspace$raw_data to workspace$data")
                      workspace$data <- workspace$raw_data
-                   }
+                   # }
                  }
                })
   
-  ##### When headers update #####
-  observeEvent(eventExpr = workspace$headers,
-               handlerExpr = {
-                 if (workspace$current_data_source == "ldc") {
-                   message("Data are from the LDC and don't actually need header info. Ignoring workspace$headers.")
-                   showNotification(ui = "Data are from the LDC and the uploaded headers will be ignored because header information is already included with the data.",
-                                    duration = NULL,
-                                    closeButton = TRUE,
-                                    id = "unnecessary_headers",
-                                    type = "message")
-                 } else if (workspace$current_data_source == "upload") {
-                   if (!is.null(workspace$raw_data)) {
-                     # Get the number of observations so we can warn if we lose some
-                     n_observations <- nrow(workspace$raw_data)
-                     message("Joining data and headers.")
-                     current_data <- dplyr::left_join(x = workspace$raw_data,
-                                                      y = workspace$headers)
-                     current_n_observations <- nrow(current_data)
-                     if (n_observations != current_n_observations) {
-                       showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
-                                                    n_observations - current_n_observations,
-                                                    " observations."),
-                                        duration = NULL,
-                                        closeButton = TRUE,
-                                        id = "dropped_data",
-                                        type = "warning")
-                     }
-                     message("Updating workspace$data with the joined data")
-                     workspace$data <- current_data
-                   }
-                 }
-               })
+  # ##### When headers update #####
+  # observeEvent(eventExpr = workspace$headers,
+  #              handlerExpr = {
+  #                if (workspace$current_data_source == "ldc") {
+  #                  message("Data are from the LDC and don't actually need header info. Ignoring workspace$headers.")
+  #                  showNotification(ui = "Data are from the LDC and the uploaded headers will be ignored because header information is already included with the data.",
+  #                                   duration = NULL,
+  #                                   closeButton = TRUE,
+  #                                   id = "unnecessary_headers",
+  #                                   type = "message")
+  #                } else if (workspace$current_data_source == "upload") {
+  #                  if (!is.null(workspace$raw_data)) {
+  #                    # Get the number of observations so we can warn if we lose some
+  #                    n_observations <- nrow(workspace$raw_data)
+  #                    message("Joining data and headers.")
+  #                    current_data <- dplyr::left_join(x = workspace$raw_data,
+  #                                                     y = workspace$headers)
+  #                    current_n_observations <- nrow(current_data)
+  #                    if (n_observations != current_n_observations) {
+  #                      showNotification(ui = paste0("Joining the headers to the data results in the loss of ",
+  #                                                   n_observations - current_n_observations,
+  #                                                   " observations."),
+  #                                       duration = NULL,
+  #                                       closeButton = TRUE,
+  #                                       id = "dropped_data",
+  #                                       type = "warning")
+  #                    }
+  #                    message("Updating workspace$data with the joined data")
+  #                    workspace$data <- current_data
+  #                  }
+  #                }
+  #              })
   
   ##### When workspace$data updates #####
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
+                 # Display the data
+                 output$data <- DT::renderDataTable(workspace$data)
+                 
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
                    message("workspace$data is NULL.")
+                   
+                   # Time to nullify all the variables
+                   message("Updating data_joining_var selectInput().")
+                   updateSelectInput(session = session,
+                                     inputId = "data_joining_var",
+                                     choices = c(""),
+                                     selected = "")
+                   
                    message("Updating key variable selectInput()s.")
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = c(""),
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = c(""),
-                                     selected = "")
+                   all_required_variables <- unique(unlist(workspace$required_vars))
+                   
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste(tolower(required_var),
+                                             "_var")
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = c(""),
+                                       selected = "")
+                   }
+                   
                    if (input$data_type %in% c("lpi", "height")) {
                      updateSelectInput(inputId = paste0(input$data_type,
                                                         "_grouping_vars"),
@@ -507,24 +613,57 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("workspace$data contains data.")
-                   message("Updating key variable selectInput()s.")
+                   
                    # Update the variable options
                    current_data_vars <- names(workspace$data)
                    
-                   updateSelectInput(inputId = "primarykey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
-                   updateSelectInput(inputId = "linekey_var",
-                                     choices = current_data_vars,
-                                     selected = "")
+                   message("Updating data_joining_var selectInput().")
+                   expected_data_joining_var <- switch(input$data_type,
+                                                       "lpi" = "code",
+                                                       "height" = "species",
+                                                       "gap" = "",
+                                                       "soil" = "")
                    
-                   if ("PrimaryKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "primarykey_var",
-                                       selected = "PrimaryKey")
+                   if (expected_data_joining_var %in% current_data_vars) {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = expected_data_joining_var)
+                   } else {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = "")
                    }
-                   if ("LineKey" %in% current_data_vars) {
-                     updateSelectInput(inputId = "linekey_var",
-                                       selected = "LineKey")
+                   
+                   message("Updating key variable selectInput()s.")
+                   # Time to nullify all the variables
+                   all_required_variables <- unique(unlist(workspace$required_vars))
+                   
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste0(tolower(required_var),
+                                              "_var")
+                     message(paste0("Currently updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
+                     if (required_var %in% current_data_vars) {
+                       selected_var <- required_var
+                     } else {
+                       selected_var <- ""
+                     }
+                     
+                     message(paste0("Selected variable is ", selected_var))
+                     
+                     updateSelectInput(inputId = inputid_string,
+                                       choices = current_data_vars,
+                                       selected = selected_var)
+                     message(paste0("Finished updating selectInput(inputId = ",
+                                    inputid_string,
+                                    ")"))
+                     
                    }
                    
                    if (input$data_type %in% c("lpi", "height")) {
@@ -534,6 +673,7 @@ server <- function(input, output, session) {
                                        selected = "")
                    }
                    
+                   
                    # DATA SOUNDNESS CHECKS
                    # We need the variables required for the current data type
                    # Add in "LineKey" if it's called for
@@ -541,8 +681,8 @@ server <- function(input, output, session) {
                    needs_linekey <- (input$data_type == "lpi" & input$lpi_unit == "line") | (input$data_type == "gap" & input$gap_unit == "line") | (input$data_type == "height" & input$height_unit == "line")
                    if (needs_linekey) {
                      message("Including 'LineKey' in required variables.")
-                     current_required_vars <- c(workspace$required_vars[[input$data_type]],
-                                                "LineKey")
+                     current_required_vars <- unique(c(workspace$required_vars[[input$data_type]],
+                                                       "LineKey"))
                    } else {
                      current_required_vars <- workspace$required_vars[[input$data_type]]
                    }
@@ -565,29 +705,55 @@ server <- function(input, output, session) {
                  }
                })
   
-  ##### When input$primarykey_var changes #####
-  observeEvent(eventExpr = input$primarykey_var,
+  ##### When join_species is clicked
+  observeEvent(eventExpr = input$join_species,
                handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$PrimaryKey with values from workspace$data$",
-                                  input$primarykey_var))
-                   workspace$data[["PrimaryKey"]] <- workspace$data[[input$primarykey_var]]
-                 } else {
-                   message("No PrimaryKey variable provided (yet).")
+                 message("Joining species information to data.")
+                 by_vector <- c(input$species_joining_var)
+                 names(by_vector) <- input$data_joining_var
+                 workspace$data <- dplyr::left_join(x = workspace$data,
+                                                    y = workspace$species_data,
+                                                    by = by_vector)
+               })
+  
+  
+  ##### When required variables update #####
+  observeEvent(eventExpr = c(input$primarykey_var,
+                             input$linekey_var,
+                             input$code_var,
+                             input$pointnbr_var,
+                             input$layer_var,
+                             input$linelengthamount_var,
+                             input$measure_var,
+                             input$rectype_var,
+                             input$gap_var,
+                             input$height_var,
+                             input$species_var,
+                             input$rating_var,
+                             input$veg_var),
+               handlerExpr = {
+                 # Let's update the variables in workspace$data
+                 # This just looks at the required variables for the current data type
+                 all_required_variables <- workspace$required_vars[[input$data_type]]
+                 
+                 for (required_var in all_required_variables) {
+                   inputid_string <- paste0(tolower(required_var),
+                                            "_var")
+                   current_var_value <- input[[inputid_string]]
+                   
+                   if (current_var_value != "") {
+                     message(paste0("Writing contents of worskpace$",
+                                    current_var_value,
+                                    " to workspace$",
+                                    required_var))
+                     workspace$data[[required_var]] <- workspace$data[[current_var_value]]
+                   } else {
+                     message(paste0("No variable identified for ",
+                                    required_var))
+                   }
                  }
                })
   
-  ##### When input$linekey_var changes #####
-  observeEvent(eventExpr = input$linekey_var,
-               handlerExpr = {
-                 if (input$primarykey_var != "") {
-                   message(paste0("Updating workspace$data$LineKey with values from workspace$data$",
-                                  input$linekey_var))
-                   workspace$data[["LineKey"]] <- workspace$data[[input$linekey_var]]
-                 } else {
-                   message("No LineKey variable provided (yet).")
-                 }
-               })
   
   
   ##### Calculating #####
