@@ -272,6 +272,7 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data = NULL,
                               raw_data = NULL,
                               headers = NULL,
@@ -342,6 +343,11 @@ server <- function(input, output, session) {
                handlerExpr = {
                  if (input$species_source == "default") {
                    message("Species source set to default")
+                   defaults_species_filepath <- paste0(workspace$original_directory,
+                                                       "/",
+                                                       workspace$default_species_filename)
+                   workspace[["species_data"]] <- read.csv(defaults_species_filepath,
+                                                           stringsAsFactors = FALSE)
                    # TODO
                    # Set workspace$species_data to the default list (which doesn't exist yet)
                    # Set this variable so we can handle the data appropriately based on source
