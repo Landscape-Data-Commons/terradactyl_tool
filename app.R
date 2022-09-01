@@ -156,7 +156,41 @@ ui <- fluidPage(
                                                         choices = c("")),
                                             selectInput(inputId = "veg_var",
                                                         label = "Variable containing vegetative cover type",
-                                                        choices = c("")))
+                                                        choices = c(""))),
+                           hr(),
+                           # Species lookup table stuff
+                           conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
+                                            checkboxInput(inputId = "use_species",
+                                                          label = "Add species information",
+                                                          value = FALSE),
+                                            conditionalPanel(condition = "input.use_species",
+                                                             radioButtons(inputId = "species_source",
+                                                                          label = "Species lookup table source",
+                                                                          choices = c("Default USDA Plants" = "default",
+                                                                                      "Upload" = "upload"),
+                                                                          selected = 0),
+                                                             conditionalPanel(condition = "input.species_source == 'upload'",
+                                                                              fileInput(inputId = "species_data",
+                                                                                        label = "Species CSV",
+                                                                                        multiple = FALSE,
+                                                                                        accept = "CSV")),
+                                                               selectInput(inputId = "data_joining_var",
+                                                                           label = "Species joining variable in data",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                               selectInput(inputId = "species_joining_var",
+                                                                           label = "Species joining variable in lookup table",
+                                                                           choices = c(""),
+                                                                           selected = "",
+                                                                           multiple = FALSE),
+                                                             conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
+                                                               actionButton(inputId = "join_species",
+                                                                            label = "Join species information to data")
+                                                             )
+                                                             
+                                                             )
+                                            )
                            
                   ),
                   tabPanel(title = "Indicator calculation",
@@ -573,10 +607,32 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("workspace$data contains data.")
-                   message("Updating key variable selectInput()s.")
+                   
                    # Update the variable options
                    current_data_vars <- names(workspace$data)
                    
+                   message("Updating data_joining_var selectInput().")
+                   expected_data_joining_var <- switch(input$data_type,
+                                                       "lpi" = "code",
+                                                       "height" = "species",
+                                                       "gap" = "",
+                                                       "soil" = "")
+                   
+                   if (expected_data_joining_var %in% current_data_vars) {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = expected_data_joining_var)
+                   } else {
+                     updateSelectInput(session = session,
+                                       inputId = "data_joining_var",
+                                       choices = c("",
+                                                   current_data_vars),
+                                       selected = "")
+                   }
+                   
+                   message("Updating key variable selectInput()s.")
                    # Time to nullify all the variables
                    all_required_variables <- unique(unlist(workspace$required_vars))
                    
@@ -642,6 +698,18 @@ server <- function(input, output, session) {
                    }
                  }
                })
+  
+  ##### When join_species is clicked
+  observeEvent(eventExpr = input$join_species,
+               handlerExpr = {
+                 message("Joining species information to data.")
+                 by_vector <- c(input$species_joining_var)
+                 names(by_vector) <- input$data_joining_var
+                 workspace$data <- dplyr::left_join(x = workspace$data,
+                                                    y = workspace$species_data,
+                                                    by = by_vector)
+               })
+  
   
   ##### When required variables update #####
   observeEvent(eventExpr = c(input$primarykey_var,
