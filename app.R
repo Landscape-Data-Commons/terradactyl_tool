@@ -537,8 +537,8 @@ server <- function(input, output, session) {
                    #                    id = "needs_headers_upload",
                    #                    type = "warning")
                    # } else if (!input$needs_header) {
-                   #   message("No headers needed. Writing workspace$raw_data to workspace$data")
-                   #   workspace$data <- workspace$raw_data
+                     message("No headers needed. Writing workspace$raw_data to workspace$data")
+                     workspace$data <- workspace$raw_data
                    # }
                  }
                })
