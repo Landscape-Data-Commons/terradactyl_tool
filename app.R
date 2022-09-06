@@ -276,6 +276,8 @@ ui <- fluidPage(
                                         label = "Calculate!")
                   ),
                   tabPanel(title = "Data",
+                           actionButton(inputId = "reset_data",
+                                        label = "Reset data"),
                            DT::dataTableOutput(outputId = "data")),
                   tabPanel(title = "Results",
                            conditionalPanel(condition = "output.results_table !== null",
