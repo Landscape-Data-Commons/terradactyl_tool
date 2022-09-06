@@ -177,23 +177,23 @@ ui <- fluidPage(
                                                                                         label = "Species CSV",
                                                                                         multiple = FALSE,
                                                                                         accept = "CSV")),
-                                                               selectInput(inputId = "data_joining_var",
-                                                                           label = "Species joining variable in data",
-                                                                           choices = c(""),
-                                                                           selected = "",
-                                                                           multiple = FALSE),
-                                                               selectInput(inputId = "species_joining_var",
-                                                                           label = "Species joining variable in lookup table",
-                                                                           choices = c(""),
-                                                                           selected = "",
-                                                                           multiple = FALSE),
+                                                             selectInput(inputId = "data_joining_var",
+                                                                         label = "Species joining variable in data",
+                                                                         choices = c(""),
+                                                                         selected = "",
+                                                                         multiple = FALSE),
+                                                             selectInput(inputId = "species_joining_var",
+                                                                         label = "Species joining variable in lookup table",
+                                                                         choices = c(""),
+                                                                         selected = "",
+                                                                         multiple = FALSE),
                                                              conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
-                                                               actionButton(inputId = "join_species",
-                                                                            label = "Join species information to data")
+                                                                              actionButton(inputId = "join_species",
+                                                                                           label = "Join species information to data")
                                                              )
                                                              
-                                                             )
                                             )
+                           )
                            
                   ),
                   tabPanel(title = "Indicator calculation",
@@ -353,19 +353,19 @@ server <- function(input, output, session) {
   #                workspace[["headers"]] <- read.csv(input$header_data$datapath,
   #                                                   stringsAsFactors = FALSE)
   #              })
-
+  
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
                handlerExpr = {
                  message("Reading in species data from uploaded CSV")
                  workspace[["species_data"]] <- read.csv(input$species_data$datapath,
                                                          stringsAsFactors = FALSE)
-
+                 
                  # Set this variable so we can handle the data appropriately based on source
                  message("Species source set to upload")
                  workspace$current_species_source <- "upload"
                })
-
+  
   # When input$species_source is set to the default, handle that
   observeEvent(eventExpr = input$species_source,
                handlerExpr = {
@@ -542,9 +542,9 @@ server <- function(input, output, session) {
                    #                    id = "needs_headers_upload",
                    #                    type = "warning")
                    # } else if (!input$needs_header) {
-                     message("No headers needed. Writing workspace$raw_data to workspace$data")
-                     workspace$data <- workspace$raw_data
-                     workspace$data_fresh <- TRUE
+                   message("No headers needed. Writing workspace$raw_data to workspace$data")
+                   workspace$data <- workspace$raw_data
+                   workspace$data_fresh <- TRUE
                    # }
                  }
                })
