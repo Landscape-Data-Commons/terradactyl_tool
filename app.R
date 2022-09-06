@@ -758,9 +758,9 @@ server <- function(input, output, session) {
                    current_var_value <- input[[inputid_string]]
                    
                    if (current_var_value != "") {
-                     message(paste0("Writing contents of worskpace$",
+                     message(paste0("Writing contents of worskpace$data$",
                                     current_var_value,
-                                    " to workspace$",
+                                    " to workspace$data$",
                                     required_var))
                      workspace$data[[required_var]] <- workspace$data[[current_var_value]]
                    } else {
