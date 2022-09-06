@@ -158,6 +158,9 @@ ui <- fluidPage(
                                                         label = "Variable containing vegetative cover type",
                                                         choices = c(""))),
                            hr(),
+                           actionButton(inputId = "update_data_vars",
+                                        label = "Update data variables"),
+                           hr(),
                            # Species lookup table stuff
                            conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
                                             checkboxInput(inputId = "use_species",
@@ -539,6 +542,7 @@ server <- function(input, output, session) {
                    # } else if (!input$needs_header) {
                      message("No headers needed. Writing workspace$raw_data to workspace$data")
                      workspace$data <- workspace$raw_data
+                     workspace$data_fresh <- TRUE
                    # }
                  }
                })
@@ -638,41 +642,43 @@ server <- function(input, output, session) {
                                        selected = "")
                    }
                    
-                   message("Updating key variable selectInput()s.")
-                   # Time to nullify all the variables
-                   all_required_variables <- unique(unlist(workspace$required_vars))
-                   
-                   for (required_var in all_required_variables) {
-                     inputid_string <- paste0(tolower(required_var),
-                                              "_var")
-                     message(paste0("Currently updating selectInput(inputId = ",
-                                    inputid_string,
-                                    ")"))
+                   # Time to update the variables if we can guess what they are
+                   if (workspace$data_fresh) {
+                     all_required_variables <- unique(unlist(workspace$required_vars))
                      
-                     if (required_var %in% current_data_vars) {
-                       selected_var <- required_var
-                     } else {
-                       selected_var <- ""
+                     for (required_var in all_required_variables) {
+                       inputid_string <- paste0(tolower(required_var),
+                                                "_var")
+                       message(paste0("Currently updating selectInput(inputId = ",
+                                      inputid_string,
+                                      ")"))
+                       
+                       if (required_var %in% current_data_vars) {
+                         selected_var <- required_var
+                       } else {
+                         selected_var <- ""
+                       }
+                       
+                       message(paste0("Selected variable is ", selected_var))
+                       
+                       updateSelectInput(inputId = inputid_string,
+                                         choices = current_data_vars,
+                                         selected = selected_var)
+                       message(paste0("Finished updating selectInput(inputId = ",
+                                      inputid_string,
+                                      ")"))
+                       
                      }
                      
-                     message(paste0("Selected variable is ", selected_var))
-                     
-                     updateSelectInput(inputId = inputid_string,
-                                       choices = current_data_vars,
-                                       selected = selected_var)
-                     message(paste0("Finished updating selectInput(inputId = ",
-                                    inputid_string,
-                                    ")"))
-                     
+                     if (input$data_type %in% c("lpi", "height")) {
+                       updateSelectInput(inputId = paste0(input$data_type,
+                                                          "_grouping_vars"),
+                                         choices = current_data_vars,
+                                         selected = "")
+                     }
                    }
                    
-                   if (input$data_type %in% c("lpi", "height")) {
-                     updateSelectInput(inputId = paste0(input$data_type,
-                                                        "_grouping_vars"),
-                                       choices = current_data_vars,
-                                       selected = "")
-                   }
-                   
+                   workspace$data_fresh <- FALSE
                    
                    # DATA SOUNDNESS CHECKS
                    # We need the variables required for the current data type
@@ -705,7 +711,7 @@ server <- function(input, output, session) {
                  }
                })
   
-  ##### When join_species is clicked
+  ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
                  message("Joining species information to data.")
@@ -714,23 +720,33 @@ server <- function(input, output, session) {
                  workspace$data <- dplyr::left_join(x = workspace$data,
                                                     y = workspace$species_data,
                                                     by = by_vector)
+                 if (input$data_type %in% c("lpi", "height")) {
+                   updateSelectInput(inputId = paste0(input$data_type,
+                                                      "_grouping_vars"),
+                                     choices = names(workspace$data),
+                                     selected = "")
+                 }
                })
   
   
-  ##### When required variables update #####
-  observeEvent(eventExpr = c(input$primarykey_var,
-                             input$linekey_var,
-                             input$code_var,
-                             input$pointnbr_var,
-                             input$layer_var,
-                             input$linelengthamount_var,
-                             input$measure_var,
-                             input$rectype_var,
-                             input$gap_var,
-                             input$height_var,
-                             input$species_var,
-                             input$rating_var,
-                             input$veg_var),
+  ##### When update vars button is pressed #####
+  # Vestigial, but annoying to recreate if I need it, so storing it here
+  # c(input$primarykey_var,
+  #   input$linekey_var,
+  #   input$code_var,
+  #   input$pointnbr_var,
+  #   input$layer_var,
+  #   input$linelengthamount_var,
+  #   input$measure_var,
+  #   input$rectype_var,
+  #   input$gap_var,
+  #   input$height_var,
+  #   input$species_var,
+  #   input$rating_var,
+  #   input$veg_var)
+  
+  
+  observeEvent(eventExpr = input$update_data_vars,
                handlerExpr = {
                  # Let's update the variables in workspace$data
                  # This just looks at the required variables for the current data type
@@ -974,6 +990,19 @@ server <- function(input, output, session) {
                         })
                  # Just in case there are row names (which shouldn't be there)
                  row.names(workspace$results) <- NULL
+                 
+                 # Let's update the variable names to reflect what they came in as
+                 current_results_vars <- names(workspace$results)
+                 current_required_vars <- workspace$required_vars[[input$data_type]]
+                 
+                 for (required_var in current_required_vars) {
+                   input_variable_name <- paste0(tolower(required_var),
+                                                 "_var")
+                   incoming_variable_name <- input[[input_variable_name]]
+                   names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                 }
+                 
+                 
                  removeNotification(session = session,
                                     id = "calculating")
                })
