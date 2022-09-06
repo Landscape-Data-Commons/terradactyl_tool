@@ -547,6 +547,15 @@ server <- function(input, output, session) {
                  }
                })
   
+  ##### When reset data button is pressed #####
+  observeEvent(eventExpr = input$reset_data,
+               handlerExpr = {
+                 if (!is.null(workspace$raw_data)) {
+                   message("Resetting data")
+                   workspace$data <- workspace$raw_data 
+                 }
+               })
+  
   # ##### When headers update #####
   # observeEvent(eventExpr = workspace$headers,
   #              handlerExpr = {
