@@ -378,7 +378,7 @@ server <- function(input, output, session) {
                  }
                })
   
-  ##### When sorkspace$species_data updates #####
+  ##### When workspace$species_data updates #####
   observeEvent(eventExpr = workspace$species_data,
                handlerExpr = {
                  current_species_data_vars <- names(workspace$species_data)
