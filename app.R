@@ -157,7 +157,6 @@ ui <- fluidPage(
                                             selectInput(inputId = "veg_var",
                                                         label = "Variable containing vegetative cover type",
                                                         choices = c(""))),
-                           hr(),
                            actionButton(inputId = "update_data_vars",
                                         label = "Update data variables"),
                            hr(),
