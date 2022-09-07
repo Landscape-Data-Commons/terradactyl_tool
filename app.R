@@ -777,13 +777,13 @@ server <- function(input, output, session) {
                    # Handle the downloading bit
                    # Starting by writing out the data
                    workspace$current_species_data_filename <- paste0("species_data_",
-                                                                    paste(format(Sys.Date(),
-                                                                                 "%Y-%m-%d"),
-                                                                          format(Sys.time(),
-                                                                                 "T%H%MZ",
-                                                                                 tz = "GMT"),
-                                                                          sep = "_"),
-                                                                    ".csv")
+                                                                     paste(format(Sys.Date(),
+                                                                                  "%Y-%m-%d"),
+                                                                           format(Sys.time(),
+                                                                                  "T%H%MZ",
+                                                                                  tz = "GMT"),
+                                                                           sep = "_"),
+                                                                     ".csv")
                    message("Writing species data to:")
                    message(paste0(workspace$temp_directory,
                                   "/",
