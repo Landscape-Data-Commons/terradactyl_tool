@@ -644,6 +644,8 @@ server <- function(input, output, session) {
                                                        "height" = "species",
                                                        "gap" = "",
                                                        "soil" = "")
+                   message(paste0("expected_data_joining_var is ",
+                                  expected_data_joining_var))
                    
                    if (expected_data_joining_var %in% current_data_vars) {
                      updateSelectInput(session = session,
