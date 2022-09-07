@@ -289,7 +289,8 @@ ui <- fluidPage(
                                                            label = 'Download results')),
                            DT::dataTableOutput(outputId = "results_table")),
                   hr(),
-                  tabPanel(title = "Help")
+                  tabPanel(title = "Help",
+                           includeHTML("help.html"))
       )
     )
   )

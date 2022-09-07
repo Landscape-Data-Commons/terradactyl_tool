@@ -57,7 +57,207 @@ document.addEventListener('DOMContentLoaded', function(e) {
 
 
 
+<div id="TOC">
+<ul>
+<li><a href="#data-configuration" id="toc-data-configuration">Data
+configuration</a>
+<ul>
+<li><a href="#primary-key" id="toc-primary-key">Primary key</a></li>
+<li><a href="#line-key" id="toc-line-key">Line key</a></li>
+<li><a href="#hit-codes" id="toc-hit-codes">Hit codes</a></li>
+<li><a href="#ordinal-hit-numbers" id="toc-ordinal-hit-numbers">Ordinal
+hit numbers</a></li>
+<li><a href="#layer" id="toc-layer">Layer</a></li>
+<li><a href="#heights" id="toc-heights">Heights</a></li>
+<li><a href="#species" id="toc-species">Species</a></li>
+<li><a href="#line-lengths" id="toc-line-lengths">Line lengths</a></li>
+<li><a href="#measurement-units" id="toc-measurement-units">Measurement
+units</a></li>
+<li><a href="#type-of-gap" id="toc-type-of-gap">Type of gap</a></li>
+<li><a href="#gap-size" id="toc-gap-size">Gap size</a></li>
+<li><a href="#stability-ratings" id="toc-stability-ratings">Stability
+ratings</a></li>
+<li><a href="#vegetative-cover" id="toc-vegetative-cover">Vegetative
+cover</a></li>
+</ul></li>
+<li><a href="#indicator-configuration" id="toc-indicator-configuration">Indicator configuration</a>
+<ul>
+<li><a href="#line-point-intercept" id="toc-line-point-intercept">Line-Point Intercept</a>
+<ul>
+<li><a href="#any-hit-versus-first-hit" id="toc-any-hit-versus-first-hit">Any hit versus first hit</a></li>
+<li><a href="#grouping-variables" id="toc-grouping-variables">Grouping
+variables</a></li>
+<li><a href="#summarization-unit" id="toc-summarization-unit">Summarization unit</a></li>
+<li><a href="#output-format" id="toc-output-format">Output
+format</a></li>
+</ul></li>
+<li><a href="#height" id="toc-height">Height</a>
+<ul>
+<li><a href="#statistic" id="toc-statistic">Statistic</a></li>
+<li><a href="#omit-0-heights" id="toc-omit-0-heights">Omit 0
+heights</a></li>
+<li><a href="#grouping-variables-1" id="toc-grouping-variables-1">Grouping variables</a></li>
+<li><a href="#summarization-unit-1" id="toc-summarization-unit-1">Summarization unit</a></li>
+<li><a href="#output-format-1" id="toc-output-format-1">Output
+format</a></li>
+</ul></li>
+<li><a href="#gap" id="toc-gap">Gap</a>
+<ul>
+<li><a href="#breakpoints" id="toc-breakpoints">Breakpoints</a></li>
+<li><a href="#gap-type" id="toc-gap-type">Gap type</a></li>
+<li><a href="#summarization-unit-2" id="toc-summarization-unit-2">Summarization unit</a></li>
+<li><a href="#output-format-2" id="toc-output-format-2">Output
+format</a></li>
+</ul></li>
+<li><a href="#soil-stability" id="toc-soil-stability">Soil Stability</a>
+<ul>
+<li><a href="#vegetative-cover-grouping" id="toc-vegetative-cover-grouping">Vegetative cover grouping</a></li>
+<li><a href="#output-format-3" id="toc-output-format-3">Output
+format</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</div>
 
+<div id="data-configuration" class="section level2">
+<h2>Data configuration</h2>
+<p>Terradactyl was developed specifically to work with <a href="https://blm.gov/aim">AIM</a> data and therefore has certain
+expected/required fields for each type of data. You may also see the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring
+Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for
+additional method details, including valid codes for certain variables.
+You must specify a corresponding variable for all required fields. You
+may have additional variables in your data beyond the minimum specified
+here. Note that all incoming data must be in long format: each row in
+the data must represent one observation and each column is a variable
+associated with the observation. For Line-Point Intercept each
+observation is a single hit with the pin; for heights, a single height;
+for gap, a single gap; and for soil stability, a single soil sample.</p>
+<div id="primary-key" class="section level4">
+<h4>Primary key</h4>
+<p>This must contain a unique value for each sampling event, e.g., plot
+visit. All records associated with a plot visit should have the same
+primary key, but if a plot was sampled more than once, each sampling
+event should have its own distinct primary key. If your data contain a
+variable called <code>PrimaryKey</code> then the tool will assume it
+contains primary keys.</p>
+</div>
+<div id="line-key" class="section level4">
+<h4>Line key</h4>
+<p>This must contain a unique value for each transect used during a
+sampling event. All records associated with that transect during that
+sampling event must have the same line key. Each transect in your data
+set should have a unique line key; non-unique line keys can result in
+calculation errors. If your data contain a variable called
+<code>LineKey</code> then the tool will assume it contains line
+keys.</p>
+</div>
+<div id="hit-codes" class="section level4">
+<h4>Hit codes</h4>
+<p>In Line-Point Intercept, every record has an associated code
+corresponding to what the pin touched in that layer. This variable
+contains species codes as well as other codes, e.g., <code>S</code> for
+“soil” or <code>WL</code> for “woody litter”. See the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring
+Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for
+information on valid codes. If your data contain a variable called
+<code>code</code> then the tool will assume it contains the hit
+codes.</p>
+</div>
+<div id="ordinal-hit-numbers" class="section level4">
+<h4>Ordinal hit numbers</h4>
+<p>In Line-Point Intercept, every record has an ordinal number
+corresponding to where on a transect it was collected, e.g. all records
+from the first pin drop on a transect would have <code>1</code>, records
+from the second would have <code>2</code>, and so on. These must be the
+same for all records associated with a single pin drop. If your data
+contain a variable called <code>PointNbr</code> then the tool will
+assume it contains the ordinal hit numbers.</p>
+</div>
+<div id="layer" class="section level4">
+<h4>Layer</h4>
+<p>In Line-Point Intercept, every record has an associated layer
+indicating where it comes from in the vertical slice. For records
+corresponding to the uppermost canopy hit at a pin drop, the value must
+be <code>&quot;TopCanopy&quot;</code>. For all other canopy codes, the format is
+“Lower” plus an ordinal number, e.g. <code>&quot;Lower1&quot;</code> for the first
+record after the top canopy, <code>&quot;Lower2&quot;</code> for the next record,
+and so on. The bottom record for a pin drop, the surface hit, must have
+a value of <code>&quot;SoilSurface&quot;</code>. If your data contain a variable
+called <code>layer</code> then the tool will assume it contains the
+layer information.</p>
+</div>
+<div id="heights" class="section level4">
+<h4>Heights</h4>
+<p>With height data, each record has an associated numeric height value.
+This variable contains those data. If your data contain a variable
+called <code>Height</code> then the tool will assume it contains the
+height information.</p>
+</div>
+<div id="species" class="section level4">
+<h4>Species</h4>
+<p>With height data, there must be an associated species with each
+height record. This variable should contain the species information,
+typically using species codes. If the height was 0 for a record (e.g.,
+no woody plant qualified to be measured at a sampling point) then the
+value should be <code>&quot;None&quot;</code>. If your data contain a variable
+called <code>Species</code> then the tool will assume it contains the
+species information.</p>
+</div>
+<div id="line-lengths" class="section level4">
+<h4>Line lengths</h4>
+<p>In gap calculations, the lengths of the lines/transects are critical.
+This variable must contain the line length for each transect in the same
+type of units as the gap sizes, i.e., in meters if the gaps are recorded
+in centimeters and in feet if the gaps are recorded in inches. The value
+should be the same for all records from the same transect. If your data
+contain a variable called <code>LineLengthAmount</code> then the tool
+will assume it contains the line lengths.</p>
+</div>
+<div id="measurement-units" class="section level4">
+<h4>Measurement units</h4>
+<p>In gap calculations, length unit type must be specified. For each
+record, this variable must contain either <code>1</code> if using metric
+units (centimeters for gap sizes and meters for line lengths) or
+<code>2</code> if using imperial units (inches for gap sizes and feet
+for line lengths). If your data contain a variable called
+<code>Measure</code> then the tool will assume it contains the unit
+type.</p>
+</div>
+<div id="type-of-gap" class="section level4">
+<h4>Type of gap</h4>
+<p>A gap data set may contain more than one type of gap: all canopy,
+perennial canopy only, and basal. This variable must contain the type of
+gap that each record represents. For gaps that take into account all
+canopy types, the value must be <code>&quot;C&quot;</code>; for perennial-only,
+<code>&quot;P&quot;</code>; and for basal, <code>&quot;P&quot;</code>. If your data contain
+a variable called <code>RecType</code> then the tool will assume it
+contains the type of gap.</p>
+</div>
+<div id="gap-size" class="section level4">
+<h4>Gap size</h4>
+<p>Each gap data record must represent one measured gap and include the
+size of the gap. This variable must contain a numeric value
+corresponding to the size of the gap in either centimeters or inches
+(see measurement units above). If your data contain a variable called
+<code>Gap</code> then the tool will assume it contains the gap
+sizes.</p>
+</div>
+<div id="stability-ratings" class="section level4">
+<h4>Stability ratings</h4>
+<p>In soil stability data, every record must have a numeric rating. This
+variable contains that rating. If your data contain a variable called
+<code>Rating</code> then the tool will assume it contains the
+ratings.</p>
+</div>
+<div id="vegetative-cover" class="section level4">
+<h4>Vegetative cover</h4>
+<p>In soil stability data, every record must have an associated
+vegetative cover designation. See the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring
+Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for
+information on valid codes. If your data contain a variable called
+<code>Veg</code> then the tool will assume it contains the vegetative
+cover types.</p>
+</div>
+</div>
 <div id="indicator-configuration" class="section level2">
 <h2>Indicator configuration</h2>
 <div id="line-point-intercept" class="section level3">
@@ -86,20 +286,36 @@ who had requested something that might approximate the aerial or
 satellite view of the landscape, however it can be argued that “any hit”
 is in fact more representative.</p>
 </div>
+<div id="grouping-variables" class="section level4">
+<h4>Grouping variables</h4>
+<p>These are additional variables beyond the sampling location to group
+the data by for calculating cover. The default behavior is to group by
+sampling location and calculate the percent cover for that location. In
+order to calculate finer-grained cover values, additional grouping
+variables need to be selected. For example, in order to calculate cover
+by species for each sampling location, the variable containing the
+species codes or names would need to be selected. The selected variables
+are additive, so selecting both a variable containing plant duration and
+a variable containing plant growth habit would result in cover being
+calculated for each combination of those two, e.g., annual forbs and
+perennial grasses.</p>
 </div>
-<div id="gap" class="section level3">
-<h3>Gap</h3>
-<div id="breaks" class="section level4">
-<h4>Breaks</h4>
-<p>Gap data are classified into size classes and the indicators reported
-are percent of the sampling location composed of gaps in each size
-class. The break values define the minimum gap size and what values to
-split the data at. The values must be listed in ascending order and
-separated by commas. The first value acts as the minimum gap size while
-the maximum gap size is infinity. As an example, in order to calculate
-cover for three size classes, one from 20 cm to 50 cm, one for 51 to 100
-cm, and one for greater than 100 cm, the breaks would be
-<code>20, 51, 101</code>.</p>
+<div id="summarization-unit" class="section level4">
+<h4>Summarization unit</h4>
+<p>Cover can be calculated by plot (each unique primary key value) or by
+line (each unique combination of primary key and line key). It is
+generally not recommended that you calculate by line, especially if you
+have fewer than 100 records per line.</p>
+</div>
+<div id="output-format" class="section level4">
+<h4>Output format</h4>
+<p>The output can be either long or wide. In long format, each
+<em>observed</em> indicator is represented by a row. This means that if
+you have supplied <code>code</code> as your grouping variable, only
+those codes which appeared on your summarization unit will have a row
+representing them. This is in contrast to wide format in which every
+possible indicator has a column in the results and they will have a
+value of 0 for summarization units where they were not observed.</p>
 </div>
 </div>
 <div id="height" class="section level3">
@@ -110,6 +326,91 @@ cm, and one for greater than 100 cm, the breaks would be
 calculated per-group, so by default they are the mean or maximum height
 value observed at a sampling location.</p>
 </div>
+<div id="omit-0-heights" class="section level4">
+<h4>Omit 0 heights</h4>
+<p>Height records with a value of 0 may be excluded from calculations.
+If they are included, then the heights reported represent the
+summarization unit on the whole whereas excluding 0 heights means that
+the reported values represent only the standing vegetation which was
+measured.</p>
+</div>
+<div id="grouping-variables-1" class="section level4">
+<h4>Grouping variables</h4>
+<p>These are additional variables beyond the sampling location to group
+the data by for calculating heights. The default behavior is to group by
+sampling location and calculate the mean or max height for that
+location. In order to calculate finer-grained height values, additional
+grouping variables need to be selected. For example, in order to
+calculate height by species for each sampling location, the variable
+containing the species codes or names would need to be selected. The
+selected variables are additive, so selecting both a variable containing
+plant duration and a variable containing plant growth habit would result
+in heights being calculated for each combination of those two, e.g.,
+annual forbs and perennial grasses.</p>
+</div>
+<div id="summarization-unit-1" class="section level4">
+<h4>Summarization unit</h4>
+<p>Heights can be calculated by plot (each unique primary key value) or
+by line (each unique combination of primary key and line key). It is
+generally not recommended that you calculate by line, especially if you
+have fewer than 100 records per line.</p>
+</div>
+<div id="output-format-1" class="section level4">
+<h4>Output format</h4>
+<p>The output can be either long or wide. In long format, each
+<em>observed</em> indicator is represented by a row. This means that if
+you have supplied <code>code</code> as your grouping variable, only
+those codes which appeared on your summarization unit will have a row
+representing them. This is in contrast to wide format in which every
+possible indicator has a column in the results and they will have a
+value of 0 for summarization units where they were not observed.</p>
+</div>
+</div>
+<div id="gap" class="section level3">
+<h3>Gap</h3>
+<div id="breakpoints" class="section level4">
+<h4>Breakpoints</h4>
+<p>Gap data are classified into size classes and the indicators reported
+are percent of the sampling location composed of gaps in each size
+class. The break values define the minimum gap size and what values to
+split the data at. The values must be listed in ascending order and
+separated by commas. The first value acts as the minimum gap size while
+the maximum gap size is infinity. As an example, in order to calculate
+cover for three size classes, one from 20 cm to 50 cm, one for 51 to 100
+cm, and one for greater than 100 cm, the breaks would be
+<code>20, 51, 101</code>.</p>
+</div>
+<div id="gap-type" class="section level4">
+<h4>Gap type</h4>
+<p>There are three available types of gap that can be calculated. They
+are:</p>
+<ul>
+<li>Canopy - Gaps in canopy, considering both annual and perennial
+plants. This uses only records where the cover type variable value is
+<code>&quot;C&quot;</code></li>
+<li>Basal - Gaps between plant bases at the soil surface, considering
+both annual and perennial plants. This uses only records where cover
+type variable value is <code>&quot;B&quot;</code></li>
+<li>Perennial canopy - Gaps in canopy, considering only perennial
+plants. This uses only records where the cover type variable value is
+<code>&quot;P&quot;</code></li>
+</ul>
+</div>
+<div id="summarization-unit-2" class="section level4">
+<h4>Summarization unit</h4>
+<p>Gaps can be calculated by plot (each unique primary key value) or by
+line (each unique combination of primary key and line key). It is
+generally not recommended that you calculate by line because your plot
+is likely the unit of replication.</p>
+</div>
+<div id="output-format-2" class="section level4">
+<h4>Output format</h4>
+<p>The output can be either long or wide. In long format, each row is
+represents one statistic for your summarization unit, e.g., a row would
+be your summarization unit, the gap size class, the statistic name, and
+the statistic value. In wide format, each row is a single summarization
+unit and each statistic has a column.</p>
+</div>
 </div>
 <div id="soil-stability" class="section level3">
 <h3>Soil Stability</h3>
@@ -119,8 +420,7 @@ value observed at a sampling location.</p>
 where a soil sample was collected. The mean can be calculated in a few
 ways using vegetative cover. It can be summarized by considering:</p>
 <ul>
-<li><code>All</code> soil stability values regardless of what kind of
-vegetative cover the samples had</li>
+<li>For soil samples with <code>all cover types</code></li>
 <li>For only those soil samples that had
 <code>perennial cover</code></li>
 <li>For only those soil samples that did not have perennial cover
@@ -128,6 +428,16 @@ vegetative cover the samples had</li>
 <li>All soil stability samples, but <code>by cover type</code>,
 producing a mean for each cover type</li>
 </ul>
+</div>
+<div id="output-format-3" class="section level4">
+<h4>Output format</h4>
+<p>The output can be either long or wide. In long format, each
+<em>observed</em> indicator is represented by a row. This means that if
+you have supplied <code>code</code> as your grouping variable, only
+those codes which appeared on your summarization unit will have a row
+representing them. This is in contrast to wide format in which every
+possible indicator has a column in the results and they will have a
+value of 0 for summarization units where they were not observed.</p>
 </div>
 </div>
 </div>
