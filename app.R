@@ -188,7 +188,12 @@ ui <- fluidPage(
                                                                          multiple = FALSE),
                                                              conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
                                                                               actionButton(inputId = "join_species",
-                                                                                           label = "Join species information to data")
+                                                                                           label = "Join species information to data"),
+                                                                              conditionalPanel(condition = "input.join_species > 0",
+                                                                                               DT::dataTableOutput(outputId = "species_lut"),
+                                                                                               downloadButton(outputId = 'downloadable_species',
+                                                                                                              label = 'Download current species information'))
+                                                                              
                                                              )
                                                              
                                             )
@@ -764,6 +769,38 @@ server <- function(input, output, session) {
                    
                    # Render the species list
                    output$species_lut <- DT::renderDataTable(workspace$species_data)
+                   
+                   # Handle the downloading bit
+                   # Starting by writing out the data
+                   workspace$current_species_data_filename <- paste0("species_data_",
+                                                                    paste(format(Sys.Date(),
+                                                                                 "%Y-%m-%d"),
+                                                                          format(Sys.time(),
+                                                                                 "T%H%MZ",
+                                                                                 tz = "GMT"),
+                                                                          sep = "_"),
+                                                                    ".csv")
+                   message("Writing species data to:")
+                   message(paste0(workspace$temp_directory,
+                                  "/",
+                                  workspace$current_species_data_filename))
+                   write.csv(x = workspace$species_data,
+                             file = paste0(workspace$temp_directory,
+                                           "/",
+                                           workspace$current_species_data_filename),
+                             row.names = FALSE)
+                   
+                   # Then we prep the data for download
+                   message("Running the downloadHandler() call.")
+                   output$downloadable_species <- downloadHandler(
+                     filename = workspace$current_species_data_filename,
+                     content = function(file) {
+                       file.copy(paste0(workspace$temp_directory,
+                                        "/",
+                                        workspace$current_species_data_filename), file)
+                     })
+                   message("downloadHandler() call complete.")
+                   
                    message("Joining species information to data.")
                    by_vector <- c(input$species_joining_var)
                    names(by_vector) <- input$data_joining_var
