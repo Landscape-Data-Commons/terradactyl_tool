@@ -157,7 +157,6 @@ ui <- fluidPage(
                                             selectInput(inputId = "veg_var",
                                                         label = "Variable containing vegetative cover type",
                                                         choices = c(""))),
-                           hr(),
                            actionButton(inputId = "update_data_vars",
                                         label = "Update data variables"),
                            hr(),
@@ -189,7 +188,12 @@ ui <- fluidPage(
                                                                          multiple = FALSE),
                                                              conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
                                                                               actionButton(inputId = "join_species",
-                                                                                           label = "Join species information to data")
+                                                                                           label = "Join species information to data"),
+                                                                              conditionalPanel(condition = "input.join_species > 0",
+                                                                                               DT::dataTableOutput(outputId = "species_lut"),
+                                                                                               downloadButton(outputId = 'downloadable_species',
+                                                                                                              label = 'Download current species information'))
+                                                                              
                                                              )
                                                              
                                             )
@@ -725,18 +729,99 @@ server <- function(input, output, session) {
   ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
-                 message("Joining species information to data.")
-                 by_vector <- c(input$species_joining_var)
-                 names(by_vector) <- input$data_joining_var
-                 workspace$data <- dplyr::left_join(x = workspace$data,
-                                                    y = workspace$species_data,
-                                                    by = by_vector)
-                 if (input$data_type %in% c("lpi", "height")) {
-                   updateSelectInput(inputId = paste0(input$data_type,
-                                                      "_grouping_vars"),
-                                     choices = names(workspace$data),
-                                     selected = "")
+                 if (input$species_joining_var != "" & input$data_joining_var != "") {
+                   
+                   message("Figuring out which species are in the data but not the lookup table")
+                   current_data_species <- unique(workspace$data[[input$data_joining_var]])
+                   current_list_species <- unique(workspace$species_data[[input$species_joining_var]])
+                   
+                   missing_species <- current_data_species[!(current_data_species %in% current_list_species)]
+                   
+                   if (length(missing_species) > 0) {
+                     message("Codes/species found in the data which do not occur in the lookup table")
+                     message("Making  data frame of missing codes/species")
+                     
+                     # Make a data frame with just the missing codes in it
+                     missing_species_df <- data.frame("code" = missing_species)
+                     names(missing_species_df) <- input$species_joining_var
+                     
+                     # Add in the unpopulated variables to match workspace$species_data
+                     existing_species_vars <- names(workspace$species_data)
+                     missing_species_vars <- existing_species_vars[!(existing_species_vars %in% names(missing_species_df))]
+                     for (var in missing_species_vars) {
+                       missing_species_df[[var]] <- NA
+                     }
+                     # Reorder variables to match
+                     missing_species_df <- missing_species_df[, existing_species_vars]
+                     
+                     # Mash up the "empty" data frame and the one in workspace$species_data
+                     workspace$species_data <- rbind(missing_species_df,
+                                                     workspace$species_data)
+                     
+                     showNotification(ui = "Not all codes/species in the data appeared in the species table provided; see the table in the Data Configuration tab. You can download the species table with the added codes to populate as appropriate, reupload, and recalculate.",
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      type = "warning")
+                     
+                   } else {
+                     message("No missing species found")
+                   }
+                   
+                   # Render the species list
+                   output$species_lut <- DT::renderDataTable(workspace$species_data)
+                   
+                   # Handle the downloading bit
+                   # Starting by writing out the data
+                   workspace$current_species_data_filename <- paste0("species_data_",
+                                                                    paste(format(Sys.Date(),
+                                                                                 "%Y-%m-%d"),
+                                                                          format(Sys.time(),
+                                                                                 "T%H%MZ",
+                                                                                 tz = "GMT"),
+                                                                          sep = "_"),
+                                                                    ".csv")
+                   message("Writing species data to:")
+                   message(paste0(workspace$temp_directory,
+                                  "/",
+                                  workspace$current_species_data_filename))
+                   write.csv(x = workspace$species_data,
+                             file = paste0(workspace$temp_directory,
+                                           "/",
+                                           workspace$current_species_data_filename),
+                             row.names = FALSE)
+                   
+                   # Then we prep the data for download
+                   message("Running the downloadHandler() call.")
+                   output$downloadable_species <- downloadHandler(
+                     filename = workspace$current_species_data_filename,
+                     content = function(file) {
+                       file.copy(paste0(workspace$temp_directory,
+                                        "/",
+                                        workspace$current_species_data_filename), file)
+                     })
+                   message("downloadHandler() call complete.")
+                   
+                   message("Joining species information to data.")
+                   by_vector <- c(input$species_joining_var)
+                   names(by_vector) <- input$data_joining_var
+                   workspace$data <- dplyr::left_join(x = workspace$data,
+                                                      y = workspace$species_data,
+                                                      by = by_vector)
+                   if (input$data_type %in% c("lpi", "height")) {
+                     message("Updating available grouping variables.")
+                     updateSelectInput(inputId = paste0(input$data_type,
+                                                        "_grouping_vars"),
+                                       choices = names(workspace$data),
+                                       selected = "")
+                   }
+                 } else {
+                   showNotification(ui = "The joining variables must both be defined in order to join species information to the data.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "missing_species_join_vars",
+                                    type = "warning")
                  }
+                 
                })
   
   
