@@ -498,6 +498,8 @@ server <- function(input, output, session) {
                      names(data) <- names(results)
                      
                      # Put it in the workspace list
+                     message("Setting data_fresh to TRUE because we just downloaded it")
+                     workspace$data_fresh <- TRUE
                      workspace$raw_data <- data
                    } else {
                      workspace$raw_data <- NULL
@@ -548,9 +550,10 @@ server <- function(input, output, session) {
                    #                    id = "needs_headers_upload",
                    #                    type = "warning")
                    # } else if (!input$needs_header) {
+                   message("Setting data_fresh to TRUE")
+                   workspace$data_fresh <- TRUE
                    message("No headers needed. Writing workspace$raw_data to workspace$data")
                    workspace$data <- workspace$raw_data
-                   workspace$data_fresh <- TRUE
                    # }
                  }
                })
@@ -663,6 +666,7 @@ server <- function(input, output, session) {
                    
                    # Time to update the variables if we can guess what they are
                    if (workspace$data_fresh) {
+                     message("Data are fresh!")
                      all_required_variables <- unique(unlist(workspace$required_vars))
                      
                      for (required_var in all_required_variables) {
@@ -695,8 +699,11 @@ server <- function(input, output, session) {
                                          choices = current_data_vars,
                                          selected = "")
                      }
+                   }  else {
+                     message("Data aren't fresh. selectInput()s will not be updated")
                    }
                    
+                   message("Setting data_fresh to FALSE")
                    workspace$data_fresh <- FALSE
                    
                    # DATA SOUNDNESS CHECKS
