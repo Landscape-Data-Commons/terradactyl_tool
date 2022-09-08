@@ -93,7 +93,6 @@ format</a></li>
 </ul></li>
 <li><a href="#height" id="toc-height">Height</a>
 <ul>
-<li><a href="#statistic" id="toc-statistic">Statistic</a></li>
 <li><a href="#omit-0-heights" id="toc-omit-0-heights">Omit 0
 heights</a></li>
 <li><a href="#grouping-variables-1" id="toc-grouping-variables-1">Grouping variables</a></li>
@@ -320,12 +319,6 @@ value of 0 for summarization units where they were not observed.</p>
 </div>
 <div id="height" class="section level3">
 <h3>Height</h3>
-<div id="statistic" class="section level4">
-<h4>Statistic</h4>
-<p>There are two available height statistics: mean and maximum. Both are
-calculated per-group, so by default they are the mean or maximum height
-value observed at a sampling location.</p>
-</div>
 <div id="omit-0-heights" class="section level4">
 <h4>Omit 0 heights</h4>
 <p>Height records with a value of 0 may be excluded from calculations.
@@ -337,8 +330,8 @@ measured.</p>
 <div id="grouping-variables-1" class="section level4">
 <h4>Grouping variables</h4>
 <p>These are additional variables beyond the sampling location to group
-the data by for calculating heights. The default behavior is to group by
-sampling location and calculate the mean or max height for that
+the data by for calculating mean heights. The default behavior is to
+group by sampling location and calculate the mean or max height for that
 location. In order to calculate finer-grained height values, additional
 grouping variables need to be selected. For example, in order to
 calculate height by species for each sampling location, the variable
@@ -350,10 +343,10 @@ annual forbs and perennial grasses.</p>
 </div>
 <div id="summarization-unit-1" class="section level4">
 <h4>Summarization unit</h4>
-<p>Heights can be calculated by plot (each unique primary key value) or
-by line (each unique combination of primary key and line key). It is
-generally not recommended that you calculate by line, especially if you
-have fewer than 100 records per line.</p>
+<p>Mean heights can be calculated by plot (each unique primary key
+value) or by line (each unique combination of primary key and line key).
+It is generally not recommended that you calculate by line, especially
+if you have fewer than 100 records per line.</p>
 </div>
 <div id="output-format-1" class="section level4">
 <h4>Output format</h4>
