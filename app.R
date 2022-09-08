@@ -243,11 +243,11 @@ ui <- fluidPage(
                                                                     "Long" = "long"))
                            ),
                            conditionalPanel(condition = "input.data_type == 'height'",
-                                            selectInput(inputId = "height_stat",
-                                                        label = "Statistic",
-                                                        choices = c("Mean" = "mean",
-                                                                    "Maximum" = "max"),
-                                                        selected = "mean"),
+                                            # selectInput(inputId = "height_stat",
+                                            #             label = "Statistic",
+                                            #             choices = c("Mean" = "mean",
+                                            #                         "Maximum" = "max"),
+                                            #             selected = "mean"),
                                             checkboxInput(inputId = "height_omit_zero",
                                                           label = "Omit heights of 0 from calculation"),
                                             selectInput(inputId = "height_grouping_vars",
@@ -1031,7 +1031,7 @@ server <- function(input, output, session) {
                             if (length(missing_height_grouping_vars) < 1) {
                               height_cover_string <- paste0("terradactyl::mean_height(",
                                                             "height_tall = workspace$data,",
-                                                            "method = input$height_stat,",
+                                                            "method = 'mean',",
                                                             "omit_zero = input$height_omit_zero,",
                                                             "by_line = height_by_line,",
                                                             "tall = output_tall,",
@@ -1051,7 +1051,7 @@ server <- function(input, output, session) {
                                                type = "warning")
                               height_cover_string <- paste0("terradactyl::mean_height(",
                                                             "height_tall = workspace$data,",
-                                                            "method = input$height_stat,",
+                                                            "method = 'mean',",
                                                             "omit_zero = input$height_omit_zero,",
                                                             "by_line = height_by_line,",
                                                             "tall = output_tall",
@@ -1063,7 +1063,7 @@ server <- function(input, output, session) {
                             message("No grouping vars!")
                             height_cover_string <- paste0("terradactyl::mean_height(",
                                                           "height_tall = workspace$data,",
-                                                          "method = input$height_stat,",
+                                                          "method = 'mean',",
                                                           "omit_zero = input$height_omit_zero,",
                                                           "by_line = height_by_line,",
                                                           "tall = output_tall",
