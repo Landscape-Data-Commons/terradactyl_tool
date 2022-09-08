@@ -641,7 +641,7 @@ server <- function(input, output, session) {
                    message("Updating data_joining_var selectInput().")
                    expected_data_joining_var <- switch(input$data_type,
                                                        "lpi" = "code",
-                                                       "height" = "species",
+                                                       "height" = "Species",
                                                        "gap" = "",
                                                        "soil" = "")
                    message(paste0("expected_data_joining_var is ",
