@@ -604,7 +604,8 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
                  # Display the data
-                 output$data <- DT::renderDataTable(workspace$data)
+                 output$data <- DT::renderDataTable(workspace$data,
+                                                    options = list(pageLength = 100))
                  
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
@@ -782,7 +783,8 @@ server <- function(input, output, session) {
                    }
                    
                    # Render the species list
-                   output$species_lut <- DT::renderDataTable(workspace$species_data)
+                   output$species_lut <- DT::renderDataTable(workspace$species_data,
+                                                             options = list(pageLength = 100))
                    
                    # Handle the downloading bit
                    # Starting by writing out the data
@@ -1122,7 +1124,8 @@ server <- function(input, output, session) {
                handlerExpr = {
                  message("The results have updated!")
                  message(head(workspace$results))
-                 output$results_table <- DT::renderDataTable(workspace$results)
+                 output$results_table <- DT::renderDataTable(workspace$results,
+                                                             options = list(pageLength = 100))
                  message("output$results_table rendered")
                  message("Switching to Results tab")
                  updateTabsetPanel(session = session,
