@@ -735,6 +735,9 @@ server <- function(input, output, session) {
                      # We're in the clear!
                    }
                  }
+                 updateTabsetPanel(session = session,
+                                   inputId = "maintabs",
+                                   selected = "Data")
                })
   
   ##### When join_species is clicked #####
