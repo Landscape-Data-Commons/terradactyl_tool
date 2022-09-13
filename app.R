@@ -1123,6 +1123,11 @@ server <- function(input, output, session) {
                  
                  removeNotification(session = session,
                                     id = "calculating")
+                 
+                 message("Switching to Results tab")
+                 updateTabsetPanel(session = session,
+                                   inputId = "maintabs",
+                                   selected = "Results")
                })
   
   ##### When results update #####
