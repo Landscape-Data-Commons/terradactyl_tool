@@ -1092,7 +1092,9 @@ server <- function(input, output, session) {
                           }
                           message("The function call is:")
                           message(height_cover_string)
+                          message("Parsing")
                           workspace$results <- eval(parse(text = height_cover_string))
+                          message("Parsed")
                           
                           # # Remove that hacky temp_grouping_var
                           # message("Removing temp_grouping_var from workspace$results")
