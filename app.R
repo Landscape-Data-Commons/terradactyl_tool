@@ -108,6 +108,8 @@ ui <- fluidPage(
       tabsetPanel(type = "tabs",
                   id = "maintabs",
                   tabPanel(title = "Data configuration",
+                           actionLink(inputId = "data_help",
+                                      label = "What do these options mean?"),
                            selectInput(inputId = "primarykey_var",
                                        label = "Variable containing primary key values",
                                        choices = c("")),
@@ -201,7 +203,7 @@ ui <- fluidPage(
                            
                   ),
                   tabPanel(title = "Indicator calculation",
-                           actionLink(inputId = "help",
+                           actionLink(inputId = "indicator_help",
                                       label = "What do these options mean?"),
                            conditionalPanel(condition = "input.data_type == 'lpi'",
                                             radioButtons(inputId = "lpi_hit",
@@ -330,7 +332,13 @@ server <- function(input, output, session) {
                                                               "Veg")))
   
   ##### Directing to help #####
-  observeEvent(eventExpr = input$help,
+  observeEvent(eventExpr = input$indicator_help,
+               handlerExpr = {
+                 updateTabsetPanel(session = session,
+                                   inputId = "maintabs",
+                                   selected = "Help")
+               })
+  observeEvent(eventExpr = input$data_help,
                handlerExpr = {
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
