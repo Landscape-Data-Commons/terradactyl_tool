@@ -289,6 +289,7 @@ ui <- fluidPage(
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
                                                            label = 'Download results')),
+                           textOutput(outputId = "metadata_text"),
                            DT::dataTableOutput(outputId = "results_table")),
                   hr(),
                   tabPanel(title = "Help",
@@ -1161,6 +1162,16 @@ server <- function(input, output, session) {
                  output$results_table <- DT::renderDataTable(workspace$results,
                                                              options = list(pageLength = 100))
                  message("output$results_table rendered")
+                 software_version_string <- paste0("These results were calculated using terradactyl v",
+                                                   packageVersion("terradactyl"),
+                                                   " and R v",
+                                                   R.Version()$major, ".", R.Version()$minor,
+                                                   " on ",
+                                                   format(Sys.Date(),
+                                                          "%Y-%m-%d"),
+                                                   ".")
+                 output$metadata_text <- renderText(software_version_string)
+                 message("output$metadata_text has been rendered")
                  message("Switching to Results tab")
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
