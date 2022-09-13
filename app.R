@@ -1096,10 +1096,6 @@ server <- function(input, output, session) {
                           workspace$results <- eval(parse(text = height_cover_string))
                           message("Parsed")
                           
-                          # # Remove that hacky temp_grouping_var
-                          # message("Removing temp_grouping_var from workspace$results")
-                          # workspace$results <- dplyr::select(workspace$results,
-                          #                                    -temp_grouping_var)
                         },
                         "soil" = {
                           message("Calculating soil stability")
