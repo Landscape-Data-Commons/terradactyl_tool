@@ -16,3 +16,14 @@ help_files/libs/quarto-html/tippy.css
 help_files/libs/quarto-html/tippy.umd.min.js
 terradactyl_testing_data_20220913.zip
 testing_bad_species_data.csv
+instructions_files/libs/bootstrap/bootstrap-icons.css
+instructions_files/libs/bootstrap/bootstrap.min.css
+instructions_files/libs/bootstrap/bootstrap.min.js
+instructions_files/libs/clipboard/clipboard.min.js
+instructions_files/libs/bootstrap/bootstrap-icons.woff
+instructions_files/libs/quarto-html/anchor.min.js
+instructions_files/libs/quarto-html/popper.min.js
+instructions_files/libs/quarto-html/quarto-syntax-highlighting.css
+instructions_files/libs/quarto-html/quarto.js
+instructions_files/libs/quarto-html/tippy.css
+instructions_files/libs/quarto-html/tippy.umd.min.js
