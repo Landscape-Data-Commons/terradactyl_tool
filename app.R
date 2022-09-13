@@ -107,6 +107,8 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(type = "tabs",
                   id = "maintabs",
+                  tabPanel(title = "Instructions",
+                           includeHTML("instructions.html")),
                   tabPanel(title = "Data configuration",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
