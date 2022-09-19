@@ -614,7 +614,20 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
                  # Display the data
-                 output$data <- DT::renderDataTable(workspace$data,
+                 # But we want to round to 2 decimal places for ease-of-reading
+                 display_data <- workspace$data
+                 # Which indices are numeric variables?
+                 numeric_var_indices <- which(sapply(X = display_data,
+                                                     FUN = is.numeric))
+                 # If any variables are numeric, round them to 2 decimal places
+                 if (length(numeric_var_indices) > 0) {
+                   display_data <- dplyr::mutate(.data = display_data,
+                                                 dplyr::across(.cols = dplyr::all_of(numeric_var_indices),
+                                                               .fns = round,
+                                                               digits = 2))
+                 }
+                 
+                 output$data <- DT::renderDataTable(display_data,
                                                     options = list(pageLength = 100))
                  
                  if (is.null(workspace$data)) {
@@ -1160,7 +1173,21 @@ server <- function(input, output, session) {
                handlerExpr = {
                  message("The results have updated!")
                  message(head(workspace$results))
-                 output$results_table <- DT::renderDataTable(workspace$results,
+                 
+                 # But we want to round to 2 decimal places for ease-of-reading
+                 display_results <- workspace$results
+                 # Which indices are numeric variables at?
+                 numeric_var_indices <- which(sapply(X = display_results,
+                                                     FUN = is.numeric))
+                 # If there are numeric variables, round them to 2 decimal places
+                 if (length(numeric_var_indices) > 0) {
+                   display_results <- dplyr::mutate(.data = display_results,
+                                                    dplyr::across(.cols = dplyr::all_of(numeric_var_indices),
+                                                                  .fns = round,
+                                                                  digits = 2))
+                 }
+                 
+                 output$results_table <- DT::renderDataTable(display_results,
                                                              options = list(pageLength = 100))
                  message("output$results_table rendered")
                  software_version_string <- paste0("These results were calculated using terradactyl v",
