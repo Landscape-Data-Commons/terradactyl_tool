@@ -27,3 +27,5 @@ instructions_files/libs/quarto-html/quarto-syntax-highlighting.css
 instructions_files/libs/quarto-html/quarto.js
 instructions_files/libs/quarto-html/tippy.css
 instructions_files/libs/quarto-html/tippy.umd.min.js
+*.R
+*.png
