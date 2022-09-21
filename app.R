@@ -2,6 +2,7 @@ library(shiny)
 library(ggplot2)
 library(dplyr)
 library(DT)
+library(stringr)
 source("functions.R")
 
 # Define UI for application
