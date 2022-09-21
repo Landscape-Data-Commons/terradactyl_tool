@@ -621,8 +621,10 @@ server <- function(input, output, session) {
                                                      FUN = is.numeric))
                  # If any variables are numeric, round them to 2 decimal places
                  if (length(numeric_var_indices) > 0) {
+                   # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
+                   numeric_var_names <- names(display_data)[numeric_var_indices]
                    display_data <- dplyr::mutate(.data = display_data,
-                                                 dplyr::across(.cols = dplyr::all_of(numeric_var_indices),
+                                                 dplyr::across(.cols = dplyr::all_of(numeric_var_names),
                                                                .fns = round,
                                                                digits = 2))
                  }
