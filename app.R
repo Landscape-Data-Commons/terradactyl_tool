@@ -1179,10 +1179,21 @@ server <- function(input, output, session) {
                  # Which indices are numeric variables at?
                  numeric_var_indices <- which(sapply(X = display_results,
                                                      FUN = is.numeric))
+                 message(paste0("Numeric variable indices in display_results are: ",
+                                paste(numeric_var_indices,
+                                      collapse = ", ")))
+                 message(paste0("That's a total of ",
+                                length(numeric_var_indices),
+                                " variables out of ",
+                                ncol(display_results),
+                                " variables in display_results."))
                  # If there are numeric variables, round them to 2 decimal places
-                 if (length(numeric_var_indices) > 0) {
+                 if (length(numeric_var_indices) > 0 & max(numeric_var_indices) <= ncol(display_results)) {
+                   message("Attempting to round display_result values.")
+                   # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
+                   numeric_var_names <- names(display_results)[numeric_var_indices]
                    display_results <- dplyr::mutate(.data = display_results,
-                                                    dplyr::across(.cols = dplyr::all_of(numeric_var_indices),
+                                                    dplyr::across(.cols = dplyr::all_of(numeric_var_names),
                                                                   .fns = round,
                                                                   digits = 2))
                  }
