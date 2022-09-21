@@ -2,6 +2,7 @@ library(shiny)
 library(ggplot2)
 library(dplyr)
 library(DT)
+library(stringr)
 source("functions.R")
 
 # Define UI for application
@@ -74,7 +75,7 @@ ui <- fluidPage(
                        fileInput(inputId = "raw_data",
                                  label = "Data CSV",
                                  multiple = FALSE,
-                                 accept = "CSV")#,
+                                 accept = ".csv")#,
                        # checkboxInput(inputId = "needs_header",
                        #               label = "Need to upload header information",
                        #               value = FALSE),
@@ -179,7 +180,7 @@ ui <- fluidPage(
                                                                               fileInput(inputId = "species_data",
                                                                                         label = "Species CSV",
                                                                                         multiple = FALSE,
-                                                                                        accept = "CSV")),
+                                                                                        accept = ".csv")),
                                                              selectInput(inputId = "data_joining_var",
                                                                          label = "Species joining variable in data",
                                                                          choices = c(""),
@@ -352,34 +353,63 @@ server <- function(input, output, session) {
   # When input$raw_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$raw_data,
                handlerExpr = {
-                 message("Reading in raw data from uploaded CSV")
-                 workspace[["raw_data"]] <- read.csv(input$raw_data$datapath,
-                                                     stringsAsFactors = FALSE)
+                 # Because it looks like I can't enforce filetype in the upload
+                 # selection dialogue, check it here
+                 # I'm assuming that a file extension can be 1-5 characters long
+                 # although the longest I've seen is 4, I think
+                 data_upload_extension <- toupper(stringr::str_extract(string = input$raw_data$datapath,
+                                                               pattern = "(?<=\\.).{1,5}$"))
+                 data_are_csv <- data_upload_extension == "CSV"
                  
-                 # Set this variable so we can handle the data appropriately based on source
-                 # Since these are uploaded data, we're not looking for header info
-                 message("Data source set to upload")
-                 workspace$current_data_source <- "upload"
+                 if (data_are_csv) {
+                   message("Reading in raw data from uploaded CSV")
+                   workspace[["raw_data"]] <- read.csv(input$raw_data$datapath,
+                                                       stringsAsFactors = FALSE)
+                   
+                   # Set this variable so we can handle the data appropriately based on source
+                   # Since these are uploaded data, we're not looking for header info
+                   message("Data source set to upload")
+                   workspace$current_data_source <- "upload"
+                 } else {
+                   data_csv_error_message <- paste0("You have uploaded a ",
+                                                    data_upload_extension,
+                                                    " file. Please upload a CSV instead.")
+                   showNotification(ui = data_csv_error_message,
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "data_csv_error",
+                                    type = "error")
+                 }
                })
-  
-  # # When input$header_data updates, look at its filepath and read in the CSV
-  # observeEvent(eventExpr = input$header_data,
-  #              handlerExpr = {
-  #                message("Reading in header info from uploaded CSV")
-  #                workspace[["headers"]] <- read.csv(input$header_data$datapath,
-  #                                                   stringsAsFactors = FALSE)
-  #              })
   
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
                handlerExpr = {
-                 message("Reading in species data from uploaded CSV")
-                 workspace[["species_data"]] <- read.csv(input$species_data$datapath,
-                                                         stringsAsFactors = FALSE)
+                 # Because it looks like I can't enforce filetype in the upload
+                 # selection dialogue, check it here
+                 species_upload_extension <- toupper(stringr::str_extract(string = input$species_data$datapath,
+                                                               pattern = "(?<=\\.).{1,5}$"))
+                 species_are_csv <- species_upload_extension == "CSV"
                  
-                 # Set this variable so we can handle the data appropriately based on source
-                 message("Species source set to upload")
-                 workspace$current_species_source <- "upload"
+                 if (species_are_csv) {
+                   message("Reading in species data from uploaded CSV")
+                   workspace[["species_data"]] <- read.csv(input$species_data$datapath,
+                                                           stringsAsFactors = FALSE)
+                   
+                   # Set this variable so we can handle the data appropriately based on source
+                   message("Species source set to upload")
+                   workspace$current_species_source <- "upload"
+                 } else {
+                   species_csv_error_message <- paste0("You have uploaded a ",
+                                                    species_upload_extension,
+                                                    " file. Please upload a CSV instead.")
+                   showNotification(ui = species_csv_error_message,
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "species_csv_error",
+                                    type = "error")
+                 }
+
                })
   
   # When input$species_source is set to the default, handle that
