@@ -531,6 +531,8 @@ server <- function(input, output, session) {
                  if (workspace$current_data_source == "ldc") {
                    message("Current data source is the LDC, using workspace$raw_data as workspace$data")
                    workspace$data <- workspace$raw_data
+                   message("Setting data_fresh to TRUE")
+                   workspace$data_fresh <- TRUE
                  } else if (workspace$current_data_source == "upload") {
                    message("Setting data_fresh to TRUE")
                    workspace$data_fresh <- TRUE
@@ -545,7 +547,9 @@ server <- function(input, output, session) {
                handlerExpr = {
                  if (!is.null(workspace$raw_data)) {
                    message("Resetting data")
-                   workspace$data <- workspace$raw_data 
+                   workspace$data <- workspace$raw_data
+                   message("Setting data_fresh to TRUE")
+                   workspace$data_fresh <- TRUE
                  }
                })
   
