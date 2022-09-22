@@ -60,6 +60,8 @@ ui <- fluidPage(
   ##### Sidebar #####
   sidebarLayout(
     sidebarPanel(
+      HTML("Powered by <a href='https://github.com/Landscape-Data-Commons/terradactyl'>terradactyl</a>"),
+      hr(),
       selectInput(inputId = "data_type",
                   label = "Data type",
                   choices = c("Line-Point Intercept" = "lpi",
