@@ -54,8 +54,8 @@ ui <- fluidPage(
   # Application title
   titlePanel(img(src = "combined_logos.png",
                  align = "right"),
-             windowTitle = "Terradactyl Indicator Calculator"),
-  titlePanel(title = "Terradactyl Indicator Calculator"),
+             windowTitle = "Rangeland Indicator Calculator"),
+  titlePanel(title = "Rangeland Indicator Calculator"),
   
   ##### Sidebar #####
   sidebarLayout(
