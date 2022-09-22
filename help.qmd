@@ -7,15 +7,15 @@ toc-depth: 4
 
 ## Data configuration {#data-configuration}
 
-[Terradactyl](https://github.com/Landscape-Data-Commons/terradactyl) was developed specifically to work with [AIM](https://blm.gov/aim) data and therefore has certain expected/required fields for each type of data. You may also see the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that ***all incoming data must be in long format***: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample.
+[Terradactyl](https://github.com/Landscape-Data-Commons/terradactyl) was developed specifically to work with core methods data from the Bureau of Land Management [AIM](https://blm.gov/aim) and National Resources Conservation Service [NRI](https://grazingland.cssm.iastate.edu/) Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment ([DIMA](https://jornada.nmsu.edu/monit-assess/dima/download)). There are certain expected/required fields for each type of data. You may also refer to the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that ***all incoming data must be in long format***: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. The *terradactyl* gather functions can assist with this process.
 
-#### Primary key {#primary-key}
+#### PrimaryKey {#primary-key}
 
-This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same primary key, but if a plot was sampled more than once, each sampling event should have its own distinct primary key. If your data contain a variable called `PrimaryKey` then the tool will assume it contains primary keys.
+This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called `PrimaryKey` then the tool will assume it contains PrimaryKeys.
 
-#### Line key {#line-key-var}
+#### LineKey {#line-key-var}
 
-This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same line key. Each transect in your data set should have a unique line key; non-unique line keys can result in calculation errors. If your data contain a variable called `LineKey` then the tool will assume it contains line keys.
+This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same LineKey. Each transect in your data set should have a unique LineKey; non-unique LineKeys can result in calculation errors. If your data contain a variable called `LineKey` then the tool will assume it contains LineKeys.
 
 #### Hit codes {#hit-codes-var}
 
@@ -65,7 +65,7 @@ In soil stability data, every record must have an associated vegetative cover de
 
 ### Line-Point Intercept {#lpi-config}
 
-#### Any hit versus first hit {#lpi-hit-config}
+#### Any hit versus First hit {#lpi-hit-config}
 
 There are two options for which "hit" to calculate from with LPI data. When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using "any hit" then every layer is considered as contributing to cover while ""first hit" only considers the topmost recorded hit. For example, if a pin first touches a perennial forb then an annual grass, using "first hit" would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using "any hit" then the perennial forb would contribute to cover by perennial forbs *and* the annual grass would contribute to to cover by annual grasses.
 
@@ -75,13 +75,13 @@ When using "first hit" all your calculated cover values on a plot will sum to 10
 
 These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
 
-#### Summarization unit {#lpi-summarization-unit-config}
+#### Indicator Unit of Summary {#lpi-summarization-unit-config}
 
-Cover can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
+Cover can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
 
 #### Output format {#lpi-output-format-config}
 
-The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your indicator unit of summary scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the unit of summary where they were not observed.
 
 ### Height {#height}
 
@@ -95,7 +95,7 @@ These are additional variables beyond the sampling location to group the data by
 
 #### Summarization unit {#height-summarization-unit-config}
 
-Mean heights can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
+Mean heights can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.
 
 #### Output format {#height-output-format-config}
 
@@ -117,7 +117,7 @@ There are three available types of gap that can be calculated. They are:
 
 #### Summarization unit {#gap-summarization-unit-config}
 
-Gaps can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
+Gaps can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
 
 #### Output format {#gap-output-format-config}
 
