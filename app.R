@@ -382,7 +382,7 @@ server <- function(input, output, session) {
                  # Because it looks like I can't enforce filetype in the upload
                  # selection dialogue, check it here
                  species_upload_extension <- toupper(stringr::str_extract(string = input$species_data$datapath,
-                                                               pattern = "(?<=\\.).{1,5}$"))
+                                                                          pattern = "(?<=\\.).{1,5}$"))
                  species_are_csv <- species_upload_extension == "CSV"
                  
                  if (species_are_csv) {
@@ -395,15 +395,15 @@ server <- function(input, output, session) {
                    workspace$current_species_source <- "upload"
                  } else {
                    species_csv_error_message <- paste0("You have uploaded a ",
-                                                    species_upload_extension,
-                                                    " file. Please upload a CSV instead.")
+                                                       species_upload_extension,
+                                                       " file. Please upload a CSV instead.")
                    showNotification(ui = species_csv_error_message,
                                     duration = NULL,
                                     closeButton = TRUE,
                                     id = "species_csv_error",
                                     type = "error")
                  }
-
+                 
                })
   
   # When input$species_source is set to the default, handle that
