@@ -352,7 +352,7 @@ server <- function(input, output, session) {
                  # I'm assuming that a file extension can be 1-5 characters long
                  # although the longest I've seen is 4, I think
                  data_upload_extension <- toupper(stringr::str_extract(string = input$raw_data$datapath,
-                                                               pattern = "(?<=\\.).{1,5}$"))
+                                                                       pattern = "(?<=\\.).{1,5}$"))
                  data_are_csv <- data_upload_extension == "CSV"
                  
                  if (data_are_csv) {
