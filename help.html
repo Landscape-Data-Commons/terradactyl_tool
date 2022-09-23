@@ -101,12 +101,12 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="data-configuration">Data configuration</h2>
 <p><a href="https://github.com/Landscape-Data-Commons/terradactyl">Terradactyl</a> was developed specifically to work with <a href="https://blm.gov/aim">AIM</a> data and therefore has certain expected/required fields for each type of data. You may also see the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that <strong><em>all incoming data must be in long format</em></strong>: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample.</p>
 <section id="primary-key" class="level4">
-<h4 class="anchored" data-anchor-id="primary-key">Primary key</h4>
-<p>This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same primary key, but if a plot was sampled more than once, each sampling event should have its own distinct primary key. If your data contain a variable called <code>PrimaryKey</code> then the tool will assume it contains primary keys.</p>
+<h4 class="anchored" data-anchor-id="primary-key">PrimaryKey</h4>
+<p>This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called <code>PrimaryKey</code> then the tool will assume it contains PrimaryKeys.</p>
 </section>
 <section id="line-key-var" class="level4">
-<h4 class="anchored" data-anchor-id="line-key-var">Line key</h4>
-<p>This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same line key. Each transect in your data set should have a unique line key; non-unique line keys can result in calculation errors. If your data contain a variable called <code>LineKey</code> then the tool will assume it contains line keys.</p>
+<h4 class="anchored" data-anchor-id="line-key-var">LineKey</h4>
+<p>This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same LineKey. Each transect in your data set should have a unique LineKey; non-unique LineKeys can result in calculation errors. If your data contain a variable called <code>LineKey</code> then the tool will assume it contains LineKeys.</p>
 </section>
 <section id="hit-codes-var" class="level4">
 <h4 class="anchored" data-anchor-id="hit-codes-var">Hit codes</h4>
@@ -167,8 +167,8 @@ ul.task-list li input[type="checkbox"] {
 <p>These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
 </section>
 <section id="lpi-summarization-unit-config" class="level4">
-<p>Cover can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
 <h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summary Unit</h4>
+<p>Cover can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
 </section>
 <section id="lpi-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-output-format-config">Output format</h4>
@@ -186,8 +186,8 @@ ul.task-list li input[type="checkbox"] {
 <p>These are additional variables beyond the sampling location to group the data by for calculating mean heights. The default behavior is to group by sampling location and calculate the mean or max height for that location. In order to calculate finer-grained height values, additional grouping variables need to be selected. For example, in order to calculate height by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in heights being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
 </section>
 <section id="height-summarization-unit-config" class="level4">
-<p>Mean heights can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
 <h4 class="anchored" data-anchor-id="height-summarization-unit-config">Summary unit</h4>
+<p>Mean heights can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.</p>
 </section>
 <section id="height-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-output-format-config">Output format</h4>
@@ -210,8 +210,8 @@ ul.task-list li input[type="checkbox"] {
 </ul>
 </section>
 <section id="gap-summarization-unit-config" class="level4">
-<p>Gaps can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
 <h4 class="anchored" data-anchor-id="gap-summarization-unit-config">Summary unit</h4>
+<p>Gaps can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
 </section>
 <section id="gap-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="gap-output-format-config">Output format</h4>
