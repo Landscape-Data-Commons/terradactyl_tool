@@ -77,16 +77,7 @@ ui <- fluidPage(
                        fileInput(inputId = "raw_data",
                                  label = "Data CSV",
                                  multiple = FALSE,
-                                 accept = ".csv")#,
-                       # checkboxInput(inputId = "needs_header",
-                       #               label = "Need to upload header information",
-                       #               value = FALSE),
-                       # conditionalPanel(condition = "input.needs_header",
-                       #                  fileInput(inputId = "header_data",
-                       #                            label = "Header CSV",
-                       #                            multiple = FALSE,
-                       #                            accept = "CSV")
-                       # )
+                                 accept = ".csv")
       ),
       
       conditionalPanel(condition = "input.data_source == 'ldc'",
