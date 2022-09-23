@@ -75,31 +75,31 @@ When using "first hit" or "basal hit" all your calculated cover values on a plot
 
 These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
 
-#### Indicator Unit of Summary {#lpi-summarization-unit-config}
+#### Summary Unit {#lpi-summarization-unit-config}
 
 Cover can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
 
 #### Output format {#lpi-output-format-config}
 
-The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your indicator unit of summary scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the unit of summary where they were not observed.
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your indicator summary unit scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the summary unit where they were not observed.
 
 ### Height {#height}
 
 #### Omit 0 heights {#height-omit-0-config}
 
-Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summarization unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.
+Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summary unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.
 
 #### Grouping variables {#height-grouping-variables-config}
 
 These are additional variables beyond the sampling location to group the data by for calculating mean heights. The default behavior is to group by sampling location and calculate the mean or max height for that location. In order to calculate finer-grained height values, additional grouping variables need to be selected. For example, in order to calculate height by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in heights being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
 
-#### Summarization unit {#height-summarization-unit-config}
+#### Summary unit {#height-summarization-unit-config}
 
 Mean heights can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.
 
 #### Output format {#height-output-format-config}
 
-The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.
 
 ### Gap {#gap}
 
@@ -115,13 +115,13 @@ There are three available types of gap that can be calculated. They are:
 -   Basal - Gaps between plant bases at the soil surface, considering both annual and perennial plants. This uses only records where cover type variable value is `"B"`
 -   Perennial canopy - Gaps in canopy, considering only perennial plants. This uses only records where the cover type variable value is `"P"`
 
-#### Summarization unit {#gap-summarization-unit-config}
+#### Summary unit {#gap-summarization-unit-config}
 
 Gaps can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
 
 #### Output format {#gap-output-format-config}
 
-The output can be either long or wide. In long format, each row is represents one statistic for your summarization unit, e.g., a row would be your summarization unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summarization unit and each statistic has a column.
+The output can be either long or wide. In long format, each row is represents one statistic for your summary unit, e.g., a row would be your summary unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summary unit and each statistic has a column.
 
 ### Soil Stability {#soil-stability}
 
@@ -136,4 +136,4 @@ Soil stability data includes the vegetative cover at the location where a soil s
 
 #### Output format {#soil-output-format-config}
 
-The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.

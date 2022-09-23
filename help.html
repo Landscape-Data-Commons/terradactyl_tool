@@ -67,21 +67,21 @@ ul.task-list li input[type="checkbox"] {
   <ul class="collapse">
   <li><a href="#lpi-hit-config" id="toc-lpi-hit-config" class="nav-link" data-scroll-target="#lpi-hit-config">LPI hit</a></li>
   <li><a href="#lpi-grouping-variables-config" id="toc-lpi-grouping-variables-config" class="nav-link" data-scroll-target="#lpi-grouping-variables-config">Grouping variables</a></li>
-  <li><a href="#lpi-summarization-unit-config" id="toc-lpi-summarization-unit-config" class="nav-link" data-scroll-target="#lpi-summarization-unit-config">Summarization unit</a></li>
+  <li><a href="#lpi-summarization-unit-config" id="toc-lpi-summarization-unit-config" class="nav-link" data-scroll-target="#lpi-summarization-unit-config">Summary Unit</a></li>
   <li><a href="#lpi-output-format-config" id="toc-lpi-output-format-config" class="nav-link" data-scroll-target="#lpi-output-format-config">Output format</a></li>
   </ul></li>
   <li><a href="#height" id="toc-height" class="nav-link" data-scroll-target="#height">Height</a>
   <ul class="collapse">
   <li><a href="#height-omit-0-config" id="toc-height-omit-0-config" class="nav-link" data-scroll-target="#height-omit-0-config">Omit 0 heights</a></li>
   <li><a href="#height-grouping-variables-config" id="toc-height-grouping-variables-config" class="nav-link" data-scroll-target="#height-grouping-variables-config">Grouping variables</a></li>
-  <li><a href="#height-summarization-unit-config" id="toc-height-summarization-unit-config" class="nav-link" data-scroll-target="#height-summarization-unit-config">Summarization unit</a></li>
+  <li><a href="#height-summarization-unit-config" id="toc-height-summarization-unit-config" class="nav-link" data-scroll-target="#height-summarization-unit-config">Summary unit</a></li>
   <li><a href="#height-output-format-config" id="toc-height-output-format-config" class="nav-link" data-scroll-target="#height-output-format-config">Output format</a></li>
   </ul></li>
   <li><a href="#gap" id="toc-gap" class="nav-link" data-scroll-target="#gap">Gap</a>
   <ul class="collapse">
   <li><a href="#gap-breakpoints-config" id="toc-gap-breakpoints-config" class="nav-link" data-scroll-target="#gap-breakpoints-config">Breakpoints</a></li>
   <li><a href="#gap-type-config" id="toc-gap-type-config" class="nav-link" data-scroll-target="#gap-type-config">Gap type</a></li>
-  <li><a href="#gap-summarization-unit-config" id="toc-gap-summarization-unit-config" class="nav-link" data-scroll-target="#gap-summarization-unit-config">Summarization unit</a></li>
+  <li><a href="#gap-summarization-unit-config" id="toc-gap-summarization-unit-config" class="nav-link" data-scroll-target="#gap-summarization-unit-config">Summary unit</a></li>
   <li><a href="#gap-output-format-config" id="toc-gap-output-format-config" class="nav-link" data-scroll-target="#gap-output-format-config">Output format</a></li>
   </ul></li>
   <li><a href="#soil-stability" id="toc-soil-stability" class="nav-link" data-scroll-target="#soil-stability">Soil Stability</a>
@@ -167,31 +167,31 @@ ul.task-list li input[type="checkbox"] {
 <p>These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
 </section>
 <section id="lpi-summarization-unit-config" class="level4">
-<h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summarization unit</h4>
 <p>Cover can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
+<h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summary Unit</h4>
 </section>
 <section id="lpi-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-output-format-config">Output format</h4>
-<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.</p>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your indicator summary unit scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the summary unit where they were not observed.</p>
 </section>
 </section>
 <section id="height" class="level3">
 <h3 class="anchored" data-anchor-id="height">Height</h3>
 <section id="height-omit-0-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-omit-0-config">Omit 0 heights</h4>
-<p>Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summarization unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.</p>
+<p>Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summary unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.</p>
 </section>
 <section id="height-grouping-variables-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-grouping-variables-config">Grouping variables</h4>
 <p>These are additional variables beyond the sampling location to group the data by for calculating mean heights. The default behavior is to group by sampling location and calculate the mean or max height for that location. In order to calculate finer-grained height values, additional grouping variables need to be selected. For example, in order to calculate height by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in heights being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
 </section>
 <section id="height-summarization-unit-config" class="level4">
-<h4 class="anchored" data-anchor-id="height-summarization-unit-config">Summarization unit</h4>
 <p>Mean heights can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
+<h4 class="anchored" data-anchor-id="height-summarization-unit-config">Summary unit</h4>
 </section>
 <section id="height-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-output-format-config">Output format</h4>
-<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.</p>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.</p>
 </section>
 </section>
 <section id="gap" class="level3">
@@ -210,12 +210,12 @@ ul.task-list li input[type="checkbox"] {
 </ul>
 </section>
 <section id="gap-summarization-unit-config" class="level4">
-<h4 class="anchored" data-anchor-id="gap-summarization-unit-config">Summarization unit</h4>
 <p>Gaps can be calculated by plot (each unique primary key value) or by line (each unique combination of primary key and line key). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
+<h4 class="anchored" data-anchor-id="gap-summarization-unit-config">Summary unit</h4>
 </section>
 <section id="gap-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="gap-output-format-config">Output format</h4>
-<p>The output can be either long or wide. In long format, each row is represents one statistic for your summarization unit, e.g., a row would be your summarization unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summarization unit and each statistic has a column.</p>
+<p>The output can be either long or wide. In long format, each row is represents one statistic for your summary unit, e.g., a row would be your summary unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summary unit and each statistic has a column.</p>
 </section>
 </section>
 <section id="soil-stability" class="level3">
@@ -232,7 +232,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="soil-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="soil-output-format-config">Output format</h4>
-<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summarization unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summarization units where they were not observed.</p>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.</p>
 </section>
 </section>
 </section>
