@@ -3,6 +3,7 @@ library(ggplot2)
 library(dplyr)
 library(DT)
 library(stringr)
+library(tippy)
 source("functions.R")
 
 # Define UI for application
@@ -91,6 +92,10 @@ ui <- fluidPage(
                                  label = "Search values",
                                  value = "",
                                  placeholder = "R042XB012NM"),
+                       tippy_this(elementId = "keys",
+                                  tooltip = "Separate multiple values with commas.",
+                                  placement = "right",
+                                  delay = c(200, 0)),
                        actionButton(inputId = "fetch_data",
                                     label = "Fetch data")),
       hr()
@@ -207,10 +212,17 @@ ui <- fluidPage(
                                                          choices = c("Any hit" = "any",
                                                                      "First hit" = "first",
                                                                      "Basal hit" = "basal")),
-                                            selectInput(inputId = "lpi_grouping_vars",
-                                                        label = "Variables to group by",
-                                                        multiple = TRUE,
-                                                        choices = c("")),
+                                            # tippy can't work with selectInput(multiple = TRUE)
+                                            # So we can wrap it in a div() and tippy that
+                                            div(id = "lpi_grouping_vars_wrapper",
+                                                selectInput(inputId = "lpi_grouping_vars",
+                                                            label = "Grouping variables",
+                                                            multiple = TRUE,
+                                                            choices = c(""))),
+                                            tippy_this(elementId = "lpi_grouping_vars_wrapper",
+                                                       tooltip = "E.g. code or growth habit and duration",
+                                                       placement = "right",
+                                                       delay = c(200, 0)),
                                             selectInput(inputId = "lpi_unit",
                                                         label = "Summary unit",
                                                         choices = c("Plot" = "plot",
@@ -244,10 +256,17 @@ ui <- fluidPage(
                            conditionalPanel(condition = "input.data_type == 'height'",
                                             checkboxInput(inputId = "height_omit_zero",
                                                           label = "Omit heights of 0 from calculation"),
-                                            selectInput(inputId = "height_grouping_vars",
-                                                        label = "Variables to group by",
-                                                        multiple = TRUE,
-                                                        choices = c("")),
+                                            # tippy can't work with selectInput(multiple = TRUE)
+                                            # So we can wrap it in a div() and tippy that
+                                            div(id = "height_grouping_vars_wrapper",
+                                                selectInput(inputId = "height_grouping_vars",
+                                                            label = "Grouping variables",
+                                                            multiple = TRUE,
+                                                            choices = c(""))),
+                                            tippy_this(elementId = "height_grouping_vars_wrapper",
+                                                       tooltip = "E.g. species or growth habit and duration",
+                                                       placement = "right",
+                                                       delay = c(200, 0)),
                                             selectInput(inputId = "height_unit",
                                                         label = "Summary unit",
                                                         choices = c("Plot" = "plot",
