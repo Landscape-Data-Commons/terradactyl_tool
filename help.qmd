@@ -5,9 +5,37 @@ toc: true
 toc-depth: 4
 ---
 
-## Data configuration {#data-configuration}
+## Background
 
 [*Terradactyl*](https://github.com/Landscape-Data-Commons/terradactyl) was developed specifically to work with core methods data from the Bureau of Land Management [AIM](https://blm.gov/aim) and National Resources Conservation Service [NRI](https://grazingland.cssm.iastate.edu/) Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment ([DIMA](https://jornada.nmsu.edu/monit-assess/dima/download)). There are certain expected/required fields for each type of data. You may also refer to the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that ***all incoming data must be in long format***: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. If your data are not yet in the correct format, the *terradactyl* gather functions can assist with this process.
+
+## Input data format
+
+### Line-Point Intercept
+
+In long LPI data, each row must represent a single intercept of a pin drop, so a pin drop that intercepted two species and ended on soil would be spread across three rows: one for each species hit and one for the surface hit. The minimum required variables are [PrimaryKey], [LineKey], [ordinal hit numbers], [layers], and [hit codes].
+
+![Example minimum Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons](lpi_data_minimum_example.png){alt="Example Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons"}
+
+### Height
+
+In long height data, each row must represent one plant height measurement. The minimum required variables are [PrimaryKey], [LineKey], [heights], and [species].
+
+![Example minimum height data for measurements on a single transect in long format retrieved from the Landscape Data Commons](height_data_minimum_example.png){alt="Example height data for measurements on a single transect in long format retrieved from the Landscape Data Commons"}
+
+### Gap
+
+In long gap data, each row must represent a single gap. The minimum required variables are [PrimaryKey], [LineKey], the [measurement units], the [line lengths], the [type of gap], and the [gap size].
+
+![Example minimum gap data for a single transect in long format retrieved from the Landscape Data Commons](gap_data_minimum_example.png){alt="Example gap data for a single transect in long format retrieved from the Landscape Data Commons"}
+
+### Soil Stability
+
+In long soil stability data, each row represents one soil sample (i.e., ped). The minimum required variables are [PrimaryKey], [vegetative cover], and [stability ratings].
+
+![Example minimum soil stability data in long format retrieved from the Landscape Data Commons](soil_data_minimum_example.png){alt="Example soil stability data in long format retrieved from the Landscape Data Commons"}
+
+## Data configuration {#data-configuration}
 
 #### PrimaryKey {#primary-key}
 
@@ -25,7 +53,7 @@ In Line-Point Intercept, every record has an associated code corresponding to wh
 
 In Line-Point Intercept, every record has an ordinal number corresponding to where on a transect it was collected, e.g. all records from the first pin drop on a transect would have `1`, records from the second would have `2`, and so on. These must be the same for all records associated with a single pin drop. If your data contain a variable called `PointNbr` then the tool will assume it contains the ordinal hit numbers.
 
-#### Layer {#layer-var}
+#### Layers {#layer-var}
 
 In Line-Point Intercept, every record has an associated layer indicating where it comes from in the vertical slice. For records corresponding to the uppermost canopy hit at a pin drop, the value must be `"TopCanopy"`. For all other canopy codes, the format is "Lower" plus an ordinal number, e.g. `"Lower1"` for the first record after the top canopy, `"Lower2"` for the next record, and so on. The bottom record for a pin drop, the surface hit, must have a value of `"SoilSurface"`. If your data contain a variable called `layer` then the tool will assume it contains the layer information.
 
@@ -39,11 +67,11 @@ With height data, there must be an associated species with each height record. T
 
 #### Line lengths {#line-lengths-var}
 
-In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the gap sizes, i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called `LineLengthAmount` then the tool will assume it contains the line lengths.
+In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the [gap size], i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called `LineLengthAmount` then the tool will assume it contains the line lengths.
 
 #### Measurement units {#measurement-units-var}
 
-In gap calculations, length unit type must be specified. For each record, this variable must contain either `1` if using metric units (centimeters for gap sizes and meters for line lengths) or `2` if using imperial units (inches for gap sizes and feet for line lengths). If your data contain a variable called `Measure` then the tool will assume it contains the unit type.
+In gap calculations, length unit type must be specified. For each record, this variable must contain either `1` if using metric units (centimeters for [gap size] and meters for [line lengths]) or `2` if using imperial units (inches for [gap size] and feet for [line lengths]). If your data contain a variable called `Measure` then the tool will assume it contains the unit type.
 
 #### Type of gap {#type-of-gap-var}
 
@@ -51,7 +79,7 @@ A gap data set may contain more than one type of gap: all canopy, perennial cano
 
 #### Gap size {#gap-size-var}
 
-Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see measurement units above). If your data contain a variable called `Gap` then the tool will assume it contains the gap sizes.
+Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see [measurement units]). If your data contain a variable called `Gap` then the tool will assume it contains the gap sizes.
 
 #### Stability ratings {#stability-ratings-var}
 
@@ -77,7 +105,7 @@ These are additional variables beyond the sampling location to group the data by
 
 #### Summary Unit {#lpi-summarization-unit-config}
 
-Cover can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
+Cover can be calculated by plot (each unique [PrimaryKey] value) or by line (each unique combination of [PrimaryKey] and [LineKey]). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
 
 #### Output format {#lpi-output-format-config}
 
@@ -95,7 +123,7 @@ These are additional variables beyond the sampling location to group the data by
 
 #### Summary unit {#height-summarization-unit-config}
 
-Mean heights can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.
+Mean heights can be calculated by plot (each unique [PrimaryKey] value) or by line (each unique combination of [PrimaryKey] and [LineKey]). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.
 
 #### Output format {#height-output-format-config}
 
@@ -117,7 +145,7 @@ There are three available types of gap that can be calculated. They are:
 
 #### Summary unit {#gap-summarization-unit-config}
 
-Gaps can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
+Gaps can be calculated by plot (each unique [PrimaryKey] value) or by line (each unique combination of [PrimaryKey] and [LineKey]). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
 
 #### Output format {#gap-output-format-config}
 

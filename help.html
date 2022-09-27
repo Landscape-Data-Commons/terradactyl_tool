@@ -45,13 +45,21 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#data-configuration" id="toc-data-configuration" class="nav-link active" data-scroll-target="#data-configuration">Data configuration</a>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
+  <li><a href="#input-data-format" id="toc-input-data-format" class="nav-link" data-scroll-target="#input-data-format">Input data format</a>
+  <ul>
+  <li><a href="#line-point-intercept" id="toc-line-point-intercept" class="nav-link" data-scroll-target="#line-point-intercept">Line-Point Intercept</a></li>
+  <li><a href="#height" id="toc-height" class="nav-link" data-scroll-target="#height">Height</a></li>
+  <li><a href="#gap" id="toc-gap" class="nav-link" data-scroll-target="#gap">Gap</a></li>
+  <li><a href="#soil-stability" id="toc-soil-stability" class="nav-link" data-scroll-target="#soil-stability">Soil Stability</a></li>
+  </ul></li>
+  <li><a href="#data-configuration" id="toc-data-configuration" class="nav-link" data-scroll-target="#data-configuration">Data configuration</a>
   <ul>
   <li><a href="#primary-key" id="toc-primary-key" class="nav-link" data-scroll-target="#primary-key">PrimaryKey</a></li>
   <li><a href="#line-key-var" id="toc-line-key-var" class="nav-link" data-scroll-target="#line-key-var">LineKey</a></li>
   <li><a href="#hit-codes-var" id="toc-hit-codes-var" class="nav-link" data-scroll-target="#hit-codes-var">Hit codes</a></li>
   <li><a href="#ordinal-hit-numbers-var" id="toc-ordinal-hit-numbers-var" class="nav-link" data-scroll-target="#ordinal-hit-numbers-var">Ordinal hit numbers</a></li>
-  <li><a href="#layer-var" id="toc-layer-var" class="nav-link" data-scroll-target="#layer-var">Layer</a></li>
+  <li><a href="#layer-var" id="toc-layer-var" class="nav-link" data-scroll-target="#layer-var">Layers</a></li>
   <li><a href="#heights-var" id="toc-heights-var" class="nav-link" data-scroll-target="#heights-var">Heights</a></li>
   <li><a href="#species" id="toc-species" class="nav-link" data-scroll-target="#species">Species</a></li>
   <li><a href="#line-lengths-var" id="toc-line-lengths-var" class="nav-link" data-scroll-target="#line-lengths-var">Line lengths</a></li>
@@ -97,9 +105,55 @@ ul.task-list li input[type="checkbox"] {
 
 
 
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p><a href="https://github.com/Landscape-Data-Commons/terradactyl"><em>Terradactyl</em></a> was developed specifically to work with core methods data from the Bureau of Land Management <a href="https://blm.gov/aim">AIM</a> and National Resources Conservation Service <a href="https://grazingland.cssm.iastate.edu/">NRI</a> Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment (<a href="https://jornada.nmsu.edu/monit-assess/dima/download">DIMA</a>). There are certain expected/required fields for each type of data. You may also refer to the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that <strong><em>all incoming data must be in long format</em></strong>: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. If your data are not yet in the correct format, the <em>terradactyl</em> gather functions can assist with this process.</p>
+</section>
+<section id="input-data-format" class="level2">
+<h2 class="anchored" data-anchor-id="input-data-format">Input data format</h2>
+<section id="line-point-intercept" class="level3">
+<h3 class="anchored" data-anchor-id="line-point-intercept">Line-Point Intercept</h3>
+<p>In long LPI data, each row must represent a single intercept of a pin drop, so a pin drop that intercepted two species and ended on soil would be spread across three rows: one for each species hit and one for the surface hit. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, <a href="#ordinal-hit-numbers-var">ordinal hit numbers</a>, <a href="#layer-var">layers</a>, and <a href="#hit-codes-var">hit codes</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="lpi_data_minimum_example.png" class="img-fluid figure-img" alt="Example Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
+</div>
+</section>
+<section id="height" class="level3">
+<h3 class="anchored" data-anchor-id="height">Height</h3>
+<p>In long height data, each row must represent one plant height measurement. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, <a href="#heights-var">heights</a>, and <a href="#species">species</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="height_data_minimum_example.png" class="img-fluid figure-img" alt="Example height data for measurements on a single transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum height data for measurements on a single transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
+</div>
+</section>
+<section id="gap" class="level3">
+<h3 class="anchored" data-anchor-id="gap">Gap</h3>
+<p>In long gap data, each row must represent a single gap. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, the <a href="#measurement-units-var">measurement units</a>, the <a href="#line-lengths-var">line lengths</a>, the <a href="#type-of-gap-var">type of gap</a>, and the <a href="#gap-size-var">gap size</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="gap_data_minimum_example.png" class="img-fluid figure-img" alt="Example gap data for a single transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum gap data for a single transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
+</div>
+</section>
+<section id="soil-stability" class="level3">
+<h3 class="anchored" data-anchor-id="soil-stability">Soil Stability</h3>
+<p>In long soil stability data, each row represents one soil sample (i.e., ped). The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#vegetative-cover-var">vegetative cover</a>, and <a href="#stability-ratings-var">stability ratings</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="soil_data_minimum_example.png" class="img-fluid figure-img" alt="Example soil stability data in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum soil stability data in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
+</div>
+</section>
+</section>
 <section id="data-configuration" class="level2">
 <h2 class="anchored" data-anchor-id="data-configuration">Data configuration</h2>
-<p><a href="https://github.com/Landscape-Data-Commons/terradactyl"><em>Terradactyl</em></a> was developed specifically to work with core methods data from the Bureau of Land Management <a href="https://blm.gov/aim">AIM</a> and National Resources Conservation Service <a href="https://grazingland.cssm.iastate.edu/">NRI</a> Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment (<a href="https://jornada.nmsu.edu/monit-assess/dima/download">DIMA</a>). There are certain expected/required fields for each type of data. You may also refer to the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for additional method details, including valid codes for certain variables. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here. Note that <strong><em>all incoming data must be in long format</em></strong>: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. If your data are not yet in the correct format, the <em>terradactyl</em> gather functions can assist with this process.</p>
 <section id="primary-key" class="level4">
 <h4 class="anchored" data-anchor-id="primary-key">PrimaryKey</h4>
 <p>This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called <code>PrimaryKey</code> then the tool will assume it contains PrimaryKeys.</p>
@@ -117,7 +171,7 @@ ul.task-list li input[type="checkbox"] {
 <p>In Line-Point Intercept, every record has an ordinal number corresponding to where on a transect it was collected, e.g.&nbsp;all records from the first pin drop on a transect would have <code>1</code>, records from the second would have <code>2</code>, and so on. These must be the same for all records associated with a single pin drop. If your data contain a variable called <code>PointNbr</code> then the tool will assume it contains the ordinal hit numbers.</p>
 </section>
 <section id="layer-var" class="level4">
-<h4 class="anchored" data-anchor-id="layer-var">Layer</h4>
+<h4 class="anchored" data-anchor-id="layer-var">Layers</h4>
 <p>In Line-Point Intercept, every record has an associated layer indicating where it comes from in the vertical slice. For records corresponding to the uppermost canopy hit at a pin drop, the value must be <code>"TopCanopy"</code>. For all other canopy codes, the format is “Lower” plus an ordinal number, e.g.&nbsp;<code>"Lower1"</code> for the first record after the top canopy, <code>"Lower2"</code> for the next record, and so on. The bottom record for a pin drop, the surface hit, must have a value of <code>"SoilSurface"</code>. If your data contain a variable called <code>layer</code> then the tool will assume it contains the layer information.</p>
 </section>
 <section id="heights-var" class="level4">
@@ -130,11 +184,11 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="line-lengths-var" class="level4">
 <h4 class="anchored" data-anchor-id="line-lengths-var">Line lengths</h4>
-<p>In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the gap sizes, i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called <code>LineLengthAmount</code> then the tool will assume it contains the line lengths.</p>
+<p>In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the <a href="#gap-size-var">gap size</a>, i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called <code>LineLengthAmount</code> then the tool will assume it contains the line lengths.</p>
 </section>
 <section id="measurement-units-var" class="level4">
 <h4 class="anchored" data-anchor-id="measurement-units-var">Measurement units</h4>
-<p>In gap calculations, length unit type must be specified. For each record, this variable must contain either <code>1</code> if using metric units (centimeters for gap sizes and meters for line lengths) or <code>2</code> if using imperial units (inches for gap sizes and feet for line lengths). If your data contain a variable called <code>Measure</code> then the tool will assume it contains the unit type.</p>
+<p>In gap calculations, length unit type must be specified. For each record, this variable must contain either <code>1</code> if using metric units (centimeters for <a href="#gap-size-var">gap size</a> and meters for <a href="#line-lengths-var">line lengths</a>) or <code>2</code> if using imperial units (inches for <a href="#gap-size-var">gap size</a> and feet for <a href="#line-lengths-var">line lengths</a>). If your data contain a variable called <code>Measure</code> then the tool will assume it contains the unit type.</p>
 </section>
 <section id="type-of-gap-var" class="level4">
 <h4 class="anchored" data-anchor-id="type-of-gap-var">Type of gap</h4>
@@ -142,7 +196,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="gap-size-var" class="level4">
 <h4 class="anchored" data-anchor-id="gap-size-var">Gap size</h4>
-<p>Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see measurement units above). If your data contain a variable called <code>Gap</code> then the tool will assume it contains the gap sizes.</p>
+<p>Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see <a href="#measurement-units-var">measurement units</a>). If your data contain a variable called <code>Gap</code> then the tool will assume it contains the gap sizes.</p>
 </section>
 <section id="stability-ratings-var" class="level4">
 <h4 class="anchored" data-anchor-id="stability-ratings-var">Stability ratings</h4>
@@ -168,7 +222,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="lpi-summarization-unit-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summary Unit</h4>
-<p>Cover can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
+<p>Cover can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
 </section>
 <section id="lpi-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-output-format-config">Output format</h4>
@@ -187,7 +241,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="height-summarization-unit-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-summarization-unit-config">Summary unit</h4>
-<p>Mean heights can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.</p>
+<p>Mean heights can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.</p>
 </section>
 <section id="height-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="height-output-format-config">Output format</h4>
@@ -211,7 +265,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="gap-summarization-unit-config" class="level4">
 <h4 class="anchored" data-anchor-id="gap-summarization-unit-config">Summary unit</h4>
-<p>Gaps can be calculated by plot (each unique PrimaryKey value) or by line (each unique combination of PrimaryKey and LineKey). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
+<p>Gaps can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
 </section>
 <section id="gap-output-format-config" class="level4">
 <h4 class="anchored" data-anchor-id="gap-output-format-config">Output format</h4>
