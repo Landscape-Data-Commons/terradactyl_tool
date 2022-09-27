@@ -242,11 +242,6 @@ ui <- fluidPage(
                                                                     "Long" = "long"))
                            ),
                            conditionalPanel(condition = "input.data_type == 'height'",
-                                            # selectInput(inputId = "height_stat",
-                                            #             label = "Statistic",
-                                            #             choices = c("Mean" = "mean",
-                                            #                         "Maximum" = "max"),
-                                            #             selected = "mean"),
                                             checkboxInput(inputId = "height_omit_zero",
                                                           label = "Omit heights of 0 from calculation"),
                                             selectInput(inputId = "height_grouping_vars",
