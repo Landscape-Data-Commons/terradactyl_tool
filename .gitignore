@@ -29,3 +29,7 @@ instructions_files/libs/quarto-html/tippy.css
 instructions_files/libs/quarto-html/tippy.umd.min.js
 *.R
 *.png
+testing_minimum_gap_data.csv
+testing_minimum_height_data.csv
+testing_minimum_lpi_data.csv
+testing_minimum_soil_data.csv
