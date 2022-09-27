@@ -123,7 +123,7 @@ ui <- fluidPage(
                                                         label = "Variable containing the ordinal hit numbers",
                                                         choices = c("")),
                                             selectInput(inputId = "layer_var",
-                                                        label = "Variable containing layer for the hit records",
+                                                        label = "Variable containing the hit record layers",
                                                         choices = c(""))),
                            # Gap-specific variables
                            conditionalPanel(condition = "input.data_type == 'gap'",
