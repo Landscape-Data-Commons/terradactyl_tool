@@ -117,7 +117,7 @@ ui <- fluidPage(
                            # LPI-specific variables
                            conditionalPanel(condition = "input.data_type == 'lpi'",
                                             selectInput(inputId = "code_var",
-                                                        label = "Variable containing hit codes (e.g., ARTR2, S)",
+                                                        label = "Variable containing hit codes",
                                                         choices = c("")),
                                             selectInput(inputId = "pointnbr_var",
                                                         label = "Variable containing the ordinal hit numbers",
@@ -134,7 +134,7 @@ ui <- fluidPage(
                                                         label = "Variable containing the measurement units",
                                                         choices = c("")),
                                             selectInput(inputId = "rectype_var",
-                                                        label = "Variable containing the type of gaps (i.e., 'C', 'B', 'P')",
+                                                        label = "Variable containing the type of gaps",
                                                         choices = c("")),
                                             selectInput(inputId = "gap_var",
                                                         label = "Variable containing gap sizes",
