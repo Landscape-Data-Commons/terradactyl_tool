@@ -67,7 +67,7 @@ ui <- fluidPage(
                   choices = c("Line-Point Intercept" = "lpi",
                               "Height" = "height",
                               "Gap" = "gap",
-                              "Soil Stability" = "soil"),
+                              "Soil Stability" = "soilstability"),
                   selected = "lpi"),
       radioButtons(inputId = "data_source",
                    label = "Data source",
@@ -83,9 +83,9 @@ ui <- fluidPage(
       conditionalPanel(condition = "input.data_source == 'ldc'",
                        selectInput(inputId = "key_type",
                                    label = "LDC search type",
-                                   choices = c("By ecological site" = "ecosite",
-                                               "By PrimaryKey" = "primarykey",
-                                               "By ProjectKey" = "projectkey"),
+                                   choices = c("By ecological site" = "EcologicalSiteID",
+                                               "By PrimaryKey" = "PrimaryKey",
+                                               "By ProjectKey" = "ProjectKey"),
                                    selected = "ecosite"),
                        textInput(inputId = "keys",
                                  label = "Search values",
@@ -152,7 +152,7 @@ ui <- fluidPage(
                                                         label = "Variable containing the species",
                                                         choices = c(""))),
                            # Soil-specific variables
-                           conditionalPanel(condition = "input.data_type == 'soil'",
+                           conditionalPanel(condition = "input.data_type == 'soilstability'",
                                             selectInput(inputId = "rating_var",
                                                         label = "Variable containing stability ratings",
                                                         choices = c("")),
@@ -276,7 +276,7 @@ ui <- fluidPage(
                                                         choices = c("Wide" = "wide",
                                                                     "Long" = "long"))
                            ),
-                           conditionalPanel(condition = "input.data_type == 'soil'",
+                           conditionalPanel(condition = "input.data_type == 'soilstability'",
                                             checkboxGroupInput(inputId = "soil_covergroups",
                                                                label = "Vegetative cover grouping",
                                                                choices = c("All cover types" = "all",
@@ -484,23 +484,48 @@ server <- function(input, output, session) {
                                                             simplify = TRUE)
                    current_key_vector <- trimws(current_key_vector)
                    
-                   results <- fetch_ldc(keys = current_key_vector,
-                                        key_type = input$key_type,
-                                        data = input$data_type,
-                                        verbose = TRUE)
+                   
+                   # The API queryable tables don't include ecosite, so we grab
+                   # the header table and get primary keys from that
+                   if (input$key_type == "EcologicalSiteID") {
+                     message("key_type is EcologicalSiteID")
+                     message("Retrieving headers")
+                     current_headers <- fetch_ldc(keys = current_key_vector,
+                                                  key_type = input$key_type,
+                                                  data_type = "header",
+                                                  verbose = TRUE)
+                     
+                     current_primary_keys <- paste(current_headers$PrimaryKey,
+                                                   collapse = ",")
+                     message("Retrieving data using PrimaryKey values from headers")
+                     results <- fetch_ldc(keys = current_primary_keys,
+                                          key_type = "PrimaryKey",
+                                          data_type = input$data_type,
+                                          verbose = TRUE)
+                   } else {
+                     message("key_type is not EcologicalSiteID")
+                     message("Retrieving data using provided keys")
+                     results <- fetch_ldc(keys = current_key_vector,
+                                          key_type = input$key_type,
+                                          data_type = input$data_type,
+                                          verbose = TRUE)
+                   }
+                   
                    
                    # So we can tell the user later which actually got queried
                    if (is.null(results)) {
                      message("No data from LDC!")
                      workspace$missing_keys <- current_key_vector
                    } else {
-                     message("Determining if ecosites are missing.")
-                     key_var <- switch(input$key_type,
-                                       "ecosite" = {"EcologicalSiteId"},
-                                       "primarykey" = {"PrimaryKey"},
-                                       "projectkey" = {"ProjectKey"})
+                     message("Determining if keys are missing.")
                      
-                     workspace$queried_keys <- unique(results[[key_var]])
+                     # Because ecosites were two-stage, we check in with headers
+                     if (input$key_type == "EcologicalSiteID") {
+                       workspace$queried_keys <- unique(current_headers[[input$key_type]])
+                     } else {
+                       workspace$queried_keys <- unique(results[[input$key_type]])
+                     }
+                     
                      workspace$missing_keys <- current_key_vector[!(current_key_vector %in% workspace$queried_keys)]
                    }
                    
@@ -652,7 +677,7 @@ server <- function(input, output, session) {
                                                        "lpi" = "code",
                                                        "height" = "Species",
                                                        "gap" = "",
-                                                       "soil" = "")
+                                                       "soilstability" = "")
                    message(paste0("expected_data_joining_var is ",
                                   expected_data_joining_var))
                    
@@ -1117,7 +1142,7 @@ server <- function(input, output, session) {
                           message("Parsed")
                           
                         },
-                        "soil" = {
+                        "soilstability" = {
                           message("Calculating soil stability")
                           workspace$results <- terradactyl::soil_stability(soil_stability_tall = workspace$data,
                                                                            all = "all" %in% input$soil_covergroups,
