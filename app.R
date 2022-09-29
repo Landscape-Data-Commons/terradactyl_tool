@@ -482,7 +482,15 @@ server <- function(input, output, session) {
                    current_key_vector <- stringr::str_split(string = input$keys,
                                                             pattern = ",",
                                                             simplify = TRUE)
+                   
+                   # This will make it easy to check to see if any of these values
+                   # weren't associated with data
                    current_key_vector <- trimws(current_key_vector)
+                   
+                   # fetch_ldc() can take a vector (slow, retrieves one at a time)
+                   # or a string of values separated by commas (fast, rEtrieves all at once)
+                   current_key_string <- paste(current_key_vector,
+                                               collapse = ",")
                    
                    
                    # The API queryable tables don't include ecosite, so we grab
@@ -490,7 +498,7 @@ server <- function(input, output, session) {
                    if (input$key_type == "EcologicalSiteID") {
                      message("key_type is EcologicalSiteID")
                      message("Retrieving headers")
-                     current_headers <- fetch_ldc(keys = current_key_vector,
+                     current_headers <- fetch_ldc(keys = current_key_string,
                                                   key_type = input$key_type,
                                                   data_type = "header",
                                                   verbose = TRUE)
@@ -505,7 +513,7 @@ server <- function(input, output, session) {
                    } else {
                      message("key_type is not EcologicalSiteID")
                      message("Retrieving data using provided keys")
-                     results <- fetch_ldc(keys = current_key_vector,
+                     results <- fetch_ldc(keys = current_key_string,
                                           key_type = input$key_type,
                                           data_type = input$data_type,
                                           verbose = TRUE)
