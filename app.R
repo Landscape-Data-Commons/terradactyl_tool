@@ -594,7 +594,7 @@ server <- function(input, output, session) {
                      message(paste0("The following key values are missing: ",
                                     paste(workspace$missing_keys,
                                           collapse = ", ")))
-                     key_error <- paste0("Data could not be retrieved from the LDC for the following keys: ",
+                     key_error <- paste0("The following keys did not have data associated with them: ",
                                          paste(workspace$missing_keys,
                                                collapse = ", "))
                      showNotification(ui = key_error,
