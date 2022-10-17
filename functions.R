@@ -432,6 +432,11 @@ fetch_ldc <- function(keys,
     queried_keys <- unique(results[[key_type]])
     missing_keys <- keys[!(keys %in% queried_keys)]
   }
+  if (verbose) {
+    message(paste0("length(missing_keys) is: ",
+                   paste(length(missing_keys),
+                         collapse = ", ")))
+  }
   
   if (length(missing_keys) > 0) {
     missing_key_warning <- paste0("The following keys did not return data from the LDC: ",
@@ -440,9 +445,17 @@ fetch_ldc <- function(keys,
     warning(missing_key_warning)
   }
   
+  if (verbose) {
+    message(paste0("length(results) is: ",
+                   paste(length(results),
+                         collapse = ", ")))
+  }
   
   # Only keep going if there are results!!!!
   if (length(results) > 0) {
+    if (verbose) {
+      message("Coercing data to numeric.")
+    }
     # Convert from character to numeric variables where possible
     data_corrected <- lapply(X = names(results),
                              data = results,
@@ -467,8 +480,14 @@ fetch_ldc <- function(keys,
     names(data) <- names(results)
     
     # Put it in the workspace list
+    if (verbose) {
+      message("Returning coerced data")
+    }
     return(data)
   } else {
+    if (verbose) {
+      message("Returning empty results")
+    }
     return(results)
   }
 }
