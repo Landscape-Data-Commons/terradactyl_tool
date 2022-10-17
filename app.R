@@ -500,8 +500,10 @@ server <- function(input, output, session) {
                                                         pattern = "^Error.+[ ]:[ ]",
                                                         replacement = "")
                                                  })
-                     
-                     if (class(current_headers) == "character") {
+                     message(paste0("class(current_headers) is ",
+                                    paste(class(current_headers),
+                                          collapse = ", ")))
+                     if ("character" %in% class(current_headers)) {
                        results <- NULL
                      } else {
                        current_primary_keys <- current_headers$PrimaryKey
@@ -569,7 +571,7 @@ server <- function(input, output, session) {
                                       closeButton = TRUE,
                                       type = "warning",
                                       id = "no_data_returned_warning")
-                   } else if (class(results) == "character") {
+                   } else if ("character" %in% class(results)) {
                      # If results is actually an error message, display it
                      showNotification(ui = results,
                                       duration = NULL,
@@ -579,9 +581,11 @@ server <- function(input, output, session) {
                      workspace$missing_keys <- NULL
                    } else {
                      message("Determining if keys are missing.")
-                     
+                     message(paste0("input$key_type is: ",
+                                    paste(input$key_type,
+                                          collapse = ", ")))
                      # Because ecosites were two-stage, we check in with headers
-                     if (input$key_type == "EcologicalSiteID") {
+                     if (input$key_type %in% c("EcologicalSiteID")) {
                        workspace$queried_keys <- unique(current_headers[[input$key_type]])
                      } else {
                        workspace$queried_keys <- unique(results[[input$key_type]])
@@ -590,6 +594,7 @@ server <- function(input, output, session) {
                      workspace$missing_keys <- current_key_vector[!(current_key_vector %in% workspace$queried_keys)]
                    }
                    
+                   message("Determining if workspace$missing_keys has length > 0")
                    if (length(workspace$missing_keys) > 0) {
                      message(paste0("The following key values are missing: ",
                                     paste(workspace$missing_keys,
@@ -602,11 +607,14 @@ server <- function(input, output, session) {
                                       closeButton = TRUE,
                                       type = "warning",
                                       id = "key_error")
+                   } else {
+                     message("No missing keys!")
                    }
                    
                    
                    # Only keep going if there are results!!!!
-                   if (length(results) > 0 & class(results) != "character") {
+                   if (length(results) > 0 & "data.frame" %in% class(results)) {
+                     message("Coercing variables to numeric.")
                      # Convert from character to numeric variables where possible
                      data_corrected <- lapply(X = names(results),
                                               data = results,
