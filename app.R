@@ -469,14 +469,7 @@ server <- function(input, output, session) {
                  workspace$current_data_source <- "ldc"
                  message("Data source set to LDC")
                  
-                 # Update the data format since we know these're long
-                 # updateRadioButtons(session = session,
-                 #                    inputId = "data_format",
-                 #                    selected = "long")
-                 
-                 
-                 
-                 # Only do anything if there's an ecosite ID
+                 # Only do anything if there's at least one key
                  if (input$keys != "") {
                    # Handle multiple requested ecosites at once!
                    current_key_vector <- stringr::str_split(string = input$keys,
