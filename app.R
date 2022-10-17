@@ -481,7 +481,7 @@ server <- function(input, output, session) {
                    current_key_vector <- trimws(current_key_vector)
                    
                    # fetch_ldc() can take a vector (slow, retrieves one at a time)
-                   # or a string of values separated by commas (fast, rEtrieves all at once)
+                   # or a string of values separated by commas (fast, retrieves all at once)
                    current_key_string <- paste(current_key_vector,
                                                collapse = ",")
                    
