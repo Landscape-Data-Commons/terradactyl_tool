@@ -386,14 +386,19 @@ fetch_ldc <- function(keys,
                                  }
                                  
                                  # Full query results
-                                 full_results <- httr::GET(query,
+                                 response <- httr::GET(query,
                                                            config = httr::timeout(60))
+                                 # What if there's an error????
+                                 if (httr::http_error(response)) {
+                                   stop(paste0("Query failed with status ",
+                                               response$status_code))
+                                 }
                                  # Grab only the data portion
-                                 results_raw <- full_results[["content"]]
+                                 response_content <- response[["content"]]
                                  # Convert from raw to character
-                                 results_character <- rawToChar(results_raw)
+                                 response_content_character <- rawToChar(response_content)
                                  # Convert from character to data frame
-                                 results <- jsonlite::fromJSON(results_character)
+                                 results <- jsonlite::fromJSON(response_content_character)
                                  if (verbose) {
                                    message("Results converted from json to character")
                                  }
