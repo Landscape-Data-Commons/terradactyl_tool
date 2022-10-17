@@ -606,7 +606,7 @@ server <- function(input, output, session) {
                    
                    
                    # Only keep going if there are results!!!!
-                   if (length(results) > 0) {
+                   if (length(results) > 0 & class(results) != "character") {
                      # Convert from character to numeric variables where possible
                      data_corrected <- lapply(X = names(results),
                                               data = results,
