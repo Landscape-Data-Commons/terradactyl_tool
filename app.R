@@ -491,25 +491,72 @@ server <- function(input, output, session) {
                    if (input$key_type == "EcologicalSiteID") {
                      message("key_type is EcologicalSiteID")
                      message("Retrieving headers")
-                     current_headers <- fetch_ldc(keys = current_key_string,
-                                                  key_type = input$key_type,
-                                                  data_type = "header",
-                                                  verbose = TRUE)
+                     current_headers <- tryCatch(fetch_ldc(keys = current_key_string,
+                                                           key_type = input$key_type,
+                                                           data_type = "header",
+                                                           verbose = TRUE),
+                                                 error = function(error){
+                                                   gsub(x = error,
+                                                        pattern = "^Error.+[ ]:[ ]",
+                                                        replacement = "")
+                                                 })
                      
-                     current_primary_keys <- paste(current_headers$PrimaryKey,
-                                                   collapse = ",")
-                     message("Retrieving data using PrimaryKey values from headers")
-                     results <- fetch_ldc(keys = current_primary_keys,
-                                          key_type = "PrimaryKey",
-                                          data_type = input$data_type,
-                                          verbose = TRUE)
+                     if (class(current_headers) == "character") {
+                       results <- NULL
+                     } else {
+                       current_primary_keys <- current_headers$PrimaryKey
+                       
+                       current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                       
+                       current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                                                     keys_vector = current_primary_keys,
+                                                     key_chunk_size = 100,
+                                                     key_count = length(current_primary_keys),
+                                                     FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                       min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                       max_index <- min(c(key_count, X * key_chunk_size))
+                                                       indices <- min_index:max_index
+                                                       paste(keys_vector[indices],
+                                                             collapse = ",")
+                                                     })
+                       
+                       message("Retrieving data using PrimaryKey values from headers")
+                       results <- tryCatch(fetch_ldc(keys = current_primary_keys,
+                                                     key_type = "PrimaryKey",
+                                                     data_type = input$data_type,
+                                                     verbose = TRUE),
+                                           error = function(error){
+                                             gsub(x = error,
+                                                  pattern = "^Error.+[ ]:[ ]",
+                                                  replacement = "")
+                                           })
+                     }
                    } else {
                      message("key_type is not EcologicalSiteID")
                      message("Retrieving data using provided keys")
-                     results <- fetch_ldc(keys = current_key_string,
-                                          key_type = input$key_type,
-                                          data_type = input$data_type,
-                                          verbose = TRUE)
+                     current_key_chunk_count <- ceiling(length(current_key_vector) / 100)
+                     
+                     current_keys_chunks <- sapply(X = 1:current_key_chunk_count,
+                                                    keys_vector = current_key_vector,
+                                                    key_chunk_size = 100,
+                                                    key_count = length(current_key_vector),
+                                                    FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                      min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                      max_index <- min(c(key_count, X * key_chunk_size))
+                                                      indices <- min_index:max_index
+                                                      paste(keys_vector[indices],
+                                                            collapse = ",")
+                                                    })
+                     
+                     results <- tryCatch(fetch_ldc(keys = current_keys_chunks,
+                                                   key_type = input$key_type,
+                                                   data_type = input$data_type,
+                                                   verbose = TRUE),
+                                         error = function(error){
+                                           gsub(x = error,
+                                                pattern = "^Error.+[ ]:[ ]",
+                                                replacement = "")
+                                         })
                    }
                    
                    
@@ -517,6 +564,19 @@ server <- function(input, output, session) {
                    if (is.null(results)) {
                      message("No data from LDC!")
                      workspace$missing_keys <- current_key_vector
+                     showNotification(ui = "No data were found associated with your keys.",
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      type = "warning",
+                                      id = "no_data_returned_warning")
+                   } else if (class(results) == "character") {
+                     # If results is actually an error message, display it
+                     showNotification(ui = results,
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      type = "error",
+                                      id = "api_error")
+                     workspace$missing_keys <- NULL
                    } else {
                      message("Determining if keys are missing.")
                      
