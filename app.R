@@ -337,6 +337,7 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              header_sf = NULL,
                               default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data_fresh = TRUE,
                               data = NULL,
