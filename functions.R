@@ -94,23 +94,23 @@ fetch_ldc <- function(keys,
                                "OtherBasal",
                                "source"),
                      "soilstability" = c("rid",
-                                "PrimaryKey",
-                                "DBKey",
-                                "ProjectKey",
-                                "RecKey",
-                                "FormType",
-                                "FormDate",
-                                "LineKey",
-                                "SoilStabSubSurface",
-                                "Line",
-                                "Position",
-                                "Pos",
-                                "Veg",
-                                "Rating",
-                                "Hydro",
-                                "Notes",
-                                "source",
-                                "DateLoadedInDb"),
+                                         "PrimaryKey",
+                                         "DBKey",
+                                         "ProjectKey",
+                                         "RecKey",
+                                         "FormType",
+                                         "FormDate",
+                                         "LineKey",
+                                         "SoilStabSubSurface",
+                                         "Line",
+                                         "Position",
+                                         "Pos",
+                                         "Veg",
+                                         "Rating",
+                                         "Hydro",
+                                         "Notes",
+                                         "source",
+                                         "DateLoadedInDb"),
                      "species" = c("rid",
                                    "PrimaryKey",
                                    "DBKey",
@@ -343,7 +343,7 @@ fetch_ldc <- function(keys,
   if (!(data_type %in% names(table_vars))) {
     stop(paste0("data_type must be one of: ",
                 paste(names(table_vars),
-                            collapse = ", ")))
+                      collapse = ", ")))
   }
   
   current_data_source <- switch(data_type,
@@ -358,23 +358,38 @@ fetch_ldc <- function(keys,
                                 "dustdeposition" = {"datadustdeposition"},
                                 "horizontalflux" = {"datahorizontalflux"})
   
+  
   available_vars <- table_vars[[data_type]]
   
-  if (!(key_type %in% available_vars)) {
-    stop(paste0("key_type must be one of: ",
-                paste(available_vars,
-                      collapse = ", ")))
+  if (!is.null(key_type)) {
+    if (!(key_type %in% available_vars)) {
+      stop(paste0("key_type must be one of: ",
+                  paste(available_vars,
+                        collapse = ", ")))
+    }
   }
   
-  query_results_list <- lapply(X = keys,
-                               current_data_source = current_data_source,
-                               current_key_type = key_type,
-                               FUN = function(X, current_data_source, current_key_type){
+  
+  if (is.null(keys) & !is.null(key_type)) {
+    warning("No keys provided. Ignoring key_type.")
+  } else if (!is.null(keys) & is.null(key_type)) {
+    warning("key_type is NULL. Ignoring keys.")
+  }
+  
+  if (is.null(keys) | is.null(key_type)) {
+    queries <- paste0("https://napi.landscapedatacommons.org/api/v1/",
+                      current_data_source)
+  } else {
+    queries <- paste0("https://napi.landscapedatacommons.org/api/v1/",
+                      current_data_source, "?",
+                      key_type, "=",
+                      keys)
+  }
+  
+  query_results_list <- lapply(X = queries,
+                               FUN = function(X){
                                  # Build the query
-                                 query <- paste0("https://napi.landscapedatacommons.org/api/v1/",
-                                                 current_data_source, "?",
-                                                 current_key_type, "=",
-                                                 X)
+                                 query <- X
                                  
                                  # Getting the data via curl
                                  # connection <- curl::curl(query)
@@ -387,7 +402,7 @@ fetch_ldc <- function(keys,
                                  
                                  # Full query results
                                  response <- httr::GET(query,
-                                                           config = httr::timeout(60))
+                                                       config = httr::timeout(60))
                                  # What if there's an error????
                                  if (httr::http_error(response)) {
                                    stop(paste0("Query failed with status ",
@@ -417,20 +432,23 @@ fetch_ldc <- function(keys,
     if (verbose) {
       message("Determining if keys are missing.")
     }
-    
-    # So if they submitted multiple keys as a a single character string with separating commas, handle that
-    keys <- unlist(sapply(X = keys,
-                          FUN = function(X){
-                            if (grepl(x = X, pattern = ",")) {
-                              unlist(stringr::str_split(string = X,
-                                                 pattern = ","))
-                            } else {
-                              X
-                            }
-                          }))
-    
-    queried_keys <- unique(results[[key_type]])
-    missing_keys <- keys[!(keys %in% queried_keys)]
+    if (is.null(keys)) {
+      missing_keys <- NULL
+    } else {
+      # So if they submitted multiple keys as a a single character string with separating commas, handle that
+      keys <- unlist(sapply(X = keys,
+                            FUN = function(X){
+                              if (grepl(x = X, pattern = ",")) {
+                                unlist(stringr::str_split(string = X,
+                                                          pattern = ","))
+                              } else {
+                                X
+                              }
+                            }))
+      
+      queried_keys <- unique(results[[key_type]])
+      missing_keys <- keys[!(keys %in% queried_keys)]
+    }
   }
   if (verbose) {
     message(paste0("length(missing_keys) is: ",
