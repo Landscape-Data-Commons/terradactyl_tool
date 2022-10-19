@@ -331,6 +331,9 @@ server <- function(input, output, session) {
   # Allow for wonking big files
   options(shiny.maxRequestSize = 30 * 1024^2)
   
+  # This is dangerous, but I'm doing it anyway so that polygons work consistently
+  sf::sf_use_s2(FALSE)
+  
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
