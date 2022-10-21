@@ -1,0 +1,191 @@
+---
+format: html
+editor: visual
+toc: true
+toc-depth: 4
+---
+
+## Background
+
+[*Terradactyl*](https://github.com/Landscape-Data-Commons/terradactyl) (see [suggested citations]) was developed specifically to work with core methods data from the Bureau of Land Management [AIM](https://blm.gov/aim) and National Resources Conservation Service [NRI](https://grazingland.cssm.iastate.edu/) Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment ([DIMA](https://jornada.nmsu.edu/monit-assess/dima/download)). There are certain expected/required fields for each type of data. You may also refer to the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for additional method details, including valid codes for certain variables.
+
+## Input data format
+
+Note that ***all incoming data must be in long format***: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. If your data are not yet in the correct format, the [*terradactyl*](https://github.com/Landscape-Data-Commons/terradactyl) gather functions can assist with this process. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here.
+
+### Line-Point Intercept
+
+In long LPI data, each row must represent a single intercept of a pin drop, so a pin drop that intercepted two species and ended on soil would be spread across three rows: one for each species hit and one for the surface hit. The minimum required variables are [PrimaryKey](#primary-key), [LineKey](#line-key-var), [ordinal hit numbers](#ordinal-hit-numbers-var), [layers](#layer-var), and [hit codes](#hit-codes-var).
+
+![Example minimum Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons](lpi_data_minimum_example.png){alt="Example Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons"}
+
+### Height {#height}
+
+In long height data, each row must represent one plant height measurement. The minimum required variables are [PrimaryKey](#primary-key), [LineKey](#line-key-var), [heights](#heights-var), and [species](#species).
+
+![Example minimum height data for measurements on a single transect in long format retrieved from the Landscape Data Commons](height_data_minimum_example.png){alt="Example height data for measurements on a single transect in long format retrieved from the Landscape Data Commons"}
+
+### Gap {#gap}
+
+In long gap data, each row must represent a single gap. The minimum required variables are [PrimaryKey](#primary-key), [LineKey](#line-key-var), the [measurement units](#measurement-units-var), the [line lengths](#line-lengths-var), the [type of gap](#type-of-gap-var), and the [gap size](#gap-size-var).
+
+![Example minimum gap data for a single transect in long format retrieved from the Landscape Data Commons](gap_data_minimum_example.png){alt="Example gap data for a single transect in long format retrieved from the Landscape Data Commons"}
+
+### Soil Stability {#soil-stability}
+
+In long soil stability data, each row represents one soil sample (i.e., ped). The minimum required variables are [PrimaryKey](#primary-key), [vegetative cover](#vegetative-cover-var), and [stability ratings](#stability-ratings-var).
+
+![Example minimum soil stability data in long format retrieved from the Landscape Data Commons](soil_data_minimum_example.png){alt="Example soil stability data in long format retrieved from the Landscape Data Commons"}
+
+## Data configuration {#data-configuration}
+
+#### PrimaryKey {#primary-key}
+
+This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called `PrimaryKey` then the tool will assume it contains PrimaryKeys.
+
+#### LineKey {#line-key-var}
+
+This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same LineKey. Each transect in your data set should have a unique LineKey; non-unique LineKeys can result in calculation errors. If your data contain a variable called `LineKey` then the tool will assume it contains LineKeys.
+
+#### Hit codes {#hit-codes-var}
+
+In Line-Point Intercept, every record has an associated code corresponding to what the pin touched in that layer. This variable contains species codes as well as other codes, e.g., `S` for "soil" or `WL` for "woody litter". See the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for information on valid codes. If your data contain a variable called `code` then the tool will assume it contains the hit codes.
+
+#### Ordinal hit numbers {#ordinal-hit-numbers-var}
+
+In Line-Point Intercept, every record has an ordinal number corresponding to where on a transect it was collected, e.g. all records from the first pin drop on a transect would have `1`, records from the second would have `2`, and so on. These must be the same for all records associated with a single pin drop. If your data contain a variable called `PointNbr` then the tool will assume it contains the ordinal hit numbers.
+
+#### Layers {#layer-var}
+
+In Line-Point Intercept, every record has an associated layer indicating where it comes from in the vertical slice. For records corresponding to the uppermost canopy hit at a pin drop, the value must be `"TopCanopy"`. For all other canopy codes, the format is "Lower" plus an ordinal number, e.g. `"Lower1"` for the first record after the top canopy, `"Lower2"` for the next record, and so on. The bottom record for a pin drop, the surface hit, must have a value of `"SoilSurface"`. If your data contain a variable called `layer` then the tool will assume it contains the layer information.
+
+#### Heights {#heights-var}
+
+With height data, each record has an associated numeric height value. This variable contains those data. If your data contain a variable called `Height` then the tool will assume it contains the height information.
+
+#### Species {#species}
+
+With height data, there must be an associated species with each height record. This variable should contain the species information, typically using species codes. If the height was 0 for a record (e.g., no woody plant qualified to be measured at a sampling point) then the value should be `"None"`. If your data contain a variable called `Species` then the tool will assume it contains the species information.
+
+#### Line lengths {#line-lengths-var}
+
+In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the [gap size](#gap-size-var), i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called `LineLengthAmount` then the tool will assume it contains the line lengths.
+
+#### Measurement units {#measurement-units-var}
+
+In gap calculations, length unit type must be specified. For each record, this variable must contain either `1` if using metric units (centimeters for [gap size](#gap-size-var) and meters for [line lengths](#line-lengths-var)) or `2` if using imperial units (inches for [gap size](#gap-size-var) and feet for [line lengths](#line-lengths-var)). If your data contain a variable called `Measure` then the tool will assume it contains the unit type.
+
+#### Type of gap {#type-of-gap-var}
+
+A gap data set may contain more than one type of gap: all canopy, perennial canopy only, and basal. This variable must contain the type of gap that each record represents. For gaps that take into account all canopy types, the value must be `"C"`; for perennial-only, `"P"`; and for basal, `"P"`. If your data contain a variable called `RecType` then the tool will assume it contains the type of gap.
+
+#### Gap size {#gap-size-var}
+
+Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see [measurement units](#measurement-units-var)). If your data contain a variable called `Gap` then the tool will assume it contains the gap sizes.
+
+#### Stability ratings {#stability-ratings-var}
+
+In soil stability data, every record must have a numeric rating. This variable contains that rating. If your data contain a variable called `Rating` then the tool will assume it contains the ratings.
+
+#### Vegetative cover {#vegetative-cover-var}
+
+In soil stability data, every record must have an associated vegetative cover designation. See the [Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1](https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/) for information on valid codes. If your data contain a variable called `Veg` then the tool will assume it contains the vegetative cover types.
+
+## Indicator configuration {#indicator-configuration}
+
+### Line-Point Intercept {#lpi-config}
+
+#### LPI hit {#lpi-hit-config}
+
+There are two options for which "hit" to calculate from with LPI data. When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using "any hit" then every layer is considered as contributing to cover while "first hit" only considers the topmost recorded hits and "basal hit" only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using "first hit" would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using "any hit" then the perennial forb would contribute to cover by perennial forbs *and* the annual grass would contribute to to cover by annual grasses.
+
+![An example pin drop. Each hit record is labeled with the type of calculation (first, any, or basal) it would be included in.](hit_type_figure_small.png)
+
+When using "first hit" or "basal hit" all your calculated cover values on a plot will sum to no more than 100%. When using "any hit" 100% is the minimum total cover possible; if any pin drops recorded more than one hit, then the sum of cover values will exceed 100%. "Any hit" is the default because it provides the most information from the data and doesn't exclude any records, offering the most comprehensive characterization. "First hit" was added as an option for those working with remote sensing products who had requested something that might approximate the aerial or satellite view of the landscape, however it can be argued that "any hit" is in fact more representative.
+
+#### Grouping variables {#lpi-grouping-variables-config}
+
+These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
+
+#### Summary Unit {#lpi-summarization-unit-config}
+
+Cover can be calculated by plot (each unique [PrimaryKey](#primary-key) value) or by line (each unique combination of [PrimaryKey](#primary-key) and [LineKey](#line-key-var)). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.
+
+#### Output format {#lpi-output-format-config}
+
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your indicator summary unit scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the summary unit where they were not observed.
+
+### Height
+
+#### Omit 0 heights {#height-omit-0-config}
+
+Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summary unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.
+
+#### Grouping variables {#height-grouping-variables-config}
+
+These are additional variables beyond the sampling location to group the data by for calculating mean heights. The default behavior is to group by sampling location and calculate the mean or max height for that location. In order to calculate finer-grained height values, additional grouping variables need to be selected. For example, in order to calculate height by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in heights being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
+
+#### Summary unit {#height-summarization-unit-config}
+
+Mean heights can be calculated by plot (each unique [PrimaryKey](#primary-key) value) or by line (each unique combination of [PrimaryKey](#primary-key) and [LineKey](#line-key-var)). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.
+
+#### Output format {#height-output-format-config}
+
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.
+
+### Gap
+
+#### Breakpoints {#gap-breakpoints-config}
+
+Gap data are classified into size classes and the indicators reported are percent of the sampling location composed of gaps in each size class. The break values define the minimum gap size and what values to split the data at. The values must be listed in ascending order and separated by commas. The first value acts as the minimum gap size while the maximum gap size is infinity. As an example, in order to calculate cover for three size classes, one from 20 cm to 50 cm, one for 51 to 100 cm, and one for greater than 100 cm, the breaks would be `20, 51, 101`.
+
+#### Gap type {#gap-type-config}
+
+There are three available types of gap that can be calculated. They are:
+
+-   Canopy - Gaps in canopy, considering both annual and perennial plants. This uses only records where the cover type variable value is `"C"`
+-   Basal - Gaps between plant bases at the soil surface, considering both annual and perennial plants. This uses only records where cover type variable value is `"B"`
+-   Perennial canopy - Gaps in canopy, considering only perennial plants. This uses only records where the cover type variable value is `"P"`
+
+#### Summary unit {#gap-summarization-unit-config}
+
+Gaps can be calculated by plot (each unique [PrimaryKey](#primary-key) value) or by line (each unique combination of [PrimaryKey](#primary-key) and [LineKey](#line-key-var)). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.
+
+#### Output format {#gap-output-format-config}
+
+The output can be either long or wide. In long format, each row is represents one statistic for your summary unit, e.g., a row would be your summary unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summary unit and each statistic has a column.
+
+### Soil Stability
+
+#### Vegetative cover grouping {#soil-veg-cover-grouping-config}
+
+Soil stability data includes the vegetative cover at the location where a soil sample was collected. The mean can be calculated in a few ways using vegetative cover. It can be summarized by considering:
+
+-   For soil samples with `all cover types`
+-   For only those soil samples that had `perennial cover`
+-   For only those soil samples that did not have perennial cover (considered `no cover`)
+-   All soil stability samples, but `by cover type`, producing a mean for each cover type
+
+#### Output format {#soil-output-format-config}
+
+The output can be either long or wide. In long format, each *observed* indicator is represented by a row. This means that if you have supplied `code` as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.
+
+## Citations
+
+### Suggested citations
+
+McCord, S.E., J.R. Brehm, S.H. Burnett, B.L. Edwards, M. Hernandez-Narvaez, E. Kachergis, L.J. Metz, F. Pierson, K. S. Ramirez, N.G. Stauffer, N.P. Webb, C. E. Tweedie. A framework and toolset for standardizing ecosystem indicators. Ecological Indicators. In Press.
+
+### Packages
+
+Sarah E. McCord, Joseph R. Brehm, and Nelson G. Stauffer (2022). terradactyl: Tools for Creating and Using TerrADat. R package version 0.1.5. [https://github.com/Landscape-Data-Commons/terradactyl](https://github.com/Landscape-Data-Commons/terradactyl_tool)
+
+Winston Chang, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges (2021). shiny: Web Application Framework for R. R package version 1.7.1. <https://CRAN.R-project.org/package=shiny>
+
+Hadley Wickham, Romain François, Lionel Henry, and Kirill Müller (2022). dplyr: A Grammar of Data Manipulation. R package version 1.0.8. <https://CRAN.R-project.org/package=dplyr>
+
+Yihui Xie, Joe Cheng, and Xianying Tan (2022). DT: A Wrapper of the JavaScript Library 'DataTables'. R package version 0.24. <https://CRAN.R-project.org/package=DT>
+
+Hadley Wickham (2019). stringr: Simple, Consistent Wrappers for Common String Operations. R package version 1.4.0. <https://CRAN.R-project.org/package=stringr>
+
+John Coene (2021). tippy: Add Tooltips to 'R markdown' Documents or 'Shiny' Apps. R package version 0.1.0. <https://CRAN.R-project.org/package=tippy>

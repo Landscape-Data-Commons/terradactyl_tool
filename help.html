@@ -1,142 +1,426 @@
 <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
-<html>
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.1.189">
 
-<head>
-
-<meta charset="utf-8" />
-<meta name="generator" content="pandoc" />
-<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
-
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-
-<title>help.knit</title>
-
-<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
-// be compatible with the behavior of Pandoc < 2.8).
-document.addEventListener('DOMContentLoaded', function(e) {
-  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
-  var i, h, a;
-  for (i = 0; i < hs.length; i++) {
-    h = hs[i];
-    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
-    a = h.attributes;
-    while (a.length > 0) h.removeAttribute(a[0].name);
-  }
-});
-</script>
-
-<style type="text/css">
-  code{white-space: pre-wrap;}
-  span.smallcaps{font-variant: small-caps;}
-  span.underline{text-decoration: underline;}
-  div.column{display: inline-block; vertical-align: top; width: 50%;}
-  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-  ul.task-list{list-style: none;}
-      .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-  </style>
+<title>help</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1.6em;
+  vertical-align: middle;
+}
+</style>
 
 
-
-
-
-
-
-
-
+<script src="help_files/libs/clipboard/clipboard.min.js"></script>
+<script src="help_files/libs/quarto-html/quarto.js"></script>
+<script src="help_files/libs/quarto-html/popper.min.js"></script>
+<script src="help_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="help_files/libs/quarto-html/anchor.min.js"></script>
+<link href="help_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="help_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="help_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="help_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="help_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 
 
 </head>
 
 <body>
 
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
+  <li><a href="#input-data-format" id="toc-input-data-format" class="nav-link" data-scroll-target="#input-data-format">Input data format</a>
+  <ul>
+  <li><a href="#line-point-intercept" id="toc-line-point-intercept" class="nav-link" data-scroll-target="#line-point-intercept">Line-Point Intercept</a></li>
+  <li><a href="#height" id="toc-height" class="nav-link" data-scroll-target="#height">Height</a></li>
+  <li><a href="#gap" id="toc-gap" class="nav-link" data-scroll-target="#gap">Gap</a></li>
+  <li><a href="#soil-stability" id="toc-soil-stability" class="nav-link" data-scroll-target="#soil-stability">Soil Stability</a></li>
+  </ul></li>
+  <li><a href="#data-configuration" id="toc-data-configuration" class="nav-link" data-scroll-target="#data-configuration">Data configuration</a>
+  <ul>
+  <li><a href="#primary-key" id="toc-primary-key" class="nav-link" data-scroll-target="#primary-key">PrimaryKey</a></li>
+  <li><a href="#line-key-var" id="toc-line-key-var" class="nav-link" data-scroll-target="#line-key-var">LineKey</a></li>
+  <li><a href="#hit-codes-var" id="toc-hit-codes-var" class="nav-link" data-scroll-target="#hit-codes-var">Hit codes</a></li>
+  <li><a href="#ordinal-hit-numbers-var" id="toc-ordinal-hit-numbers-var" class="nav-link" data-scroll-target="#ordinal-hit-numbers-var">Ordinal hit numbers</a></li>
+  <li><a href="#layer-var" id="toc-layer-var" class="nav-link" data-scroll-target="#layer-var">Layers</a></li>
+  <li><a href="#heights-var" id="toc-heights-var" class="nav-link" data-scroll-target="#heights-var">Heights</a></li>
+  <li><a href="#species" id="toc-species" class="nav-link" data-scroll-target="#species">Species</a></li>
+  <li><a href="#line-lengths-var" id="toc-line-lengths-var" class="nav-link" data-scroll-target="#line-lengths-var">Line lengths</a></li>
+  <li><a href="#measurement-units-var" id="toc-measurement-units-var" class="nav-link" data-scroll-target="#measurement-units-var">Measurement units</a></li>
+  <li><a href="#type-of-gap-var" id="toc-type-of-gap-var" class="nav-link" data-scroll-target="#type-of-gap-var">Type of gap</a></li>
+  <li><a href="#gap-size-var" id="toc-gap-size-var" class="nav-link" data-scroll-target="#gap-size-var">Gap size</a></li>
+  <li><a href="#stability-ratings-var" id="toc-stability-ratings-var" class="nav-link" data-scroll-target="#stability-ratings-var">Stability ratings</a></li>
+  <li><a href="#vegetative-cover-var" id="toc-vegetative-cover-var" class="nav-link" data-scroll-target="#vegetative-cover-var">Vegetative cover</a></li>
+  </ul></li>
+  <li><a href="#indicator-configuration" id="toc-indicator-configuration" class="nav-link" data-scroll-target="#indicator-configuration">Indicator configuration</a>
+  <ul>
+  <li><a href="#lpi-config" id="toc-lpi-config" class="nav-link" data-scroll-target="#lpi-config">Line-Point Intercept</a>
+  <ul class="collapse">
+  <li><a href="#lpi-hit-config" id="toc-lpi-hit-config" class="nav-link" data-scroll-target="#lpi-hit-config">LPI hit</a></li>
+  <li><a href="#lpi-grouping-variables-config" id="toc-lpi-grouping-variables-config" class="nav-link" data-scroll-target="#lpi-grouping-variables-config">Grouping variables</a></li>
+  <li><a href="#lpi-summarization-unit-config" id="toc-lpi-summarization-unit-config" class="nav-link" data-scroll-target="#lpi-summarization-unit-config">Summary Unit</a></li>
+  <li><a href="#lpi-output-format-config" id="toc-lpi-output-format-config" class="nav-link" data-scroll-target="#lpi-output-format-config">Output format</a></li>
+  </ul></li>
+  <li><a href="#height-1" id="toc-height-1" class="nav-link" data-scroll-target="#height-1">Height</a>
+  <ul class="collapse">
+  <li><a href="#height-omit-0-config" id="toc-height-omit-0-config" class="nav-link" data-scroll-target="#height-omit-0-config">Omit 0 heights</a></li>
+  <li><a href="#height-grouping-variables-config" id="toc-height-grouping-variables-config" class="nav-link" data-scroll-target="#height-grouping-variables-config">Grouping variables</a></li>
+  <li><a href="#height-summarization-unit-config" id="toc-height-summarization-unit-config" class="nav-link" data-scroll-target="#height-summarization-unit-config">Summary unit</a></li>
+  <li><a href="#height-output-format-config" id="toc-height-output-format-config" class="nav-link" data-scroll-target="#height-output-format-config">Output format</a></li>
+  </ul></li>
+  <li><a href="#gap-1" id="toc-gap-1" class="nav-link" data-scroll-target="#gap-1">Gap</a>
+  <ul class="collapse">
+  <li><a href="#gap-breakpoints-config" id="toc-gap-breakpoints-config" class="nav-link" data-scroll-target="#gap-breakpoints-config">Breakpoints</a></li>
+  <li><a href="#gap-type-config" id="toc-gap-type-config" class="nav-link" data-scroll-target="#gap-type-config">Gap type</a></li>
+  <li><a href="#gap-summarization-unit-config" id="toc-gap-summarization-unit-config" class="nav-link" data-scroll-target="#gap-summarization-unit-config">Summary unit</a></li>
+  <li><a href="#gap-output-format-config" id="toc-gap-output-format-config" class="nav-link" data-scroll-target="#gap-output-format-config">Output format</a></li>
+  </ul></li>
+  <li><a href="#soil-stability-1" id="toc-soil-stability-1" class="nav-link" data-scroll-target="#soil-stability-1">Soil Stability</a>
+  <ul class="collapse">
+  <li><a href="#soil-veg-cover-grouping-config" id="toc-soil-veg-cover-grouping-config" class="nav-link" data-scroll-target="#soil-veg-cover-grouping-config">Vegetative cover grouping</a></li>
+  <li><a href="#soil-output-format-config" id="toc-soil-output-format-config" class="nav-link" data-scroll-target="#soil-output-format-config">Output format</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#citations" id="toc-citations" class="nav-link" data-scroll-target="#citations">Citations</a>
+  <ul>
+  <li><a href="#suggested-citations" id="toc-suggested-citations" class="nav-link" data-scroll-target="#suggested-citations">Suggested citations</a></li>
+  <li><a href="#packages" id="toc-packages" class="nav-link" data-scroll-target="#packages">Packages</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
 
 
 
-
-
-
-<div id="indicator-configuration" class="section level2">
-<h2>Indicator configuration</h2>
-<div id="line-point-intercept" class="section level3">
-<h3>Line-Point Intercept</h3>
-<div id="any-hit-versus-first-hit" class="section level4">
-<h4>Any hit versus first hit</h4>
-<p>There are two options for which “hit” to calculate from with LPI
-data. When a pin is dropped during LPI, all intercepted canopy layers
-and the soil surface are recorded. When calculating using “any hit” then
-every layer is considered as contributing to cover while ““first hit”
-only considers the topmost recorded hit. For example, if a pin first
-touches a perennial forb then an annual grass, using “first hit” would
-ignore the annual grass record and that would not contribute to the
-percent cover by annual grass because it was not the topmost recorded
-cover. If using “any hit” then the perennial forb would contribute to
-cover by perennial forbs <em>and</em> the annual grass would contribute
-to to cover by annual grasses.</p>
-<p>When using “first hit” all your calculated cover values on a plot
-will sum to 100%. When using “any hit” 100% is the minimum total cover
-possible; if any pin drops recorded more than one hit, then the sum of
-cover values will exceed 100%. “Any hit” is the default because it
-provides the most information from the data and doesn’t exclude any
-records, offering the most comprehensive characterization. “First hit”
-was added as an option for those working with remote sensing products
-who had requested something that might approximate the aerial or
-satellite view of the landscape, however it can be argued that “any hit”
-is in fact more representative.</p>
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p><a href="https://github.com/Landscape-Data-Commons/terradactyl"><em>Terradactyl</em></a> (see <a href="#suggested-citations">suggested citations</a>) was developed specifically to work with core methods data from the Bureau of Land Management <a href="https://blm.gov/aim">AIM</a> and National Resources Conservation Service <a href="https://grazingland.cssm.iastate.edu/">NRI</a> Grazing Land Onsite programs as well as data collected using the Database for Inventory, Monitoring and Assessment (<a href="https://jornada.nmsu.edu/monit-assess/dima/download">DIMA</a>). There are certain expected/required fields for each type of data. You may also refer to the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for additional method details, including valid codes for certain variables.</p>
+</section>
+<section id="input-data-format" class="level2">
+<h2 class="anchored" data-anchor-id="input-data-format">Input data format</h2>
+<p>Note that <strong><em>all incoming data must be in long format</em></strong>: each row in the data must represent one observation and each column is a variable associated with the observation. For Line-Point Intercept each observation is a single hit with the pin; for heights, a single height; for gap, a single gap; and for soil stability, a single soil sample. This generally requires transforming data collected in the field into this format. If your data are not yet in the correct format, the <a href="https://github.com/Landscape-Data-Commons/terradactyl"><em>terradactyl</em></a> gather functions can assist with this process. You must specify a corresponding variable for all required fields. You may have additional variables in your data beyond the minimum specified here.</p>
+<section id="line-point-intercept" class="level3">
+<h3 class="anchored" data-anchor-id="line-point-intercept">Line-Point Intercept</h3>
+<p>In long LPI data, each row must represent a single intercept of a pin drop, so a pin drop that intercepted two species and ended on soil would be spread across three rows: one for each species hit and one for the surface hit. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, <a href="#ordinal-hit-numbers-var">ordinal hit numbers</a>, <a href="#layer-var">layers</a>, and <a href="#hit-codes-var">hit codes</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="lpi_data_minimum_example.png" class="img-fluid figure-img" alt="Example Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum Line-Point Intercept data for the first three pin drops on a transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
 </div>
+</section>
+<section id="height" class="level3">
+<h3 class="anchored" data-anchor-id="height">Height</h3>
+<p>In long height data, each row must represent one plant height measurement. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, <a href="#heights-var">heights</a>, and <a href="#species">species</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="height_data_minimum_example.png" class="img-fluid figure-img" alt="Example height data for measurements on a single transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum height data for measurements on a single transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
 </div>
-<div id="gap" class="section level3">
-<h3>Gap</h3>
-<div id="breaks" class="section level4">
-<h4>Breaks</h4>
-<p>Gap data are classified into size classes and the indicators reported
-are percent of the sampling location composed of gaps in each size
-class. The break values define the minimum gap size and what values to
-split the data at. The values must be listed in ascending order and
-separated by commas. The first value acts as the minimum gap size while
-the maximum gap size is infinity. As an example, in order to calculate
-cover for three size classes, one from 20 cm to 50 cm, one for 51 to 100
-cm, and one for greater than 100 cm, the breaks would be
-<code>20, 51, 101</code>.</p>
+</section>
+<section id="gap" class="level3">
+<h3 class="anchored" data-anchor-id="gap">Gap</h3>
+<p>In long gap data, each row must represent a single gap. The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#line-key-var">LineKey</a>, the <a href="#measurement-units-var">measurement units</a>, the <a href="#line-lengths-var">line lengths</a>, the <a href="#type-of-gap-var">type of gap</a>, and the <a href="#gap-size-var">gap size</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="gap_data_minimum_example.png" class="img-fluid figure-img" alt="Example gap data for a single transect in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum gap data for a single transect in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
 </div>
+</section>
+<section id="soil-stability" class="level3">
+<h3 class="anchored" data-anchor-id="soil-stability">Soil Stability</h3>
+<p>In long soil stability data, each row represents one soil sample (i.e., ped). The minimum required variables are <a href="#primary-key">PrimaryKey</a>, <a href="#vegetative-cover-var">vegetative cover</a>, and <a href="#stability-ratings-var">stability ratings</a>.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="soil_data_minimum_example.png" class="img-fluid figure-img" alt="Example soil stability data in long format retrieved from the Landscape Data Commons"></p>
+<p></p><figcaption class="figure-caption">Example minimum soil stability data in long format retrieved from the Landscape Data Commons</figcaption><p></p>
+</figure>
 </div>
-<div id="height" class="section level3">
-<h3>Height</h3>
-<div id="statistic" class="section level4">
-<h4>Statistic</h4>
-<p>There are two available height statistics: mean and maximum. Both are
-calculated per-group, so by default they are the mean or maximum height
-value observed at a sampling location.</p>
+</section>
+</section>
+<section id="data-configuration" class="level2">
+<h2 class="anchored" data-anchor-id="data-configuration">Data configuration</h2>
+<section id="primary-key" class="level4">
+<h4 class="anchored" data-anchor-id="primary-key">PrimaryKey</h4>
+<p>This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called <code>PrimaryKey</code> then the tool will assume it contains PrimaryKeys.</p>
+</section>
+<section id="line-key-var" class="level4">
+<h4 class="anchored" data-anchor-id="line-key-var">LineKey</h4>
+<p>This must contain a unique value for each transect used during a sampling event. All records associated with that transect during that sampling event must have the same LineKey. Each transect in your data set should have a unique LineKey; non-unique LineKeys can result in calculation errors. If your data contain a variable called <code>LineKey</code> then the tool will assume it contains LineKeys.</p>
+</section>
+<section id="hit-codes-var" class="level4">
+<h4 class="anchored" data-anchor-id="hit-codes-var">Hit codes</h4>
+<p>In Line-Point Intercept, every record has an associated code corresponding to what the pin touched in that layer. This variable contains species codes as well as other codes, e.g., <code>S</code> for “soil” or <code>WL</code> for “woody litter”. See the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for information on valid codes. If your data contain a variable called <code>code</code> then the tool will assume it contains the hit codes.</p>
+</section>
+<section id="ordinal-hit-numbers-var" class="level4">
+<h4 class="anchored" data-anchor-id="ordinal-hit-numbers-var">Ordinal hit numbers</h4>
+<p>In Line-Point Intercept, every record has an ordinal number corresponding to where on a transect it was collected, e.g.&nbsp;all records from the first pin drop on a transect would have <code>1</code>, records from the second would have <code>2</code>, and so on. These must be the same for all records associated with a single pin drop. If your data contain a variable called <code>PointNbr</code> then the tool will assume it contains the ordinal hit numbers.</p>
+</section>
+<section id="layer-var" class="level4">
+<h4 class="anchored" data-anchor-id="layer-var">Layers</h4>
+<p>In Line-Point Intercept, every record has an associated layer indicating where it comes from in the vertical slice. For records corresponding to the uppermost canopy hit at a pin drop, the value must be <code>"TopCanopy"</code>. For all other canopy codes, the format is “Lower” plus an ordinal number, e.g.&nbsp;<code>"Lower1"</code> for the first record after the top canopy, <code>"Lower2"</code> for the next record, and so on. The bottom record for a pin drop, the surface hit, must have a value of <code>"SoilSurface"</code>. If your data contain a variable called <code>layer</code> then the tool will assume it contains the layer information.</p>
+</section>
+<section id="heights-var" class="level4">
+<h4 class="anchored" data-anchor-id="heights-var">Heights</h4>
+<p>With height data, each record has an associated numeric height value. This variable contains those data. If your data contain a variable called <code>Height</code> then the tool will assume it contains the height information.</p>
+</section>
+<section id="species" class="level4">
+<h4 class="anchored" data-anchor-id="species">Species</h4>
+<p>With height data, there must be an associated species with each height record. This variable should contain the species information, typically using species codes. If the height was 0 for a record (e.g., no woody plant qualified to be measured at a sampling point) then the value should be <code>"None"</code>. If your data contain a variable called <code>Species</code> then the tool will assume it contains the species information.</p>
+</section>
+<section id="line-lengths-var" class="level4">
+<h4 class="anchored" data-anchor-id="line-lengths-var">Line lengths</h4>
+<p>In gap calculations, the lengths of the lines/transects are critical. This variable must contain the line length for each transect in the same type of units as the <a href="#gap-size-var">gap size</a>, i.e., in meters if the gaps are recorded in centimeters and in feet if the gaps are recorded in inches. The value should be the same for all records from the same transect. If your data contain a variable called <code>LineLengthAmount</code> then the tool will assume it contains the line lengths.</p>
+</section>
+<section id="measurement-units-var" class="level4">
+<h4 class="anchored" data-anchor-id="measurement-units-var">Measurement units</h4>
+<p>In gap calculations, length unit type must be specified. For each record, this variable must contain either <code>1</code> if using metric units (centimeters for <a href="#gap-size-var">gap size</a> and meters for <a href="#line-lengths-var">line lengths</a>) or <code>2</code> if using imperial units (inches for <a href="#gap-size-var">gap size</a> and feet for <a href="#line-lengths-var">line lengths</a>). If your data contain a variable called <code>Measure</code> then the tool will assume it contains the unit type.</p>
+</section>
+<section id="type-of-gap-var" class="level4">
+<h4 class="anchored" data-anchor-id="type-of-gap-var">Type of gap</h4>
+<p>A gap data set may contain more than one type of gap: all canopy, perennial canopy only, and basal. This variable must contain the type of gap that each record represents. For gaps that take into account all canopy types, the value must be <code>"C"</code>; for perennial-only, <code>"P"</code>; and for basal, <code>"P"</code>. If your data contain a variable called <code>RecType</code> then the tool will assume it contains the type of gap.</p>
+</section>
+<section id="gap-size-var" class="level4">
+<h4 class="anchored" data-anchor-id="gap-size-var">Gap size</h4>
+<p>Each gap data record must represent one measured gap and include the size of the gap. This variable must contain a numeric value corresponding to the size of the gap in either centimeters or inches (see <a href="#measurement-units-var">measurement units</a>). If your data contain a variable called <code>Gap</code> then the tool will assume it contains the gap sizes.</p>
+</section>
+<section id="stability-ratings-var" class="level4">
+<h4 class="anchored" data-anchor-id="stability-ratings-var">Stability ratings</h4>
+<p>In soil stability data, every record must have a numeric rating. This variable contains that rating. If your data contain a variable called <code>Rating</code> then the tool will assume it contains the ratings.</p>
+</section>
+<section id="vegetative-cover-var" class="level4">
+<h4 class="anchored" data-anchor-id="vegetative-cover-var">Vegetative cover</h4>
+<p>In soil stability data, every record must have an associated vegetative cover designation. See the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for information on valid codes. If your data contain a variable called <code>Veg</code> then the tool will assume it contains the vegetative cover types.</p>
+</section>
+</section>
+<section id="indicator-configuration" class="level2">
+<h2 class="anchored" data-anchor-id="indicator-configuration">Indicator configuration</h2>
+<section id="lpi-config" class="level3">
+<h3 class="anchored" data-anchor-id="lpi-config">Line-Point Intercept</h3>
+<section id="lpi-hit-config" class="level4">
+<h4 class="anchored" data-anchor-id="lpi-hit-config">LPI hit</h4>
+<p>There are two options for which “hit” to calculate from with LPI data. When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using “any hit” then every layer is considered as contributing to cover while “first hit” only considers the topmost recorded hits and “basal hit” only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using “first hit” would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using “any hit” then the perennial forb would contribute to cover by perennial forbs <em>and</em> the annual grass would contribute to to cover by annual grasses.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="hit_type_figure_small.png" class="img-fluid figure-img"></p>
+<p></p><figcaption class="figure-caption">An example pin drop. Each hit record is labeled with the type of calculation (first, any, or basal) it would be included in.</figcaption><p></p>
+</figure>
 </div>
-</div>
-<div id="soil-stability" class="section level3">
-<h3>Soil Stability</h3>
-<div id="vegetative-cover-grouping" class="section level4">
-<h4>Vegetative cover grouping</h4>
-<p>Soil stability data includes the vegetative cover at the location
-where a soil sample was collected. The mean can be calculated in a few
-ways using vegetative cover. It can be summarized by considering:</p>
+<p>When using “first hit” or “basal hit” all your calculated cover values on a plot will sum to no more than 100%. When using “any hit” 100% is the minimum total cover possible; if any pin drops recorded more than one hit, then the sum of cover values will exceed 100%. “Any hit” is the default because it provides the most information from the data and doesn’t exclude any records, offering the most comprehensive characterization. “First hit” was added as an option for those working with remote sensing products who had requested something that might approximate the aerial or satellite view of the landscape, however it can be argued that “any hit” is in fact more representative.</p>
+</section>
+<section id="lpi-grouping-variables-config" class="level4">
+<h4 class="anchored" data-anchor-id="lpi-grouping-variables-config">Grouping variables</h4>
+<p>These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
+</section>
+<section id="lpi-summarization-unit-config" class="level4">
+<h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summary Unit</h4>
+<p>Cover can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line, especially if you have fewer than 100 records per line.</p>
+</section>
+<section id="lpi-output-format-config" class="level4">
+<h4 class="anchored" data-anchor-id="lpi-output-format-config">Output format</h4>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your indicator summary unit scale will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for the summary unit where they were not observed.</p>
+</section>
+</section>
+<section id="height-1" class="level3">
+<h3 class="anchored" data-anchor-id="height-1">Height</h3>
+<section id="height-omit-0-config" class="level4">
+<h4 class="anchored" data-anchor-id="height-omit-0-config">Omit 0 heights</h4>
+<p>Height records with a value of 0 may be excluded from calculations. If they are included, then the heights reported represent the summary unit on the whole whereas excluding 0 heights means that the reported values represent only the standing vegetation which was measured.</p>
+</section>
+<section id="height-grouping-variables-config" class="level4">
+<h4 class="anchored" data-anchor-id="height-grouping-variables-config">Grouping variables</h4>
+<p>These are additional variables beyond the sampling location to group the data by for calculating mean heights. The default behavior is to group by sampling location and calculate the mean or max height for that location. In order to calculate finer-grained height values, additional grouping variables need to be selected. For example, in order to calculate height by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in heights being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
+</section>
+<section id="height-summarization-unit-config" class="level4">
+<h4 class="anchored" data-anchor-id="height-summarization-unit-config">Summary unit</h4>
+<p>Mean heights can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line, especially if you have fewer than 30 records per line.</p>
+</section>
+<section id="height-output-format-config" class="level4">
+<h4 class="anchored" data-anchor-id="height-output-format-config">Output format</h4>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.</p>
+</section>
+</section>
+<section id="gap-1" class="level3">
+<h3 class="anchored" data-anchor-id="gap-1">Gap</h3>
+<section id="gap-breakpoints-config" class="level4">
+<h4 class="anchored" data-anchor-id="gap-breakpoints-config">Breakpoints</h4>
+<p>Gap data are classified into size classes and the indicators reported are percent of the sampling location composed of gaps in each size class. The break values define the minimum gap size and what values to split the data at. The values must be listed in ascending order and separated by commas. The first value acts as the minimum gap size while the maximum gap size is infinity. As an example, in order to calculate cover for three size classes, one from 20 cm to 50 cm, one for 51 to 100 cm, and one for greater than 100 cm, the breaks would be <code>20, 51, 101</code>.</p>
+</section>
+<section id="gap-type-config" class="level4">
+<h4 class="anchored" data-anchor-id="gap-type-config">Gap type</h4>
+<p>There are three available types of gap that can be calculated. They are:</p>
 <ul>
-<li><code>All</code> soil stability values regardless of what kind of
-vegetative cover the samples had</li>
-<li>For only those soil samples that had
-<code>perennial cover</code></li>
-<li>For only those soil samples that did not have perennial cover
-(considered <code>no cover</code>)</li>
-<li>All soil stability samples, but <code>by cover type</code>,
-producing a mean for each cover type</li>
+<li>Canopy - Gaps in canopy, considering both annual and perennial plants. This uses only records where the cover type variable value is <code>"C"</code></li>
+<li>Basal - Gaps between plant bases at the soil surface, considering both annual and perennial plants. This uses only records where cover type variable value is <code>"B"</code></li>
+<li>Perennial canopy - Gaps in canopy, considering only perennial plants. This uses only records where the cover type variable value is <code>"P"</code></li>
 </ul>
-</div>
-</div>
-</div>
+</section>
+<section id="gap-summarization-unit-config" class="level4">
+<h4 class="anchored" data-anchor-id="gap-summarization-unit-config">Summary unit</h4>
+<p>Gaps can be calculated by plot (each unique <a href="#primary-key">PrimaryKey</a> value) or by line (each unique combination of <a href="#primary-key">PrimaryKey</a> and <a href="#line-key-var">LineKey</a>). It is generally not recommended that you calculate by line because your plot is likely the unit of replication.</p>
+</section>
+<section id="gap-output-format-config" class="level4">
+<h4 class="anchored" data-anchor-id="gap-output-format-config">Output format</h4>
+<p>The output can be either long or wide. In long format, each row is represents one statistic for your summary unit, e.g., a row would be your summary unit, the gap size class, the statistic name, and the statistic value. In wide format, each row is a single summary unit and each statistic has a column.</p>
+</section>
+</section>
+<section id="soil-stability-1" class="level3">
+<h3 class="anchored" data-anchor-id="soil-stability-1">Soil Stability</h3>
+<section id="soil-veg-cover-grouping-config" class="level4">
+<h4 class="anchored" data-anchor-id="soil-veg-cover-grouping-config">Vegetative cover grouping</h4>
+<p>Soil stability data includes the vegetative cover at the location where a soil sample was collected. The mean can be calculated in a few ways using vegetative cover. It can be summarized by considering:</p>
+<ul>
+<li>For soil samples with <code>all cover types</code></li>
+<li>For only those soil samples that had <code>perennial cover</code></li>
+<li>For only those soil samples that did not have perennial cover (considered <code>no cover</code>)</li>
+<li>All soil stability samples, but <code>by cover type</code>, producing a mean for each cover type</li>
+</ul>
+</section>
+<section id="soil-output-format-config" class="level4">
+<h4 class="anchored" data-anchor-id="soil-output-format-config">Output format</h4>
+<p>The output can be either long or wide. In long format, each <em>observed</em> indicator is represented by a row. This means that if you have supplied <code>code</code> as your grouping variable, only those codes which appeared on your summary unit will have a row representing them. This is in contrast to wide format in which every possible indicator has a column in the results and they will have a value of 0 for summary units where they were not observed.</p>
+</section>
+</section>
+</section>
+<section id="citations" class="level2">
+<h2 class="anchored" data-anchor-id="citations">Citations</h2>
+<section id="suggested-citations" class="level3">
+<h3 class="anchored" data-anchor-id="suggested-citations">Suggested citations</h3>
+<p>McCord, S.E., J.R. Brehm, S.H. Burnett, B.L. Edwards, M. Hernandez-Narvaez, E. Kachergis, L.J. Metz, F. Pierson, K. S. Ramirez, N.G. Stauffer, N.P. Webb, C. E. Tweedie. A framework and toolset for standardizing ecosystem indicators. Ecological Indicators. In Press.</p>
+</section>
+<section id="packages" class="level3">
+<h3 class="anchored" data-anchor-id="packages">Packages</h3>
+<p>Sarah E. McCord, Joseph R. Brehm, and Nelson G. Stauffer (2022). terradactyl: Tools for Creating and Using TerrADat. R package version 0.1.5. <a href="https://github.com/Landscape-Data-Commons/terradactyl_tool">https://github.com/Landscape-Data-Commons/terradactyl</a></p>
+<p>Winston Chang, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges (2021). shiny: Web Application Framework for R. R package version 1.7.1. <a href="https://CRAN.R-project.org/package=shiny" class="uri">https://CRAN.R-project.org/package=shiny</a></p>
+<p>Hadley Wickham, Romain François, Lionel Henry, and Kirill Müller (2022). dplyr: A Grammar of Data Manipulation. R package version 1.0.8. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a></p>
+<p>Yihui Xie, Joe Cheng, and Xianying Tan (2022). DT: A Wrapper of the JavaScript Library ‘DataTables’. R package version 0.24. <a href="https://CRAN.R-project.org/package=DT" class="uri">https://CRAN.R-project.org/package=DT</a></p>
+<p>Hadley Wickham (2019). stringr: Simple, Consistent Wrappers for Common String Operations. R package version 1.4.0. <a href="https://CRAN.R-project.org/package=stringr" class="uri">https://CRAN.R-project.org/package=stringr</a></p>
+<p>John Coene (2021). tippy: Add Tooltips to ‘R markdown’ Documents or ‘Shiny’ Apps. R package version 0.1.0. <a href="https://CRAN.R-project.org/package=tippy" class="uri">https://CRAN.R-project.org/package=tippy</a></p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
 
 
 
-<!-- code folding -->
-
-
-
-</body>
-</html>
+</body></html>
