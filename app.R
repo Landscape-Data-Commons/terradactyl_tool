@@ -188,6 +188,21 @@ ui <- fluidPage(
                                                                          choices = c(""),
                                                                          selected = "",
                                                                          multiple = FALSE),
+                                                             checkboxInput(inputId = "add_generic_species",
+                                                                           label = "Include generic species codes"),
+                                                             conditionalPanel(condition = "input.add_generic_species",
+                                                                              selectInput(inputId = "growth_habit_var",
+                                                                                          label = "Growth habit variable in lookup table",
+                                                                                          choices = c(""),
+                                                                                          selected = "",
+                                                                                          multiple = FALSE),
+                                                                              selectInput(inputId = "duration_var",
+                                                                                          label = "Duration variable in lookup table",
+                                                                                          choices = c(""),
+                                                                                          selected = "",
+                                                                                          multiple = FALSE),
+                                                                              actionButton(inputId = "add_generic_species_button",
+                                                                                           label = "Add generic species codes to lookup table")),
                                                              conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
                                                                               actionButton(inputId = "join_species",
                                                                                            label = "Join species information to data"),
@@ -441,18 +456,47 @@ server <- function(input, output, session) {
                handlerExpr = {
                  current_species_data_vars <- names(workspace$species_data)
                  
+                 # For the joining variable
                  if ("code" %in% current_species_data_vars) {
                    selection <- "code"
                  } else {
                    selection <- ""
                  }
-                 
-                 
                  updateSelectInput(session = session,
                                    inputId = "species_joining_var",
                                    choices = c("",
                                                current_species_data_vars),
                                    selected = selection)
+                 
+                 # For the growth habit variable
+                 # We'll guess at the two most common options before giving up
+                 if ("GrowthHabitSub" %in% current_species_data_vars) {
+                   selection <- "GrowthHabitSub"
+                 } else if ("growth_habit" %in% current_species_data_vars) {
+                   selection <- "growth_habit"
+                 } else {
+                   selection <- ""
+                 }
+                 updateSelectInput(session = session,
+                                   inputId = "growth_habit_var",
+                                   choices = c("",
+                                               current_species_data_vars),
+                                   selected = selection)
+                 
+                 # For the duration variable
+                 if ("Duration" %in% current_species_data_vars) {
+                   selection <- "Duration"
+                 } else if ("duration" %in% current_species_data_vars) {
+                   selection <- "duration"
+                 } else {
+                   selection <- ""
+                 }
+                 updateSelectInput(session = session,
+                                   inputId = "duration_var",
+                                   choices = c("",
+                                               current_species_data_vars),
+                                   selected = selection)
+                 
                })
   
   ##### Fetching data from the LDC #####
@@ -511,16 +555,16 @@ server <- function(input, output, session) {
                        current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
                        
                        current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                                                     keys_vector = current_primary_keys,
-                                                     key_chunk_size = 100,
-                                                     key_count = length(current_primary_keys),
-                                                     FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                                                       min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                                                       max_index <- min(c(key_count, X * key_chunk_size))
-                                                       indices <- min_index:max_index
-                                                       paste(keys_vector[indices],
-                                                             collapse = ",")
-                                                     })
+                                                      keys_vector = current_primary_keys,
+                                                      key_chunk_size = 100,
+                                                      key_count = length(current_primary_keys),
+                                                      FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                        min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                        max_index <- min(c(key_count, X * key_chunk_size))
+                                                        indices <- min_index:max_index
+                                                        paste(keys_vector[indices],
+                                                              collapse = ",")
+                                                      })
                        
                        message("Retrieving data using PrimaryKey values from headers")
                        results <- tryCatch(fetch_ldc(keys = current_primary_keys,
@@ -539,16 +583,16 @@ server <- function(input, output, session) {
                      current_key_chunk_count <- ceiling(length(current_key_vector) / 100)
                      
                      current_keys_chunks <- sapply(X = 1:current_key_chunk_count,
-                                                    keys_vector = current_key_vector,
-                                                    key_chunk_size = 100,
-                                                    key_count = length(current_key_vector),
-                                                    FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                                                      min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                                                      max_index <- min(c(key_count, X * key_chunk_size))
-                                                      indices <- min_index:max_index
-                                                      paste(keys_vector[indices],
-                                                            collapse = ",")
-                                                    })
+                                                   keys_vector = current_key_vector,
+                                                   key_chunk_size = 100,
+                                                   key_count = length(current_key_vector),
+                                                   FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                     min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                     max_index <- min(c(key_count, X * key_chunk_size))
+                                                     indices <- min_index:max_index
+                                                     paste(keys_vector[indices],
+                                                           collapse = ",")
+                                                   })
                      
                      results <- tryCatch(fetch_ldc(keys = current_keys_chunks,
                                                    key_type = input$key_type,
@@ -838,6 +882,55 @@ server <- function(input, output, session) {
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
                                    selected = "Data")
+               })
+  
+  ##### When adding generic/unknown species #####
+  observeEvent(eventExpr = input$add_generic_species_button,
+               handlerExpr = {
+                 if (length(workspace$raw_data) < 1) {
+                   showNotification(ui = "You must upload or download data before generic species can be added.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "no_data_for_generics_error",
+                                    type = "error")
+                 } else if (input$species_joining_var == "" | input$data_joining_var == "") {
+                   showNotification(ui = "You must identify the variable containing species codes in both your data and species list before generic species can be added.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "no_data_for_generics_error",
+                                    type = "error")
+                 } else if (input$growth_habit_var == "" | input$duration_var == "") {
+                   showNotification(ui = "You must specify the growth habit and duration variables in order to add generic species codes.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    type = "error",
+                                    id = "undefined_unknown_vars_error")
+                 } else {
+                   # In case there are generic codes to accommodate
+                   species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
+                                                                                           data_code = input$data_joining_var,
+                                                                                           species_list = workspace$species_data,
+                                                                                           species_code = input$species_joining_var,
+                                                                                           species_growth_habit_code = input$growth_habit_var,
+                                                                                           species_duration = input$duration_var))
+                   # Make sure that the growth habit and duration information is
+                   # in the correct variables
+                   # Which indices have the attributed generic codes?
+                   unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
+                   
+                   # At those indices, write in the growth habit and duration info
+                   # from the default variables to the user's selected variables
+                   if (any(unknown_indices)) {
+                     species_list_with_generics[[input$growth_habit_var]][unknown_indices] <- as.character(species_list_with_generics[["GrowthHabitSub"]][unknown_indices])
+                     species_list_with_generics[[input$duration_var]][unknown_indices] <- as.character(species_list_with_generics[["Duration"]][unknown_indices])
+                   }
+                   
+                   # Reduce to only the variables we had coming into this
+                   species_list_with_generics <- select(species_list_with_generics,
+                                                        names(workspace$species_data))
+                   
+                   workspace$species_data <- species_list_with_generics
+                 }
                })
   
   ##### When join_species is clicked #####
