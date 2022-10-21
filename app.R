@@ -1244,6 +1244,9 @@ server <- function(input, output, session) {
                                     id = "undefined_unknown_vars_error")
                  } else {
                    # In case there are generic codes to accommodate
+                   message("Getting ready to add generic codes")
+                   message(paste0("length(workspace$data) is ",
+                                  length(workspace$data)))
                    species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
                                                                                            data_code = input$data_joining_var,
                                                                                            species_list = workspace$species_data,
