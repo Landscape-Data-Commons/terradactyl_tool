@@ -88,3 +88,4 @@ test_geodatabase.gdb/gdb
 test_geodatabase.gdb/timestamps
 test_shapefiles.zip
 test_shapefiles_bad.zip
+jer_boundary.zip
