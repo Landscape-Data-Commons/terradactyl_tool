@@ -3,6 +3,7 @@ library(dplyr)
 library(DT)
 library(stringr)
 library(tippy)
+library(leaflet)
 source("functions.R")
 
 # Define UI for application
@@ -327,6 +328,9 @@ ui <- fluidPage(
                            actionButton(inputId = "reset_data",
                                         label = "Reset data"),
                            DT::dataTableOutput(outputId = "data")),
+                  tabPanel(title = "Map",
+                           leaflet::leafletOutput(outputId = "map",
+                                                  height = "80vh")),
                   tabPanel(title = "Results",
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
@@ -352,7 +356,10 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              mapping_header_sf = NULL,
+                              mapping_polygons = NULL,
                               header_sf = NULL,
+                              polygons = NULL,
                               default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data_fresh = TRUE,
                               data = NULL,
@@ -539,6 +546,34 @@ server <- function(input, output, session) {
                  }
                })
   
+  #### Mapping freshly uploaded polygons ####
+  observeEvent(eventExpr = {input$polygons_layer},
+               handlerExpr = {
+                 if (input$polygons_layer != "") {
+                   message("Reading in polygons")
+                   if (workspace$polygon_filetype == "gdb") {
+                     workspace$mapping_polygons <- sf::st_read(dsn = workspace$gdb_filepath,
+                                                       layer = input$polygons_layer)
+                   } else if (workspace$polygon_filetype == "shp") {
+                     workspace$mapping_polygons <- sf::st_read(dsn = input$polygons_layer)
+                   }
+                   message("Making sure the polygons are in NAD83")
+                   workspace$mapping_polygons <- sf::st_transform(workspace$mapping_polygons,
+                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                   
+                   # If they've asked us to "repair" polygons, buffer by 0
+                   if (input$repair_polygons) {
+                     message("Attempting to repair polygons by buffering by 0")
+                     workspace$mapping_polygons <- sf::st_buffer(x = workspace$mapping_polygons,
+                                                         dist = 0)
+                   }
+                 }
+                 # message("Jumping to map tab")
+                 # updateTabsetPanel(session = session,
+                 #                   inputId = "maintabs",
+                 #                   selected = "Map")
+               })
+  
   ##### CSV upload handling #####
   # When input$raw_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$raw_data,
@@ -682,6 +717,8 @@ server <- function(input, output, session) {
                  message("Data source set to LDC")
                  
                  if (input$query_method == "keys") {
+                   message("Nullifying workspace$mapping_polygons for mapping reasons")
+                   workspace$mapping_polygons <- NULL
                    message("Querying by keys")
                    # Only do anything if there's at least one key
                    if (input$keys != "") {
@@ -774,8 +811,54 @@ server <- function(input, output, session) {
                                                   replacement = "")
                                            })
                      }
-                    
-                    
+                     message("Getting current headers for mapping")
+                     current_primarykeys <- unique(results$PrimaryKey)
+                     current_primarykey_chunk_count <- ceiling(length(current_key_vector) / 100)
+                     
+                     current_primarykeys_chunks <- sapply(X = 1:current_primarykey_chunk_count,
+                                                          keys_vector = current_primarykeys,
+                                                          key_chunk_size = 100,
+                                                          key_count = length(current_primarykeys),
+                                                          FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                            min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                            max_index <- min(c(key_count, X * key_chunk_size))
+                                                            indices <- min_index:max_index
+                                                            paste(keys_vector[indices],
+                                                                  collapse = ",")
+                                                          })
+                     message("Actually fetching current headers based on PrimaryKeys")
+                     current_headers <- tryCatch(fetch_ldc(keys = current_primarykeys_chunks,
+                                                           key_type = "PrimaryKey",
+                                                           data_type = "header",
+                                                           verbose = TRUE),
+                                                 error = function(error){
+                                                   gsub(x = error,
+                                                        pattern = "^Error.+[ ]:[ ]",
+                                                        replacement = "")
+                                                 })
+                     
+                     message(paste0("class(current_headers) is: ",
+                                    paste(class(current_headers),
+                                          collapse = ", ")))
+                     if ("character" %in% class(current_headers)) {
+                       showNotification(ui = paste0("Encountered the following API error: ",
+                                                    current_headers),
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        type = "error",
+                                        id = "api_headers_error")
+                     } else if ("data.frame" %in% class(current_headers)) {
+                       message("Converting header info to sf object")
+                       current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                          coords = c("Longitude_NAD83",
+                                                                     "Latitude_NAD83"),
+                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                       
+                       # This'll be useful so I can make a map
+                       workspace$mapping_header_sf <- current_headers_sf
+                     }
+                     
+                     
                      # So we can tell the user later which actually got queried
                      if (is.null(results)) {
                        message("No data from LDC!")
@@ -895,6 +978,10 @@ server <- function(input, output, session) {
                      message("Adding unique_id variable to workspace$polygons")
                      workspace$polygons[["unique_id"]] <- 1:nrow(workspace$polygons)
                      
+                     # For mapping purposes
+                     message("Updating workspace$mapping_polygons")
+                     workspace$mapping_polygons <- workspace$polygons
+                     
                      if (is.null(workspace$headers)) {
                        message("Retrieving headers")
                        workspace$headers <- tryCatch(fetch_ldc(keys = NULL,
@@ -933,11 +1020,12 @@ server <- function(input, output, session) {
                        
                        # This'll be useful so I can make a map, if that feature is added
                        workspace$header_sf <- current_headers_sf
+                       workspace$mapping_header_sf <- current_headers_sf
                        
                        message("Performing sf_intersection()")
                        points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
-                                                                                            y = sf::st_transform(workspace$polygons[, "unique_id"],
-                                                                                                                 crs = sf::st_crs(current_headers_sf))),
+                                                                                    y = sf::st_transform(workspace$polygons[, "unique_id"],
+                                                                                                         crs = sf::st_crs(current_headers_sf))),
                                                                 error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
                        
                        if ("character" %in% class(points_polygons_intersection)) {
@@ -990,6 +1078,9 @@ server <- function(input, output, session) {
                          
                          # Only keep going if there are results!!!!
                          if (length(results) > 0 & "data.frame" %in% class(results)) {
+                           message("Making workspace$mapping_header_sf")
+                           workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
+                           
                            message("Coercing variables to numeric.")
                            # Convert from character to numeric variables where possible
                            data_corrected <- lapply(X = names(results),
@@ -1163,7 +1254,7 @@ server <- function(input, output, session) {
                          selected_var <- ""
                        }
                        
-                       message(paste0("Selected variable is ", selected_var))
+                       message(paste0("Selected variable is '", selected_var, "'"))
                        
                        updateSelectInput(inputId = inputid_string,
                                          choices = current_data_vars,
@@ -1397,22 +1488,6 @@ server <- function(input, output, session) {
   
   
   ##### When update vars button is pressed #####
-  # Vestigial, but annoying to recreate if I need it, so storing it here
-  # c(input$primarykey_var,
-  #   input$linekey_var,
-  #   input$code_var,
-  #   input$pointnbr_var,
-  #   input$layer_var,
-  #   input$linelengthamount_var,
-  #   input$measure_var,
-  #   input$rectype_var,
-  #   input$gap_var,
-  #   input$height_var,
-  #   input$species_var,
-  #   input$rating_var,
-  #   input$veg_var)
-  
-  
   observeEvent(eventExpr = input$update_data_vars,
                handlerExpr = {
                  # Let's update the variables in workspace$data
@@ -1437,7 +1512,52 @@ server <- function(input, output, session) {
                  }
                })
   
-  
+  ##### When mapping elements update #####
+  observeEvent(eventExpr = list(workspace$mapping_header_sf,
+                                workspace$mapping_polygons),
+               handlerExpr = {
+                 message("Initializing a fresh map")
+                 # Initialize the map
+                 map <- leaflet::leaflet()
+                 
+                 # Add some basic info
+                 map <- leaflet::addTiles(map = map)
+                 
+                 # Add the polygons
+                 message("Checking to see if !is.null(workspace$mapping_polygons)")
+                 if (!is.null(workspace$mapping_polygons)) {
+                   message("!is.null(workspace$mapping_polygons) was TRUE")
+                   # Note that we have to manually remove Z dimensions with sf::st_zm()
+                   # otherwise if there's a Z dimension this fails with an
+                   # inscrutable error.
+                   map <- leaflet::addPolygons(map = map,
+                                               data = sf::st_transform(x = sf::st_zm(workspace$mapping_polygons),
+                                                                       crs = "+proj=longlat +datum=WGS84"),
+                                               fillColor = "coral",
+                                               stroke = FALSE,
+                                               fillOpacity = 0.5)
+                 }
+                 
+                 # Add in the retrieved points
+                 message("Checking to see if !is.null(workspace$mapping_header_sf)")
+                 if (!is.null(workspace$mapping_header_sf)) {
+                   message("!is.null(workspace$mapping_header_sf) was TRUE")
+                   map <- leaflet::addCircleMarkers(map = map,
+                                                    data = sf::st_transform(x = workspace$mapping_header_sf,
+                                                                            crs = "+proj=longlat +datum=WGS84"),
+                                                    stroke = TRUE,
+                                                    opacity = 0.9,
+                                                    color = "white",
+                                                    weight = 1,
+                                                    fillColor = "gray20",
+                                                    fillOpacity = 1,
+                                                    radius = 3)
+                 }
+                 
+                 message("Rendering map")
+                 output$map <- leaflet::renderLeaflet(map)
+                 message("Map rendered")
+               })
   
   ##### Calculating #####
   observeEvent(eventExpr = input$calculate_button,
