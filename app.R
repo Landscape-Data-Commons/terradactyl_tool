@@ -181,8 +181,6 @@ ui <- fluidPage(
                                             selectInput(inputId = "veg_var",
                                                         label = "Variable containing vegetative cover type",
                                                         choices = c(""))),
-                           actionButton(inputId = "update_data_vars",
-                                        label = "Update data variables"),
                            hr(),
                            # Species lookup table stuff
                            conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
@@ -1307,6 +1305,21 @@ server <- function(input, output, session) {
                    current_data_vars <- names(workspace$data)
                    missing_data_vars <- current_required_vars[!(current_required_vars %in% current_data_vars)]
                    
+                   # Which required variable names are currently "" in the
+                   # data configuration tab?
+                   current_required_vars_input_vars <- paste0(current_required_vars,
+                                                             "_var")
+                   undefined_data_vars_indices <- unlist(sapply(X = current_required_vars_input_vars,
+                                                                inputs = input,
+                                                                current_available_vars = current_data_vars,
+                                                                FUN = function(X, inputs, current_available_vars) {
+                                                                  current_value <- eval(parse(text = paste0("inputs$",
+                                                                                                            X)))
+                                                                  current_value %in% c("")
+                                                                }))
+                   missing_data_vars <- missing_data_vars[!(missing_data_vars %in% current_required_vars[!undefined_data_vars_indices])]
+
+                   
                    if (length(missing_data_vars) > 0) {
                      message("Missing one or more required variables.")
                      missing_vars_notification <- paste0("The following required variables are missing: ",
@@ -1538,31 +1551,6 @@ server <- function(input, output, session) {
                })
   
   
-  ##### When update vars button is pressed #####
-  observeEvent(eventExpr = input$update_data_vars,
-               handlerExpr = {
-                 # Let's update the variables in workspace$data
-                 # This just looks at the required variables for the current data type
-                 all_required_variables <- workspace$required_vars[[input$data_type]]
-                 
-                 for (required_var in all_required_variables) {
-                   inputid_string <- paste0(tolower(required_var),
-                                            "_var")
-                   current_var_value <- input[[inputid_string]]
-                   
-                   if (current_var_value != "") {
-                     message(paste0("Writing contents of worskpace$data$",
-                                    current_var_value,
-                                    " to workspace$data$",
-                                    required_var))
-                     workspace$data[[required_var]] <- workspace$data[[current_var_value]]
-                   } else {
-                     message(paste0("No variable identified for ",
-                                    required_var))
-                   }
-                 }
-               })
-  
   ##### When mapping elements update #####
   observeEvent(eventExpr = list(workspace$mapping_header_sf,
                                 workspace$mapping_polygons),
@@ -1613,182 +1601,242 @@ server <- function(input, output, session) {
   ##### Calculating #####
   observeEvent(eventExpr = input$calculate_button,
                handlerExpr = {
+                 message("Prepping for calculation")
+                 # So we can check to make sure they've defined variables
+                 all_required_variables <- workspace$required_vars[[input$data_type]]
+                 required_vars_input_variables <- paste0(tolower(all_required_variables),
+                                                         "_var")
+                 message("Getting current required variable names")
+                 # Can't index reactivevalues with brackets????
+                 # Hacky workaround!
+                 current_variable_values <- unlist(sapply(X = required_vars_input_variables,
+                                                          inputs = input,
+                                                          FUN = function(X, inputs) {
+                                                            eval(parse(text = paste0("inputs$",
+                                                                                     X)))
+                                                          }))
                  
                  if (is.null(workspace$data)) {
-                   showNotification(ui = "Data are not yet ready for calculation.",
+                   message("No data! Can't calculate.")
+                   showNotification(ui = "No data found. Please upload or download data.",
                                     duration = NULL,
                                     closeButton = TRUE,
                                     type = "error")
+                 } else if (any(current_variable_values == "")) {
+                   message("Missing required variable names! Can't calculate.")
+                   showNotification(ui = "Not all required variables are defined. Please update those under 'Data configuration'.",
+                                    id = "missing_required_vars_error",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    type = "error")
+                   
                  } else {
+                   message("Should be good to go. Calculating!")
                    showNotification(ui = "Calculating!",
                                     id = "calculating",
                                     duration = NULL,
                                     closeButton = FALSE,
                                     type = "message")
-                 }
-                 message("Calculating!")
-                 switch(input$data_type,
-                        "lpi" = {
-                          message("Calculating cover from LPI.")
-                          # Handle the grouping variables (if any)!
-                          message("input$lpi_grouping_vars is:")
-                          message(input$lpi_grouping_vars)
-                          
-                          current_lpi_grouping_vars <- input$lpi_grouping_vars
-                          current_lpi_grouping_vars <- current_lpi_grouping_vars[!(current_lpi_grouping_vars %in% c(""))]
-                          
-                          if (length(current_lpi_grouping_vars) > 0) {
-                            lpi_grouping_vars_vector <- current_lpi_grouping_vars
+                   
+                   message("Copying workspace$data to workspace$calc_data")
+                   workspace$calc_data <- workspace$data
+                   message("Updating variables in workspace$calc_data to match terradactyl expectations")
+                   # Let's update the variables in workspace$calc_data
+                   # This just looks at the required variables for the current data type
+                   all_required_variables <- workspace$required_vars[[input$data_type]]
+                   
+                   for (required_var in all_required_variables) {
+                     inputid_string <- paste0(tolower(required_var),
+                                              "_var")
+                     current_var_value <- input[[inputid_string]]
+                     
+                     if (current_var_value != "") {
+                       message(paste0("Writing contents of worskpace$calc_data$",
+                                      current_var_value,
+                                      " to workspace$data$",
+                                      required_var))
+                       workspace$calc_data[[required_var]] <- workspace$calc_data[[current_var_value]]
+                     } else {
+                       message(paste0("No variable identified for ",
+                                      required_var))
+                     }
+                   }
+                   
+                   message("Calculating!")
+                   switch(input$data_type,
+                          "lpi" = {
+                            message("Calculating cover from LPI.")
+                            # Handle the grouping variables (if any)!
+                            message("input$lpi_grouping_vars is:")
+                            message(input$lpi_grouping_vars)
                             
-                            message("There are grouping variables.")
-                            current_lpi_vars <- names(workspace$data)
-                            missing_lpi_grouping_vars <- lpi_grouping_vars_vector[!(lpi_grouping_vars_vector %in% current_lpi_vars)]
-                            available_lpi_grouping_vars <- lpi_grouping_vars_vector[lpi_grouping_vars_vector %in% current_lpi_vars]
+                            current_lpi_grouping_vars <- input$lpi_grouping_vars
+                            current_lpi_grouping_vars <- current_lpi_grouping_vars[!(current_lpi_grouping_vars %in% c(""))]
                             
-                            if (length(missing_lpi_grouping_vars) < 1) {
-                              message("No variables missing!")
-                              lpi_cover_string <- paste0("terradactyl::pct_cover(",
-                                                         "lpi_tall = workspace$data,",
-                                                         "tall = input$lpi_output_format == 'long',",
-                                                         "hit = input$lpi_hit,",
-                                                         "by_line = input$lpi_unit == 'line',",
-                                                         paste(lpi_grouping_vars_vector,
-                                                               collapse = ","),
-                                                         ")")
+                            if (length(current_lpi_grouping_vars) > 0) {
+                              lpi_grouping_vars_vector <- current_lpi_grouping_vars
+                              
+                              message("There are grouping variables.")
+                              current_lpi_vars <- names(workspace$calc_data)
+                              missing_lpi_grouping_vars <- lpi_grouping_vars_vector[!(lpi_grouping_vars_vector %in% current_lpi_vars)]
+                              available_lpi_grouping_vars <- lpi_grouping_vars_vector[lpi_grouping_vars_vector %in% current_lpi_vars]
+                              
+                              if (length(missing_lpi_grouping_vars) < 1) {
+                                message("No variables missing!")
+                                lpi_cover_string <- paste0("terradactyl::pct_cover(",
+                                                           "lpi_tall = workspace$calc_data,",
+                                                           "tall = input$lpi_output_format == 'long',",
+                                                           "hit = input$lpi_hit,",
+                                                           "by_line = input$lpi_unit == 'line',",
+                                                           paste(lpi_grouping_vars_vector,
+                                                                 collapse = ","),
+                                                           ")")
+                              } else {
+                                message("Missing one or more variables.")
+                                missing_lpi_grouping_vars_warning <- paste0("The following variables are missing: ",
+                                                                            paste(missing_lpi_grouping_vars,
+                                                                                  collapse = ", "),
+                                                                            ". Results will be calculated without grouping.")
+                                showNotification(ui = missing_lpi_grouping_vars_warning,
+                                                 duration = NULL,
+                                                 closeButton = TRUE,
+                                                 id = "missing_lpi_grouping_vars",
+                                                 type = "warning")
+                                lpi_cover_string <- paste0("terradactyl::pct_cover(",
+                                                           "lpi_tall = workspace$calc_data,",
+                                                           "tall = input$lpi_output_format == 'long',",
+                                                           "hit = input$lpi_hit,",
+                                                           "by_line = input$lpi_unit == 'line'",
+                                                           ")")
+                              }
+                              
                             } else {
-                              message("Missing one or more variables.")
-                              missing_lpi_grouping_vars_warning <- paste0("The following variables are missing: ",
-                                                                          paste(missing_lpi_grouping_vars,
-                                                                                collapse = ", "),
-                                                                          ". Results will be calculated without grouping.")
-                              showNotification(ui = missing_lpi_grouping_vars_warning,
-                                               duration = NULL,
-                                               closeButton = TRUE,
-                                               id = "missing_lpi_grouping_vars",
-                                               type = "warning")
+                              message("No grouping variables.")
                               lpi_cover_string <- paste0("terradactyl::pct_cover(",
-                                                         "lpi_tall = workspace$data,",
+                                                         "lpi_tall = workspace$calc_data,",
                                                          "tall = input$lpi_output_format == 'long',",
                                                          "hit = input$lpi_hit,",
                                                          "by_line = input$lpi_unit == 'line'",
                                                          ")")
                             }
                             
-                          } else {
-                            message("No grouping variables.")
-                            lpi_cover_string <- paste0("terradactyl::pct_cover(",
-                                                       "lpi_tall = workspace$data,",
-                                                       "tall = input$lpi_output_format == 'long',",
-                                                       "hit = input$lpi_hit,",
-                                                       "by_line = input$lpi_unit == 'line'",
-                                                       ")")
-                          }
-                          
-                          message("The function call is:")
-                          message(lpi_cover_string)
-                          workspace$results <- eval(parse(text = lpi_cover_string))
-                        },
-                        "gap" = {
-                          message("Calculating gaps.")
-                          current_gap_breaks <- stringr::str_split(string = input$gap_breaks,
-                                                                   pattern = ",",
-                                                                   simplify = TRUE)
-                          current_gap_breaks <- as.numeric(trimws(current_gap_breaks))
-                          
-                          if (any(is.na(current_gap_breaks))) {
-                            message("At least one of the gap breakpoints isn't numeric!")
-                            showNotification(ui = "One or more of the gap breakpoints is non-numeric. Please provide the gap breaks separated by commas.",
-                                             duration = NA,
-                                             closeButton = TRUE,
-                                             id = "bad_gap_breaks")
-                          } else {
-                            message("Gap breaks are all good!")
-                            message("Calcaulating gap")
-                            gap_results <- terradactyl::gap_cover(gap_tall = workspace$data,
-                                                                  tall = input$gap_output_format == "long",
-                                                                  breaks = current_gap_breaks,
-                                                                  type = input$gap_type,
-                                                                  by_line = (input$gap_unit == "line"))
-                          }
-                          
-                          message("Gaps calculated")
-                          # Apparently gap_cover() returns a list of data frames
-                          # when tall = FALSE so let's combine them
-                          if (input$gap_output_format == "wide") {
-                            # First up is to rename the variables using the stats
-                            for (index in seq_len(length(gap_results))) {
-                              current_stat <- names(gap_results)[index]
-                              current_vars <- names(gap_results[[index]])
-                              gap_class_var_indices <- grepl(current_vars,
-                                                             pattern = "\\d|NoGap")
-                              gap_class_vars <- current_vars[gap_class_var_indices]
-                              names(gap_results[[index]])[gap_class_var_indices] <- paste0(gap_class_vars,
-                                                                                           "_",
-                                                                                           current_stat)
-                            }
-                            # Then mash them together
-                            workspace$results <- Reduce(f = dplyr::full_join,
-                                                        x = gap_results)
-                          } else {
-                            # If the results are long, we're already ready to go
-                            workspace$results <- gap_results
-                          }
-                        },
-                        "height" = {
-                          message("Handling grouping variables")
-                          # Handle the grouping variables (if any)!
-                          height_grouping_vars_vector <- stringr::str_split(string = input$height_grouping_vars,
-                                                                            pattern = ",",
-                                                                            simplify = TRUE)
-                          height_grouping_vars_vector <- as.vector(height_grouping_vars_vector)
-                          height_grouping_vars_vector <- trimws(height_grouping_vars_vector)
-                          
-                          # Total bandaid
-                          if (length(height_grouping_vars_vector) < 1) {
-                            height_grouping_vars_vector <- ""
-                          }
-                          
-                          message(paste0("Current height_grouping_vars_vector is: ",
-                                         paste(height_grouping_vars_vector,
-                                               collapse = ", ")))
-                          message(paste0("The length of height_grouping_vars_vector is ",
-                                         length(height_grouping_vars_vector)))
-                          
-                          height_by_line <- input$height_unit == "line"
-                          output_tall <- input$height_output_format == "long"
-                          
-                          if (height_grouping_vars_vector != "") {
-                            message("There are grouping variables!")
-                            current_height_vars <- names(workspace$data)
-                            missing_height_grouping_vars <- height_grouping_vars_vector[!(height_grouping_vars_vector %in% current_height_vars)]
-                            available_height_grouping_vars <- height_grouping_vars_vector[height_grouping_vars_vector %in% current_height_vars]
-                            message(paste0("missing_height_grouping_vars is currently: ",
-                                           paste(missing_height_grouping_vars,
-                                                 collapse = ", ")))
+                            message("The function call is:")
+                            message(lpi_cover_string)
+                            workspace$results <- eval(parse(text = lpi_cover_string))
+                          },
+                          "gap" = {
+                            message("Calculating gaps.")
+                            current_gap_breaks <- stringr::str_split(string = input$gap_breaks,
+                                                                     pattern = ",",
+                                                                     simplify = TRUE)
+                            current_gap_breaks <- as.numeric(trimws(current_gap_breaks))
                             
-                            if (length(missing_height_grouping_vars) < 1) {
-                              height_cover_string <- paste0("terradactyl::mean_height(",
-                                                            "height_tall = workspace$data,",
-                                                            "method = 'mean',",
-                                                            "omit_zero = input$height_omit_zero,",
-                                                            "by_line = height_by_line,",
-                                                            "tall = output_tall,",
-                                                            paste(height_grouping_vars_vector,
-                                                                  collapse = ","),
-                                                            ")"
-                              )
-                            } else {
-                              missing_height_grouping_vars_warning <- paste0("The following variables are missing: ",
-                                                                             paste(missing_height_grouping_vars,
-                                                                                   collapse = ", "),
-                                                                             ". Results will be calculated without grouping.")
-                              showNotification(ui = missing_height_grouping_vars_warning,
-                                               duration = NULL,
+                            if (any(is.na(current_gap_breaks))) {
+                              message("At least one of the gap breakpoints isn't numeric!")
+                              showNotification(ui = "One or more of the gap breakpoints is non-numeric. Please provide the gap breaks separated by commas.",
+                                               duration = NA,
                                                closeButton = TRUE,
-                                               id = "missing_height_grouping_vars",
-                                               type = "warning")
+                                               id = "bad_gap_breaks")
+                            } else {
+                              message("Gap breaks are all good!")
+                              message("Calcaulating gap")
+                              gap_results <- terradactyl::gap_cover(gap_tall = workspace$calc_data,
+                                                                    tall = input$gap_output_format == "long",
+                                                                    breaks = current_gap_breaks,
+                                                                    type = input$gap_type,
+                                                                    by_line = (input$gap_unit == "line"))
+                            }
+                            
+                            message("Gaps calculated")
+                            # Apparently gap_cover() returns a list of data frames
+                            # when tall = FALSE so let's combine them
+                            if (input$gap_output_format == "wide") {
+                              # First up is to rename the variables using the stats
+                              for (index in seq_len(length(gap_results))) {
+                                current_stat <- names(gap_results)[index]
+                                current_vars <- names(gap_results[[index]])
+                                gap_class_var_indices <- grepl(current_vars,
+                                                               pattern = "\\d|NoGap")
+                                gap_class_vars <- current_vars[gap_class_var_indices]
+                                names(gap_results[[index]])[gap_class_var_indices] <- paste0(gap_class_vars,
+                                                                                             "_",
+                                                                                             current_stat)
+                              }
+                              # Then mash them together
+                              workspace$results <- Reduce(f = dplyr::full_join,
+                                                          x = gap_results)
+                            } else {
+                              # If the results are long, we're already ready to go
+                              workspace$results <- gap_results
+                            }
+                          },
+                          "height" = {
+                            message("Handling grouping variables")
+                            # Handle the grouping variables (if any)!
+                            height_grouping_vars_vector <- stringr::str_split(string = input$height_grouping_vars,
+                                                                              pattern = ",",
+                                                                              simplify = TRUE)
+                            height_grouping_vars_vector <- as.vector(height_grouping_vars_vector)
+                            height_grouping_vars_vector <- trimws(height_grouping_vars_vector)
+                            
+                            # Total bandaid
+                            if (length(height_grouping_vars_vector) < 1) {
+                              height_grouping_vars_vector <- ""
+                            }
+                            
+                            message(paste0("Current height_grouping_vars_vector is: ",
+                                           paste(height_grouping_vars_vector,
+                                                 collapse = ", ")))
+                            message(paste0("The length of height_grouping_vars_vector is ",
+                                           length(height_grouping_vars_vector)))
+                            
+                            height_by_line <- input$height_unit == "line"
+                            output_tall <- input$height_output_format == "long"
+                            
+                            if (height_grouping_vars_vector != "") {
+                              message("There are grouping variables!")
+                              current_height_vars <- names(workspace$calc_data)
+                              missing_height_grouping_vars <- height_grouping_vars_vector[!(height_grouping_vars_vector %in% current_height_vars)]
+                              available_height_grouping_vars <- height_grouping_vars_vector[height_grouping_vars_vector %in% current_height_vars]
+                              message(paste0("missing_height_grouping_vars is currently: ",
+                                             paste(missing_height_grouping_vars,
+                                                   collapse = ", ")))
+                              
+                              if (length(missing_height_grouping_vars) < 1) {
+                                height_cover_string <- paste0("terradactyl::mean_height(",
+                                                              "height_tall = workspace$calc_data,",
+                                                              "method = 'mean',",
+                                                              "omit_zero = input$height_omit_zero,",
+                                                              "by_line = height_by_line,",
+                                                              "tall = output_tall,",
+                                                              paste(height_grouping_vars_vector,
+                                                                    collapse = ","),
+                                                              ")"
+                                )
+                              } else {
+                                missing_height_grouping_vars_warning <- paste0("The following variables are missing: ",
+                                                                               paste(missing_height_grouping_vars,
+                                                                                     collapse = ", "),
+                                                                               ". Results will be calculated without grouping.")
+                                showNotification(ui = missing_height_grouping_vars_warning,
+                                                 duration = NULL,
+                                                 closeButton = TRUE,
+                                                 id = "missing_height_grouping_vars",
+                                                 type = "warning")
+                                height_cover_string <- paste0("terradactyl::mean_height(",
+                                                              "height_tall = workspace$calc_data,",
+                                                              "method = 'mean',",
+                                                              "omit_zero = input$height_omit_zero,",
+                                                              "by_line = height_by_line,",
+                                                              "tall = output_tall",
+                                                              ")"
+                                )
+                              }
+                              
+                            } else {
+                              message("No grouping vars!")
                               height_cover_string <- paste0("terradactyl::mean_height(",
-                                                            "height_tall = workspace$data,",
+                                                            "height_tall = workspace$calc_data,",
                                                             "method = 'mean',",
                                                             "omit_zero = input$height_omit_zero,",
                                                             "by_line = height_by_line,",
@@ -1796,47 +1844,46 @@ server <- function(input, output, session) {
                                                             ")"
                               )
                             }
+                            message("The function call is:")
+                            message(height_cover_string)
+                            message("Parsing")
+                            workspace$results <- eval(parse(text = height_cover_string))
+                            message("Parsed")
                             
-                          } else {
-                            message("No grouping vars!")
-                            height_cover_string <- paste0("terradactyl::mean_height(",
-                                                          "height_tall = workspace$data,",
-                                                          "method = 'mean',",
-                                                          "omit_zero = input$height_omit_zero,",
-                                                          "by_line = height_by_line,",
-                                                          "tall = output_tall",
-                                                          ")"
-                            )
-                          }
-                          message("The function call is:")
-                          message(height_cover_string)
-                          message("Parsing")
-                          workspace$results <- eval(parse(text = height_cover_string))
-                          message("Parsed")
-                          
-                        },
-                        "soilstability" = {
-                          message("Calculating soil stability")
-                          workspace$results <- terradactyl::soil_stability(soil_stability_tall = workspace$data,
-                                                                           all = "all" %in% input$soil_covergroups,
-                                                                           cover = "covered" %in% input$soil_covergroups,
-                                                                           uncovered = "uncovered" %in% input$soil_covergroups,
-                                                                           all_cover_type = "by_type" %in% input$soil_covergroups,
-                                                                           tall = input$soil_output_format == "long")
-                        })
-                 # Just in case there are row names (which shouldn't be there)
-                 row.names(workspace$results) <- NULL
-                 
-                 # Let's update the variable names to reflect what they came in as
-                 current_results_vars <- names(workspace$results)
-                 current_required_vars <- workspace$required_vars[[input$data_type]]
-                 
-                 for (required_var in current_required_vars) {
-                   input_variable_name <- paste0(tolower(required_var),
-                                                 "_var")
-                   incoming_variable_name <- input[[input_variable_name]]
-                   names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                          },
+                          "soilstability" = {
+                            message("Calculating soil stability")
+                            workspace$results <- terradactyl::soil_stability(soil_stability_tall = workspace$calc_data,
+                                                                             all = "all" %in% input$soil_covergroups,
+                                                                             cover = "covered" %in% input$soil_covergroups,
+                                                                             uncovered = "uncovered" %in% input$soil_covergroups,
+                                                                             all_cover_type = "by_type" %in% input$soil_covergroups,
+                                                                             tall = input$soil_output_format == "long")
+                          })
+                   # Just in case there are row names (which shouldn't be there)
+                   row.names(workspace$results) <- NULL
+                   
+                   # Let's update the variable names to reflect what they came in as
+                   current_results_vars <- names(workspace$results)
+                   current_required_vars <- workspace$required_vars[[input$data_type]]
+                   
+                   for (required_var in current_required_vars) {
+                     input_variable_name <- paste0(tolower(required_var),
+                                                   "_var")
+                     incoming_variable_name <- input[[input_variable_name]]
+                     names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                   }
+                   
+                   
+                   removeNotification(session = session,
+                                      id = "calculating")
+                   
+                   message("Switching to Results tab")
+                   updateTabsetPanel(session = session,
+                                     inputId = "maintabs",
+                                     selected = "Results")
                  }
+
                  
                  if (!is.null(workspace$metadata_lut)) {
                    if (any(table(workspace$metadata_lut[[input$primarykey_var]]) > 1)) {
