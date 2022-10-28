@@ -1307,8 +1307,14 @@ server <- function(input, output, session) {
                    
                    # Which required variable names are currently "" in the
                    # data configuration tab?
+                   message("Getting required variable input index names")
                    current_required_vars_input_vars <- paste0(current_required_vars,
-                                                             "_var")
+                                                              "_var")
+                   message("Looking for undefined required XXX_var inputs")
+                   message("current_required_vars_input_vars is: c(",
+                           paste(current_required_vars_input_vars,
+                                 collapse = ", "),
+                           ")")
                    undefined_data_vars_indices <- unlist(sapply(X = current_required_vars_input_vars,
                                                                 inputs = input,
                                                                 current_available_vars = current_data_vars,
@@ -1317,8 +1323,9 @@ server <- function(input, output, session) {
                                                                                                             X)))
                                                                   current_value %in% c("")
                                                                 }))
+                   message("Determining if any required variables are missing/undefined.")
                    missing_data_vars <- missing_data_vars[!(missing_data_vars %in% current_required_vars[!undefined_data_vars_indices])]
-
+                   
                    
                    if (length(missing_data_vars) > 0) {
                      message("Missing one or more required variables.")
