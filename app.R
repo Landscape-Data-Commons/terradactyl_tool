@@ -1308,7 +1308,7 @@ server <- function(input, output, session) {
                    # Which required variable names are currently "" in the
                    # data configuration tab?
                    message("Getting required variable input index names")
-                   current_required_vars_input_vars <- paste0(current_required_vars,
+                   current_required_vars_input_vars <- paste0(tolower(current_required_vars),
                                                               "_var")
                    message("Looking for undefined required XXX_var inputs")
                    message("current_required_vars_input_vars is: c(",
