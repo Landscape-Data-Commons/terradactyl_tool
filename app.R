@@ -326,8 +326,15 @@ ui <- fluidPage(
                                                         choices = c("Wide" = "wide",
                                                                     "Long" = "long"))
                            ),
+                           selectInput(inputId = "additional_output_vars",
+                                       label = "Additional metadata variables",
+                                       choices = c(""),
+                                       selected = "",
+                                       multiple = TRUE),
+                           hr(),
                            actionButton(inputId = "calculate_button",
                                         label = "Calculate!")
+                           
                   ),
                   tabPanel(title = "Map",
                            leaflet::leafletOutput(outputId = "map",
@@ -360,6 +367,7 @@ server <- function(input, output, session) {
                               mapping_header_sf = NULL,
                               mapping_polygons = NULL,
                               header_sf = NULL,
+                              metadata_lut = NULL,
                               polygons = NULL,
                               default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
                               data_fresh = TRUE,
@@ -554,19 +562,19 @@ server <- function(input, output, session) {
                    message("Reading in polygons")
                    if (workspace$polygon_filetype == "gdb") {
                      workspace$mapping_polygons <- sf::st_read(dsn = workspace$gdb_filepath,
-                                                       layer = input$polygons_layer)
+                                                               layer = input$polygons_layer)
                    } else if (workspace$polygon_filetype == "shp") {
                      workspace$mapping_polygons <- sf::st_read(dsn = input$polygons_layer)
                    }
                    message("Making sure the polygons are in NAD83")
                    workspace$mapping_polygons <- sf::st_transform(workspace$mapping_polygons,
-                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                                                                  crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
                    
                    # If they've asked us to "repair" polygons, buffer by 0
                    if (input$repair_polygons) {
                      message("Attempting to repair polygons by buffering by 0")
                      workspace$mapping_polygons <- sf::st_buffer(x = workspace$mapping_polygons,
-                                                         dist = 0)
+                                                                 dist = 0)
                    }
                  }
                  # message("Jumping to map tab")
@@ -1264,6 +1272,11 @@ server <- function(input, output, session) {
                                       inputid_string,
                                       ")"))
                        
+                       message("Updating metadata variable options")
+                       updateSelectInput(inputId = "additional_output_vars",
+                                         choices = c("", current_data_vars[!(current_data_vars %in% input$primarykey_var)]),
+                                         selected = c(""))
+                       
                      }
                      
                      if (input$data_type %in% c("lpi", "height")) {
@@ -1312,6 +1325,43 @@ server <- function(input, output, session) {
                                    inputId = "maintabs",
                                    selected = "Data")
                })
+  
+  ##### When metadata variables change #####
+  observeEvent(eventExpr = {list(input$primarykey_var,
+                                 input$additional_output_vars)},
+               handlerExpr = {
+                 current_additional_output_vars <- input$additional_output_vars[!(input$additional_output_vars %in% c("", input$primarykey_var))]
+                 
+                 current_metadata_vars <- unique(c(input$primarykey_var,
+                                                   current_additional_output_vars))
+                 
+                 if (!("" %in% current_metadata_vars) & length(current_metadata_vars) > 1 & !is.null(workspace$data)) {
+                   workspace$metadata_lut <- unique(workspace$data[, current_metadata_vars])
+                   
+                   # Find the many-to-one variables with a sapply here
+                   many_to_one_additional_output_vars_indices <- sapply(X = current_additional_output_vars,
+                                                                        unique_id_var = input$primarykey_var,
+                                                                        data = workspace$data,
+                                                                        FUN = function(X, unique_id_var, data) {
+                                                                          lut <- unique(data[, c(unique_id_var, X)])
+                                                                          any(table(lut[[unique_id_var]]) > 1)
+                                                                        })
+                   
+                   if (any(many_to_one_additional_output_vars_indices)) {
+                     many_to_one_vars <- current_additional_output_vars[many_to_one_additional_output_vars_indices]
+                     showNotification(ui = paste0("Unable to include all selected additional metadata variables in the output because there is a one-to-many relationship between the variable ",
+                                                  input$primarykey_var,
+                                                  " and the following variables: ",
+                                                  paste(many_to_one_vars,collapse = ", ")),
+                                      duration = NULL,
+                                      id = "one_to_many_metadata_error",
+                                      closeButton = TRUE,
+                                      type = "error")
+                     workspace$metadata_lut <- NULL
+                   }
+                 }
+               })
+  
   
   ##### When adding generic/unknown species #####
   observeEvent(eventExpr = input$add_generic_species_button,
@@ -1788,15 +1838,33 @@ server <- function(input, output, session) {
                    names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
                  }
                  
-                 
-                 removeNotification(session = session,
-                                    id = "calculating")
-                 
-                 message("Switching to Results tab")
-                 updateTabsetPanel(session = session,
-                                   inputId = "maintabs",
-                                   selected = "Results")
-               })
+                 if (!is.null(workspace$metadata_lut)) {
+                   if (any(table(workspace$metadata_lut[[input$primarykey_var]]) > 1)) {
+                     showNotification(ui = "Metadata table includes multiple repeat unique IDs and will be ignored.",
+                                      duration = NULL,
+                                      close_button = TRUE,
+                                      id = "bad_metadata_lut",
+                                      type = "warning")
+                   } else {
+                     non_metadata_vars <- names(workspace$results)[!(names(workspace$results) %in% input$primarykey_var)]
+                     metadata_vars <- names(workspace$metadata_lut)
+                     current_results <- dplyr::left_join(x = workspace$results,
+                                                         y = workspace$metadata_lut,
+                                                         by = input$primarykey_var)
+                     workspace$results <- current_results[, c(metadata_vars,
+                                                              non_metadata_vars)]
+                   }
+                 }
+               
+               
+               removeNotification(session = session,
+                                  id = "calculating")
+               
+               message("Switching to Results tab")
+               updateTabsetPanel(session = session,
+                                 inputId = "maintabs",
+                                 selected = "Results")
+})
   
   ##### When results update #####
   observeEvent(eventExpr = workspace$results,
@@ -1879,7 +1947,7 @@ server <- function(input, output, session) {
                  message("downloadHandler() call complete.")
                })
   
-}
+  }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
