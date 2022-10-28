@@ -387,9 +387,9 @@ server <- function(input, output, session) {
                                                                 "LineKey",
                                                                 "Height",
                                                                 "Species"),
-                                                   "soil" = c("PrimaryKey",
-                                                              "Rating",
-                                                              "Veg")))
+                                                   "soilstability" = c("PrimaryKey",
+                                                                       "Rating",
+                                                                       "Veg")))
   
   ##### Directing to help #####
   observeEvent(eventExpr = input$indicator_help,
