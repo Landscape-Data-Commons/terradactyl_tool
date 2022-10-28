@@ -1346,6 +1346,26 @@ server <- function(input, output, session) {
                                    selected = "Data")
                })
   
+  ##### Updating available metadata variables when input$primarykey_var updates #####
+  observeEvent(eventExpr = {input$primarykey_var},
+               handlerExpr = {
+                 if (!is.null(workspace$data)) {
+                   # Figuring out which are valid, as in which don't have a
+                   # many-to-one relationship to the unique IDs
+                   current_data_vars <- names(workspace$data)
+                   valid_metadata_var_indices <- sapply(X = current_data_vars,
+                                                        unique_id_var = input$primarykey_var,
+                                                        data = workspace$data,
+                                                        FUN = function(X, unique_id_var, data) {
+                                                          current_lut <- unique(data[, c(unique_id_var, X)])
+                                                          !any(table(current_lut[[unique_id_var]]) > 1)
+                                                        })
+                   updateSelectInput(inputId = "additional_output_vars",
+                                     choices = c("", current_data_vars[valid_metadata_var_indices & !(current_data_vars %in% input$primarykey_var)]),
+                                     selected = c(""))
+                 }
+               })
+  
   ##### When metadata variables change #####
   observeEvent(eventExpr = {list(input$primarykey_var,
                                  input$additional_output_vars)},
@@ -1690,14 +1710,14 @@ server <- function(input, output, session) {
                               
                               if (length(missing_lpi_grouping_vars) < 1) {
                                 message("No variables missing!")
-                                lpi_cover_string <- paste0("terradactyl::pct_cover(",
+                                lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
                                                            "lpi_tall = workspace$calc_data,",
                                                            "tall = input$lpi_output_format == 'long',",
                                                            "hit = input$lpi_hit,",
                                                            "by_line = input$lpi_unit == 'line',",
                                                            paste(lpi_grouping_vars_vector,
                                                                  collapse = ","),
-                                                           ")")
+                                                           "),error = function(error){error})")
                               } else {
                                 message("Missing one or more variables.")
                                 missing_lpi_grouping_vars_warning <- paste0("The following variables are missing: ",
@@ -1709,27 +1729,27 @@ server <- function(input, output, session) {
                                                  closeButton = TRUE,
                                                  id = "missing_lpi_grouping_vars",
                                                  type = "warning")
-                                lpi_cover_string <- paste0("terradactyl::pct_cover(",
+                                lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
                                                            "lpi_tall = workspace$calc_data,",
                                                            "tall = input$lpi_output_format == 'long',",
                                                            "hit = input$lpi_hit,",
                                                            "by_line = input$lpi_unit == 'line'",
-                                                           ")")
+                                                           "),error = function(error){error})")
                               }
                               
                             } else {
                               message("No grouping variables.")
-                              lpi_cover_string <- paste0("terradactyl::pct_cover(",
+                              lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
                                                          "lpi_tall = workspace$calc_data,",
                                                          "tall = input$lpi_output_format == 'long',",
                                                          "hit = input$lpi_hit,",
                                                          "by_line = input$lpi_unit == 'line'",
-                                                         ")")
+                                                         "),error = function(error){error})")
                             }
                             
                             message("The function call is:")
                             message(lpi_cover_string)
-                            workspace$results <- eval(parse(text = lpi_cover_string))
+                            current_results <- eval(parse(text = lpi_cover_string))
                           },
                           "gap" = {
                             message("Calculating gaps.")
@@ -1747,11 +1767,14 @@ server <- function(input, output, session) {
                             } else {
                               message("Gap breaks are all good!")
                               message("Calcaulating gap")
-                              gap_results <- terradactyl::gap_cover(gap_tall = workspace$calc_data,
+                              gap_results <- tryCatch(terradactyl::gap_cover(gap_tall = workspace$calc_data,
                                                                     tall = input$gap_output_format == "long",
                                                                     breaks = current_gap_breaks,
                                                                     type = input$gap_type,
-                                                                    by_line = (input$gap_unit == "line"))
+                                                                    by_line = (input$gap_unit == "line")),
+                                                      error = function(error){
+                                                        error
+                                                      })
                             }
                             
                             message("Gaps calculated")
@@ -1770,11 +1793,11 @@ server <- function(input, output, session) {
                                                                                              current_stat)
                               }
                               # Then mash them together
-                              workspace$results <- Reduce(f = dplyr::full_join,
-                                                          x = gap_results)
+                              current_results <- Reduce(f = dplyr::full_join,
+                                                        x = gap_results)
                             } else {
                               # If the results are long, we're already ready to go
-                              workspace$results <- gap_results
+                              current_results <- gap_results
                             }
                           },
                           "height" = {
@@ -1810,7 +1833,7 @@ server <- function(input, output, session) {
                                                    collapse = ", ")))
                               
                               if (length(missing_height_grouping_vars) < 1) {
-                                height_cover_string <- paste0("terradactyl::mean_height(",
+                                height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
                                                               "height_tall = workspace$calc_data,",
                                                               "method = 'mean',",
                                                               "omit_zero = input$height_omit_zero,",
@@ -1818,7 +1841,7 @@ server <- function(input, output, session) {
                                                               "tall = output_tall,",
                                                               paste(height_grouping_vars_vector,
                                                                     collapse = ","),
-                                                              ")"
+                                                              "),error = function(error){error})"
                                 )
                               } else {
                                 missing_height_grouping_vars_warning <- paste0("The following variables are missing: ",
@@ -1830,178 +1853,202 @@ server <- function(input, output, session) {
                                                  closeButton = TRUE,
                                                  id = "missing_height_grouping_vars",
                                                  type = "warning")
-                                height_cover_string <- paste0("terradactyl::mean_height(",
+                                height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
                                                               "height_tall = workspace$calc_data,",
                                                               "method = 'mean',",
                                                               "omit_zero = input$height_omit_zero,",
                                                               "by_line = height_by_line,",
                                                               "tall = output_tall",
-                                                              ")"
+                                                              "),error = function(error){error})"
                                 )
                               }
                               
                             } else {
                               message("No grouping vars!")
-                              height_cover_string <- paste0("terradactyl::mean_height(",
+                              height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
                                                             "height_tall = workspace$calc_data,",
                                                             "method = 'mean',",
                                                             "omit_zero = input$height_omit_zero,",
                                                             "by_line = height_by_line,",
                                                             "tall = output_tall",
-                                                            ")"
+                                                            "),error = function(error){error})"
                               )
                             }
                             message("The function call is:")
                             message(height_cover_string)
                             message("Parsing")
-                            workspace$results <- eval(parse(text = height_cover_string))
+                            Current_results <- eval(parse(text = height_cover_string))
                             message("Parsed")
                             
                           },
                           "soilstability" = {
                             message("Calculating soil stability")
-                            workspace$results <- terradactyl::soil_stability(soil_stability_tall = workspace$calc_data,
-                                                                             all = "all" %in% input$soil_covergroups,
-                                                                             cover = "covered" %in% input$soil_covergroups,
-                                                                             uncovered = "uncovered" %in% input$soil_covergroups,
-                                                                             all_cover_type = "by_type" %in% input$soil_covergroups,
-                                                                             tall = input$soil_output_format == "long")
+                            current_results <- tryCatch(terradactyl::soil_stability(soil_stability_tall = workspace$calc_data,
+                                                                                    all = "all" %in% input$soil_covergroups,
+                                                                                    cover = "covered" %in% input$soil_covergroups,
+                                                                                    uncovered = "uncovered" %in% input$soil_covergroups,
+                                                                                    all_cover_type = "by_type" %in% input$soil_covergroups,
+                                                                                    tall = input$soil_output_format == "long"),
+                                                        error = function(error){
+                                                          error
+                                                        })
                           })
-                   # Just in case there are row names (which shouldn't be there)
-                   row.names(workspace$results) <- NULL
                    
-                   # Let's update the variable names to reflect what they came in as
-                   current_results_vars <- names(workspace$results)
-                   current_required_vars <- workspace$required_vars[[input$data_type]]
-                   
-                   for (required_var in current_required_vars) {
-                     input_variable_name <- paste0(tolower(required_var),
-                                                   "_var")
-                     incoming_variable_name <- input[[input_variable_name]]
-                     names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                   message(paste0("class(current_results) i: ",
+                                  paste0(class(current_results),
+                                               collapse = ", ")))
+                   # This is where we do error handling
+                   if ("character" %in% class(current_results)) {
+                     showNotification(ui = paste0("The calculation produced the following error: ",
+                                                  current_results),
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      id = "results_error",
+                                      type = "error")
+                     workspace$results <- NULL
+                   } else if ("data.frame" %in% class(current_results)) {
+                     message("Results appear valid.")
+                     workspace$results <- current_results
+                   } else {
+                     showNotification(ui = "Something went very wrong but did not produce an error message.",
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      id = "unknown_results_error",
+                                      type = "error")
+                     workspace$results <- NULL
                    }
                    
+                   if (!is.null(workspace$results)) {
+                     # Just in case there are row names (which shouldn't be there)
+                     row.names(workspace$results) <- NULL
+                     
+                     # Let's update the variable names to reflect what they came in as
+                     current_results_vars <- names(workspace$results)
+                     current_required_vars <- workspace$required_vars[[input$data_type]]
+                     
+                     for (required_var in current_required_vars) {
+                       input_variable_name <- paste0(tolower(required_var),
+                                                     "_var")
+                       incoming_variable_name <- input[[input_variable_name]]
+                       names(workspace$results)[names(workspace$results) == required_var] <- incoming_variable_name
+                     }
+                     
+                     # And add in the requested metadata variables
+                     if (!is.null(workspace$metadata_lut)) {
+                       if (any(table(workspace$metadata_lut[[input$primarykey_var]]) > 1)) {
+                         showNotification(ui = "Metadata table includes multiple repeat unique IDs and will be ignored.",
+                                          duration = NULL,
+                                          close_button = TRUE,
+                                          id = "bad_metadata_lut",
+                                          type = "warning")
+                       } else {
+                         non_metadata_vars <- names(workspace$results)[!(names(workspace$results) %in% input$primarykey_var)]
+                         metadata_vars <- names(workspace$metadata_lut)
+                         current_results <- dplyr::left_join(x = workspace$results,
+                                                             y = workspace$metadata_lut,
+                                                             by = input$primarykey_var)
+                         workspace$results <- current_results[, c(metadata_vars,
+                                                                  non_metadata_vars)]
+                       }
+                     }
+                     
+                     message("Switching to Results tab")
+                     updateTabsetPanel(session = session,
+                                       inputId = "maintabs",
+                                       selected = "Results")
+                   }
                    
                    removeNotification(session = session,
                                       id = "calculating")
-                   
-                   message("Switching to Results tab")
-                   updateTabsetPanel(session = session,
-                                     inputId = "maintabs",
-                                     selected = "Results")
                  }
-
-                 
-                 if (!is.null(workspace$metadata_lut)) {
-                   if (any(table(workspace$metadata_lut[[input$primarykey_var]]) > 1)) {
-                     showNotification(ui = "Metadata table includes multiple repeat unique IDs and will be ignored.",
-                                      duration = NULL,
-                                      close_button = TRUE,
-                                      id = "bad_metadata_lut",
-                                      type = "warning")
-                   } else {
-                     non_metadata_vars <- names(workspace$results)[!(names(workspace$results) %in% input$primarykey_var)]
-                     metadata_vars <- names(workspace$metadata_lut)
-                     current_results <- dplyr::left_join(x = workspace$results,
-                                                         y = workspace$metadata_lut,
-                                                         by = input$primarykey_var)
-                     workspace$results <- current_results[, c(metadata_vars,
-                                                              non_metadata_vars)]
-                   }
-                 }
-               
-               
-               removeNotification(session = session,
-                                  id = "calculating")
-               
-               message("Switching to Results tab")
-               updateTabsetPanel(session = session,
-                                 inputId = "maintabs",
-                                 selected = "Results")
-})
+               })
   
   ##### When results update #####
   observeEvent(eventExpr = workspace$results,
                handlerExpr = {
                  message("The results have updated!")
-                 message(head(workspace$results))
-                 
-                 # But we want to round to 2 decimal places for ease-of-reading
-                 display_results <- workspace$results
-                 # Which indices are numeric variables at?
-                 numeric_var_indices <- which(sapply(X = display_results,
-                                                     FUN = is.numeric))
-                 message(paste0("Numeric variable indices in display_results are: ",
-                                paste(numeric_var_indices,
-                                      collapse = ", ")))
-                 message(paste0("That's a total of ",
-                                length(numeric_var_indices),
-                                " variables out of ",
-                                ncol(display_results),
-                                " variables in display_results."))
-                 # If there are numeric variables, round them to 2 decimal places
-                 if (length(numeric_var_indices) > 0 & max(numeric_var_indices) <= ncol(display_results)) {
-                   message("Attempting to round display_result values.")
-                   # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
-                   numeric_var_names <- names(display_results)[numeric_var_indices]
-                   display_results <- dplyr::mutate(.data = display_results,
-                                                    dplyr::across(.cols = dplyr::all_of(numeric_var_names),
-                                                                  .fns = round,
-                                                                  digits = 2))
+                 if (!is.null(workspace$results)) {
+                   message(head(workspace$results))
+                   
+                   # But we want to round to 2 decimal places for ease-of-reading
+                   display_results <- workspace$results
+                   # Which indices are numeric variables at?
+                   numeric_var_indices <- which(sapply(X = display_results,
+                                                       FUN = is.numeric))
+                   message(paste0("Numeric variable indices in display_results are: ",
+                                  paste(numeric_var_indices,
+                                        collapse = ", ")))
+                   message(paste0("That's a total of ",
+                                  length(numeric_var_indices),
+                                  " variables out of ",
+                                  ncol(display_results),
+                                  " variables in display_results."))
+                   # If there are numeric variables, round them to 2 decimal places
+                   if (length(numeric_var_indices) > 0 & max(numeric_var_indices) <= ncol(display_results)) {
+                     message("Attempting to round display_result values.")
+                     # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
+                     numeric_var_names <- names(display_results)[numeric_var_indices]
+                     display_results <- dplyr::mutate(.data = display_results,
+                                                      dplyr::across(.cols = dplyr::all_of(numeric_var_names),
+                                                                    .fns = round,
+                                                                    digits = 2))
+                   }
+                   
+                   output$results_table <- DT::renderDataTable(display_results,
+                                                               options = list(pageLength = 100))
+                   message("output$results_table rendered")
+                   software_version_string <- paste0("These results were calculated using terradactyl v",
+                                                     packageVersion("terradactyl"),
+                                                     " and R v",
+                                                     R.Version()$major, ".", R.Version()$minor,
+                                                     " on ",
+                                                     format(Sys.Date(),
+                                                            "%Y-%m-%d"),
+                                                     ".")
+                   output$metadata_text <- renderText(software_version_string)
+                   message("output$metadata_text has been rendered")
+                   message("Switching to Results tab")
+                   updateTabsetPanel(session = session,
+                                     inputId = "maintabs",
+                                     selected = "Results")
+                   
+                   # Handle the downloading bit
+                   # Starting by writing out the data
+                   workspace$current_results_filename <- paste0(input$data_type,
+                                                                "_results_",
+                                                                paste(format(Sys.Date(),
+                                                                             "%Y-%m-%d"),
+                                                                      format(Sys.time(),
+                                                                             "T%H%MZ",
+                                                                             tz = "GMT"),
+                                                                      sep = "_"),
+                                                                ".csv")
+                   message("Writing results to:")
+                   message(paste0(workspace$temp_directory,
+                                  "/",
+                                  workspace$current_results_filename))
+                   write.csv(x = workspace$results,
+                             file = paste0(workspace$temp_directory,
+                                           "/",
+                                           workspace$current_results_filename),
+                             row.names = FALSE)
+                   
+                   # Then we prep the data for download
+                   message("Running the downloadHandler() call.")
+                   output$downloadable_data <- downloadHandler(
+                     filename = workspace$current_results_filename,
+                     content = function(file) {
+                       file.copy(paste0(workspace$temp_directory,
+                                        "/",
+                                        workspace$current_results_filename), file)
+                     })
+                   message("downloadHandler() call complete.")
+                 } else {
+                   message("workspace$results is NULL")
                  }
-                 
-                 output$results_table <- DT::renderDataTable(display_results,
-                                                             options = list(pageLength = 100))
-                 message("output$results_table rendered")
-                 software_version_string <- paste0("These results were calculated using terradactyl v",
-                                                   packageVersion("terradactyl"),
-                                                   " and R v",
-                                                   R.Version()$major, ".", R.Version()$minor,
-                                                   " on ",
-                                                   format(Sys.Date(),
-                                                          "%Y-%m-%d"),
-                                                   ".")
-                 output$metadata_text <- renderText(software_version_string)
-                 message("output$metadata_text has been rendered")
-                 message("Switching to Results tab")
-                 updateTabsetPanel(session = session,
-                                   inputId = "maintabs",
-                                   selected = "Results")
-                 
-                 # Handle the downloading bit
-                 # Starting by writing out the data
-                 workspace$current_results_filename <- paste0(input$data_type,
-                                                              "_results_",
-                                                              paste(format(Sys.Date(),
-                                                                           "%Y-%m-%d"),
-                                                                    format(Sys.time(),
-                                                                           "T%H%MZ",
-                                                                           tz = "GMT"),
-                                                                    sep = "_"),
-                                                              ".csv")
-                 message("Writing results to:")
-                 message(paste0(workspace$temp_directory,
-                                "/",
-                                workspace$current_results_filename))
-                 write.csv(x = workspace$results,
-                           file = paste0(workspace$temp_directory,
-                                         "/",
-                                         workspace$current_results_filename),
-                           row.names = FALSE)
-                 
-                 # Then we prep the data for download
-                 message("Running the downloadHandler() call.")
-                 output$downloadable_data <- downloadHandler(
-                   filename = workspace$current_results_filename,
-                   content = function(file) {
-                     file.copy(paste0(workspace$temp_directory,
-                                      "/",
-                                      workspace$current_results_filename), file)
-                   })
-                 message("downloadHandler() call complete.")
                })
   
-  }
+}
 
 # Run the application 
 shinyApp(ui = ui, server = server)
