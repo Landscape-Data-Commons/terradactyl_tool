@@ -188,6 +188,15 @@ ui <- fluidPage(
                                                           label = "Add species information",
                                                           value = FALSE),
                                             conditionalPanel(condition = "input.use_species",
+                                                             conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
+                                                                              actionButton(inputId = "join_species",
+                                                                                           label = "Join species information to data"),
+                                                                              conditionalPanel(condition = "input.join_species > 0",
+                                                                                               DT::dataTableOutput(outputId = "species_lut"),
+                                                                                               downloadButton(outputId = 'downloadable_species',
+                                                                                                              label = 'Download current species information'))
+                                                                              
+                                                             ),
                                                              radioButtons(inputId = "species_source",
                                                                           label = "Species lookup table source",
                                                                           choices = c("Default USDA Plants" = "default",
@@ -212,6 +221,8 @@ ui <- fluidPage(
                                                                            label = "Include generic species codes",
                                                                            value = TRUE),
                                                              conditionalPanel(condition = "input.add_generic_species",
+                                                                              actionButton(inputId = "add_generic_species_button",
+                                                                                           label = "Add generic species codes to lookup table"),
                                                                               selectInput(inputId = "growth_habit_var",
                                                                                           label = "Growth habit variable in lookup table",
                                                                                           choices = c(""),
@@ -221,19 +232,7 @@ ui <- fluidPage(
                                                                                           label = "Duration variable in lookup table",
                                                                                           choices = c(""),
                                                                                           selected = "",
-                                                                                          multiple = FALSE),
-                                                                              actionButton(inputId = "add_generic_species_button",
-                                                                                           label = "Add generic species codes to lookup table")),
-                                                             conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
-                                                                              actionButton(inputId = "join_species",
-                                                                                           label = "Join species information to data"),
-                                                                              conditionalPanel(condition = "input.join_species > 0",
-                                                                                               DT::dataTableOutput(outputId = "species_lut"),
-                                                                                               downloadButton(outputId = 'downloadable_species',
-                                                                                                              label = 'Download current species information'))
-                                                                              
-                                                             )
-                                                             
+                                                                                          multiple = FALSE))
                                             )
                            )
                            
