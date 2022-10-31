@@ -394,12 +394,14 @@ server <- function(input, output, session) {
   ##### Directing to help #####
   observeEvent(eventExpr = input$indicator_help,
                handlerExpr = {
+                 message("Help button pressed. Switching tabs")
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
                                    selected = "Help")
                })
   observeEvent(eventExpr = input$data_help,
                handlerExpr = {
+                 message("Help button pressed. Switching tabs")
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
                                    selected = "Help")
@@ -556,6 +558,7 @@ server <- function(input, output, session) {
   #### Mapping freshly uploaded polygons ####
   observeEvent(eventExpr = {input$polygons_layer},
                handlerExpr = {
+                 message("input$polygons_layer has updated")
                  if (input$polygons_layer != "") {
                    message("Reading in polygons")
                    if (workspace$polygon_filetype == "gdb") {
@@ -585,6 +588,7 @@ server <- function(input, output, session) {
   # When input$raw_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$raw_data,
                handlerExpr = {
+                 message("input$raw_data has updated")
                  # Because it looks like I can't enforce filetype in the upload
                  # selection dialogue, check it here
                  # I'm assuming that a file extension can be 1-5 characters long
@@ -603,6 +607,7 @@ server <- function(input, output, session) {
                    message("Data source set to upload")
                    workspace$current_data_source <- "upload"
                  } else {
+                   message("Uploaded data aren't a .CSV; doing nothing with them")
                    data_csv_error_message <- paste0("You have uploaded a ",
                                                     data_upload_extension,
                                                     " file. Please upload a CSV instead.")
@@ -617,6 +622,7 @@ server <- function(input, output, session) {
   # When input$species_data updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$species_data,
                handlerExpr = {
+                 message("input$species_data has updated")
                  # Because it looks like I can't enforce filetype in the upload
                  # selection dialogue, check it here
                  species_upload_extension <- toupper(stringr::str_extract(string = input$species_data$datapath,
@@ -632,6 +638,7 @@ server <- function(input, output, session) {
                    message("Species source set to upload")
                    workspace$current_species_source <- "upload"
                  } else {
+                   message("The uploaded species data are not a CSV. Doing nothing")
                    species_csv_error_message <- paste0("You have uploaded a ",
                                                        species_upload_extension,
                                                        " file. Please upload a CSV instead.")
@@ -647,8 +654,9 @@ server <- function(input, output, session) {
   # When input$species_source is set to the default, handle that
   observeEvent(eventExpr = input$species_source,
                handlerExpr = {
+                 message("input$species_source has changed")
                  if (input$species_source == "default") {
-                   message("Species source set to default")
+                   message("Species source set to default. Reading in default species data.")
                    defaults_species_filepath <- paste0(workspace$original_directory,
                                                        "/",
                                                        workspace$default_species_filename)
@@ -658,18 +666,24 @@ server <- function(input, output, session) {
                    # Set workspace$species_data to the default list (which doesn't exist yet)
                    # Set this variable so we can handle the data appropriately based on source
                    workspace$current_species_source <- "default"
+                 } else {
+                   message("Species source is not default. Doing nothing")
                  }
                })
   
   ##### When workspace$species_data updates #####
   observeEvent(eventExpr = workspace$species_data,
                handlerExpr = {
+                 message("workspace$species_data has updated!")
                  current_species_data_vars <- names(workspace$species_data)
                  
+                 message("Attempting to update the selected variables in the species data")
                  # For the joining variable
                  if ("code" %in% current_species_data_vars) {
+                   message("Found 'code' in the species data. Setting that as the species_joining_var")
                    selection <- "code"
                  } else {
+                   message("Setting species_joining_var to ''")
                    selection <- ""
                  }
                  updateSelectInput(session = session,
@@ -681,10 +695,13 @@ server <- function(input, output, session) {
                  # For the growth habit variable
                  # We'll guess at the two most common options before giving up
                  if ("GrowthHabitSub" %in% current_species_data_vars) {
+                   message("Found 'GrowthHabitSub' in the species data. Setting that as growth_habit_var")
                    selection <- "GrowthHabitSub"
                  } else if ("growth_habit" %in% current_species_data_vars) {
+                   message("Found 'growth_habit' in the species data. Setting that as growth_habit_var")
                    selection <- "growth_habit"
                  } else {
+                   message("Setting growth_habit_var to ''")
                    selection <- ""
                  }
                  updateSelectInput(session = session,
@@ -695,10 +712,13 @@ server <- function(input, output, session) {
                  
                  # For the duration variable
                  if ("Duration" %in% current_species_data_vars) {
+                   message("Found 'Duration' in the species data. Setting that as duration_var")
                    selection <- "Duration"
                  } else if ("duration" %in% current_species_data_vars) {
+                   message("Found 'duration' in the species data. Setting that as duration_var")
                    selection <- "duration"
                  } else {
+                   message("Setting duration_Var to ''")
                    selection <- ""
                  }
                  updateSelectInput(session = session,
@@ -712,6 +732,7 @@ server <- function(input, output, session) {
   ##### Fetching data from the LDC #####
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
+                 message("Fetch data button pressed!")
                  showNotification(ui = "Downloading data from the LDC. Please wait.",
                                   duration = NULL,
                                   closeButton = FALSE,
@@ -1166,8 +1187,10 @@ server <- function(input, output, session) {
   ##### When workspace$data updates #####
   observeEvent(eventExpr = workspace$data,
                handlerExpr = {
+                 message("workspace$data has updated")
                  # Display the data
                  # But we want to round to 2 decimal places for ease-of-reading
+                 message("Prepping display data")
                  display_data <- workspace$data
                  # Which indices are numeric variables?
                  numeric_var_indices <- which(sapply(X = display_data,
@@ -1181,7 +1204,9 @@ server <- function(input, output, session) {
                                                                .fns = round,
                                                                digits = 2))
                  }
+
                  
+                 message("Rendering display data")
                  output$data <- DT::renderDataTable(display_data,
                                                     options = list(pageLength = 100))
                  
@@ -1350,6 +1375,8 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = {input$primarykey_var},
                handlerExpr = {
                  if (!is.null(workspace$data)) {
+                 message("input$primarykey_var updated. Working to update available metadata variables.")
+                   message("workspace$data is not NULL; updating metadata vars")
                    # Figuring out which are valid, as in which don't have a
                    # many-to-one relationship to the unique IDs
                    current_data_vars <- names(workspace$data)
@@ -1363,6 +1390,8 @@ server <- function(input, output, session) {
                    updateSelectInput(inputId = "additional_output_vars",
                                      choices = c("", current_data_vars[valid_metadata_var_indices & !(current_data_vars %in% input$primarykey_var)]),
                                      selected = c(""))
+                 } else {
+                   message("workspace$data is NULL; doing nothiing")
                  }
                })
   
@@ -1370,12 +1399,18 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = {list(input$primarykey_var,
                                  input$additional_output_vars)},
                handlerExpr = {
+                 message("input$primarykey_var or input$additional_output_vars updated")
+                 message("Building a metadata lookup table")
                  current_additional_output_vars <- input$additional_output_vars[!(input$additional_output_vars %in% c("", input$primarykey_var))]
                  
                  current_metadata_vars <- unique(c(input$primarykey_var,
                                                    current_additional_output_vars))
+                 message(paste0("Variables for the lookup table are: ",
+                                paste(current_metadata_vars,
+                                      collapse = ", ")))
                  
                  if (!("" %in% current_metadata_vars) & length(current_metadata_vars) > 1 & !is.null(workspace$data)) {
+                   message("current_metadata_vars doesn't contain '' and has a length greater than 1. Actually building the lookup table")
                    workspace$metadata_lut <- unique(workspace$data[, current_metadata_vars])
                    
                    # Find the many-to-one variables with a sapply here
@@ -1399,6 +1434,8 @@ server <- function(input, output, session) {
                                       type = "error")
                      workspace$metadata_lut <- NULL
                    }
+                 } else {
+                   message("Right now current_metadata_vars can't be used to make a lookup table")
                  }
                })
   
@@ -1406,6 +1443,7 @@ server <- function(input, output, session) {
   ##### When adding generic/unknown species #####
   observeEvent(eventExpr = input$add_generic_species_button,
                handlerExpr = {
+                 message("Generic species button was pressed!")
                  if (length(workspace$raw_data) < 1) {
                    showNotification(ui = "You must upload or download data before generic species can be added.",
                                     duration = NULL,
@@ -1458,8 +1496,9 @@ server <- function(input, output, session) {
   ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
+                 message("Join species button was pressed!")
                  if (input$species_joining_var != "" & input$data_joining_var != "") {
-                   
+                   message("Joining variable is defined for both the data and the lookup table")
                    # Check to see if there're repeat species, which is forbidden
                    species_summary_vector <- table(workspace$species_data[[input$species_joining_var]])
                    
