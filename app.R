@@ -1382,8 +1382,8 @@ server <- function(input, output, session) {
   ##### Updating available metadata variables when input$primarykey_var updates #####
   observeEvent(eventExpr = {input$primarykey_var},
                handlerExpr = {
-                 if (!is.null(workspace$data)) {
                  message("input$primarykey_var updated. Working to update available metadata variables.")
+                 if (!is.null(workspace$data) & input$primarykey_var %in% names(workspace$data)) {
                    message("workspace$data is not NULL; updating metadata vars")
                    # Figuring out which are valid, as in which don't have a
                    # many-to-one relationship to the unique IDs
