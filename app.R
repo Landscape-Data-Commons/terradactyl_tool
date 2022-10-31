@@ -1192,17 +1192,25 @@ server <- function(input, output, session) {
                  # But we want to round to 2 decimal places for ease-of-reading
                  message("Prepping display data")
                  display_data <- workspace$data
-                 # Which indices are numeric variables?
-                 numeric_var_indices <- which(sapply(X = display_data,
-                                                     FUN = is.numeric))
-                 # If any variables are numeric, round them to 2 decimal places
-                 if (length(numeric_var_indices) > 0) {
-                   # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
-                   numeric_var_names <- names(display_data)[numeric_var_indices]
-                   display_data <- dplyr::mutate(.data = display_data,
-                                                 dplyr::across(.cols = dplyr::all_of(numeric_var_names),
-                                                               .fns = round,
-                                                               digits = 2))
+                 if (is.null(display_data)) {
+                   message("display_data is NULL")
+                 } else {
+                   message("display_Data is not NULL")
+                   # Which indices are numeric variables?
+                   numeric_var_indices <- which(sapply(X = display_data,
+                                                       FUN = is.numeric))
+                   # If any variables are numeric, round them to 2 decimal places
+                   if (length(numeric_var_indices) > 0) {
+                     message("Rounding numeric variables in display data")
+                     # APPARENTLY dplyr::all_of() is for character vectors, not numeric vectors
+                     numeric_var_names <- names(display_data)[numeric_var_indices]
+                     display_data <- dplyr::mutate(.data = display_data,
+                                                   dplyr::across(.cols = dplyr::all_of(numeric_var_names),
+                                                                 .fns = round,
+                                                                 digits = 2))
+                   } else {
+                     message("No numeric variables to round in display data")
+                   }
                  }
 
                  
