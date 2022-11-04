@@ -94,7 +94,7 @@ ui <- fluidPage(
                                                                 "By ProjectKey" = "ProjectKey"),
                                                     selected = "ecosite"),
                                         textInput(inputId = "keys",
-                                                  label = "Search values",
+                                                  label = "Search key values",
                                                   value = "",
                                                   placeholder = "R042XB012NM"),
                                         tippy_this(elementId = "keys",
