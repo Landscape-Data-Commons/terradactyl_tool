@@ -14,11 +14,12 @@ ui <- fluidPage(
       HTML(
         ".shiny-notification {
           position:fixed;
-          top: calc(30%);
-          left: calc(5%);
-          width: calc(25%);
+          top: calc(50%);
+          left: calc(50%);
+          width: calc(35%);
           opacity: 1;
           font-weight: bold;
+          font-size: large;
           box-shadow: 0 0 0 rgba(181,181,181, 0.4);
           animation: pulse 2s infinite;
         }
