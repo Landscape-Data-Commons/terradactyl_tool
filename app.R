@@ -1224,7 +1224,9 @@ server <- function(input, output, session) {
                  
                  message("Rendering display data")
                  output$data <- DT::renderDataTable(display_data,
-                                                    options = list(pageLength = 100))
+                                                    options = list(pageLength = 100,
+                                                                   fixedHeader = TRUE), 
+                                                    extensions = "FixedHeader")
                  
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
@@ -1573,7 +1575,9 @@ server <- function(input, output, session) {
                      
                      # Render the species list
                      output$species_lut <- DT::renderDataTable(workspace$species_data,
-                                                               options = list(pageLength = 100))
+                                                               options = list(pageLength = 25,
+                                                                              fixedHeader = TRUE), 
+                                                               extensions = "FixedHeader")
                      
                      
                      message("Joining species information to data.")
@@ -2050,7 +2054,9 @@ server <- function(input, output, session) {
                    }
                    
                    output$results_table <- DT::renderDataTable(display_results,
-                                                               options = list(pageLength = 100))
+                                                               options = list(pageLength = 100,
+                                                                              fixedHeader = TRUE), 
+                                                               extensions = "FixedHeader")
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
                                                      packageVersion("terradactyl"),
