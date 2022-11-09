@@ -346,10 +346,13 @@ ui <- fluidPage(
                            leaflet::leafletOutput(outputId = "map",
                                                   height = "80vh")),
                   tabPanel(title = "Results",
+                           HTML("<br>"),
                            conditionalPanel(condition = "output.results_table !== null",
                                             downloadButton(outputId = 'downloadable_data',
                                                            label = 'Download results')),
+                           HTML("<br>"),
                            textOutput(outputId = "metadata_text"),
+                           HTML("<br>"),
                            DT::dataTableOutput(outputId = "results_table")),
                   tabPanel(title = "Help",
                            includeHTML("help.html"))
