@@ -61,7 +61,7 @@ ui <- fluidPage(
   ##### Sidebar #####
   sidebarLayout(
     sidebarPanel(
-      HTML("Powered by <a href='https://github.com/Landscape-Data-Commons/terradactyl'>terradactyl</a>"),
+      HTML("Calculate indicators from core monitoring data, powered by <a href='https://github.com/Landscape-Data-Commons/terradactyl' target='_blank'>terradactyl</a>"),
       hr(),
       selectInput(inputId = "data_type",
                   label = "Data type",
