@@ -123,7 +123,7 @@ ui <- fluidPage(
     mainPanel(
       tabsetPanel(type = "tabs",
                   id = "maintabs",
-                  tabPanel(title = "Instructions",
+                  tabPanel(title = "Start",
                            includeHTML("instructions.html")),
                   tabPanel(title = "Data",
                            actionButton(inputId = "reset_data",
@@ -133,7 +133,7 @@ ui <- fluidPage(
                                       placement = "right",
                                       delay = c(50, 0)),
                            DT::dataTableOutput(outputId = "data")),
-                  tabPanel(title = "Data configuration",
+                  tabPanel(title = "Configure Data",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
                            selectInput(inputId = "primarykey_var",
@@ -245,7 +245,7 @@ ui <- fluidPage(
                            )
                            
                   ),
-                  tabPanel(title = "Indicator calculation",
+                  tabPanel(title = "Calculate Indicators",
                            actionLink(inputId = "indicator_help",
                                       label = "What do these options mean?"),
                            conditionalPanel(condition = "input.data_type == 'lpi'",
