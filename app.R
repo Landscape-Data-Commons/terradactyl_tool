@@ -136,6 +136,7 @@ ui <- fluidPage(
                   tabPanel(title = "Configure Data",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
+                           helpText("If a variable name is already selected, it should be correct."),
                            selectInput(inputId = "primarykey_var",
                                        label = "Variable containing PrimaryKey values",
                                        choices = c("")),
