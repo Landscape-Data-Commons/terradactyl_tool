@@ -799,19 +799,19 @@ server <- function(input, output, session) {
                        } else {
                          current_primary_keys <- current_headers$PrimaryKey
                          
-                         current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
-                         
-                         current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                                                        keys_vector = current_primary_keys,
-                                                        key_chunk_size = 100,
-                                                        key_count = length(current_primary_keys),
-                                                        FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                                                          min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                                                          max_index <- min(c(key_count, X * key_chunk_size))
-                                                          indices <- min_index:max_index
-                                                          paste(keys_vector[indices],
-                                                                collapse = ",")
-                                                        })
+                         # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                         # 
+                         # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                         #                                keys_vector = current_primary_keys,
+                         #                                key_chunk_size = 100,
+                         #                                key_count = length(current_primary_keys),
+                         #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                         #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                         #                                  max_index <- min(c(key_count, X * key_chunk_size))
+                         #                                  indices <- min_index:max_index
+                         #                                  paste(keys_vector[indices],
+                         #                                        collapse = ",")
+                         #                                })
                          
                          message("Retrieving data using PrimaryKey values from headers")
                          results <- tryCatch(fetch_ldc(keys = current_primary_keys,
@@ -1090,24 +1090,25 @@ server <- function(input, output, session) {
                            results <- NULL
                          } else {
                            message("Primary keys found. Querying now.")
-                           current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
-                           
-                           current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                                                          keys_vector = current_primary_keys,
-                                                          key_chunk_size = 100,
-                                                          key_count = length(current_primary_keys),
-                                                          FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                                                            min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                                                            max_index <- min(c(key_count, X * key_chunk_size))
-                                                            indices <- min_index:max_index
-                                                            paste(keys_vector[indices],
-                                                                  collapse = ",")
-                                                          })
+                           # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                           # 
+                           # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                           #                                keys_vector = current_primary_keys,
+                           #                                key_chunk_size = 100,
+                           #                                key_count = length(current_primary_keys),
+                           #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                           #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                           #                                  max_index <- min(c(key_count, X * key_chunk_size))
+                           #                                  indices <- min_index:max_index
+                           #                                  paste(keys_vector[indices],
+                           #                                        collapse = ",")
+                           #                                })
                            
                            message("Retrieving data using PrimaryKey values from spatial intersection")
                            results <- tryCatch(fetch_ldc(keys = current_primary_keys,
                                                          key_type = "PrimaryKey",
                                                          data_type = input$data_type,
+                                                         key_chunk_size = 100,
                                                          verbose = TRUE),
                                                error = function(error){
                                                  gsub(x = error,
