@@ -851,52 +851,6 @@ server <- function(input, output, session) {
                                                   replacement = "")
                                            })
                      }
-                     message("Getting current headers for mapping")
-                     current_primarykeys <- unique(results$PrimaryKey)
-                     current_primarykey_chunk_count <- ceiling(length(current_key_vector) / 100)
-                     
-                     current_primarykeys_chunks <- sapply(X = 1:current_primarykey_chunk_count,
-                                                          keys_vector = current_primarykeys,
-                                                          key_chunk_size = 100,
-                                                          key_count = length(current_primarykeys),
-                                                          FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                                                            min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                                                            max_index <- min(c(key_count, X * key_chunk_size))
-                                                            indices <- min_index:max_index
-                                                            paste(keys_vector[indices],
-                                                                  collapse = ",")
-                                                          })
-                     message("Actually fetching current headers based on PrimaryKeys")
-                     current_headers <- tryCatch(fetch_ldc(keys = current_primarykeys_chunks,
-                                                           key_type = "PrimaryKey",
-                                                           data_type = "header",
-                                                           verbose = TRUE),
-                                                 error = function(error){
-                                                   gsub(x = error,
-                                                        pattern = "^Error.+[ ]:[ ]",
-                                                        replacement = "")
-                                                 })
-                     
-                     message(paste0("class(current_headers) is: ",
-                                    paste(class(current_headers),
-                                          collapse = ", ")))
-                     if ("character" %in% class(current_headers)) {
-                       showNotification(ui = paste0("Encountered the following API error: ",
-                                                    current_headers),
-                                        duration = NULL,
-                                        closeButton = TRUE,
-                                        type = "error",
-                                        id = "api_headers_error")
-                     } else if ("data.frame" %in% class(current_headers)) {
-                       message("Converting header info to sf object")
-                       current_headers_sf <- sf::st_as_sf(x = current_headers,
-                                                          coords = c("Longitude_NAD83",
-                                                                     "Latitude_NAD83"),
-                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
-                       
-                       # This'll be useful so I can make a map
-                       workspace$mapping_header_sf <- current_headers_sf
-                     }
                      
                      
                      # So we can tell the user later which actually got queried
@@ -917,6 +871,55 @@ server <- function(input, output, session) {
                                         id = "api_error")
                        workspace$missing_keys <- NULL
                      } else {
+                       # Let's get map info!
+                       message("Getting current headers for mapping")
+                       current_primarykeys <- unique(results$PrimaryKey)
+                       current_primarykey_chunk_count <- ceiling(length(current_key_vector) / 100)
+                       
+                       current_primarykeys_chunks <- sapply(X = 1:current_primarykey_chunk_count,
+                                                            keys_vector = current_primarykeys,
+                                                            key_chunk_size = 100,
+                                                            key_count = length(current_primarykeys),
+                                                            FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                                                              min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                                                              max_index <- min(c(key_count, X * key_chunk_size))
+                                                              indices <- min_index:max_index
+                                                              paste(keys_vector[indices],
+                                                                    collapse = ",")
+                                                            })
+                       message("Actually fetching current headers based on PrimaryKeys")
+                       current_headers <- tryCatch(fetch_ldc(keys = current_primarykeys_chunks,
+                                                             key_type = "PrimaryKey",
+                                                             data_type = "header",
+                                                             verbose = TRUE),
+                                                   error = function(error){
+                                                     gsub(x = error,
+                                                          pattern = "^Error.+[ ]:[ ]",
+                                                          replacement = "")
+                                                   })
+                       
+                       message(paste0("class(current_headers) is: ",
+                                      paste(class(current_headers),
+                                            collapse = ", ")))
+                       if ("character" %in% class(current_headers)) {
+                         showNotification(ui = paste0("Encountered the following API error retrieving header info for mapping: ",
+                                                      current_headers),
+                                          duration = NULL,
+                                          closeButton = TRUE,
+                                          type = "error",
+                                          id = "api_headers_error")
+                         workspace$mapping_header_sf <- NULL
+                       } else if ("data.frame" %in% class(current_headers)) {
+                         message("Converting header info to sf object")
+                         current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                            coords = c("Longitude_NAD83",
+                                                                       "Latitude_NAD83"),
+                                                            crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                         
+                         # This'll be useful so I can make a map
+                         workspace$mapping_header_sf <- current_headers_sf
+                       }
+                       
                        message("Determining if keys are missing.")
                        message(paste0("input$key_type is: ",
                                       paste(input$key_type,
