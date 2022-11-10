@@ -1047,7 +1047,7 @@ server <- function(input, output, session) {
                      # If there was an API error, display that
                      if ("character" %in% class(current_headers)) {
                        results <- NULL
-                       showNotification(ui = paste0("API error: ",
+                       showNotification(ui = paste0("API error retrieving headers for spatial query: ",
                                                     current_headers),
                                         duration = NULL,
                                         closeButton = TRUE,
@@ -1153,7 +1153,7 @@ server <- function(input, output, session) {
                            workspace$data_fresh <- TRUE
                            workspace$raw_data <- data
                          } else {
-                           showNotification(ui = paste0("API error: ",
+                           showNotification(ui = paste0("API error retrieving data based on spatial query: ",
                                                         results),
                                             duration = NULL,
                                             closeButton = TRUE,
