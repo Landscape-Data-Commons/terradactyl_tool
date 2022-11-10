@@ -1153,6 +1153,20 @@ server <- function(input, output, session) {
                            message("Setting data_fresh to TRUE because we just downloaded it")
                            workspace$data_fresh <- TRUE
                            workspace$raw_data <- data
+                         } else if (length(results) == 0) {
+                           message("No records found for those PrimaryKeys")
+                           if (length(current_primary_keys) > 0) {
+                             no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
+                           } else {
+                             no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
+                           }
+                           showNotification(ui = paste0(no_data_spatial_error_message,
+                                                        results),
+                                            duration = NULL,
+                                            closeButton = TRUE,
+                                            id = "no_data_spatial_error",
+                                            type = "error")
+                           workspace$raw_data <- NULL
                          } else {
                            showNotification(ui = paste0("API error retrieving data based on spatial query: ",
                                                         results),
