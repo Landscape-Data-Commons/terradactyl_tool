@@ -137,56 +137,60 @@ ui <- fluidPage(
                   tabPanel(title = "Configure Data",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
-                           helpText("If a variable name is already selected, it should be correct."),
-                           selectInput(inputId = "primarykey_var",
-                                       label = "Variable containing PrimaryKey values",
-                                       choices = c("")),
-                           # LineKey (potentially) matters to LPI, gap, and height
-                           conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
-                                            selectInput(inputId = "linekey_var",
-                                                        label = "Variable containing LineKey values",
-                                                        choices = c(""))),
-                           # LPI-specific variables
-                           conditionalPanel(condition = "input.data_type == 'lpi'",
-                                            selectInput(inputId = "code_var",
-                                                        label = "Variable containing hit codes",
+                           checkboxInput(inputId = "show_var_config",
+                                         label = "Show variable configuration options",
+                                         value = FALSE),
+                           conditionalPanel(condition = "input.show_var_config",
+                                            helpText("If a variable name is already selected, it should be correct."),
+                                            selectInput(inputId = "primarykey_var",
+                                                        label = "Variable containing PrimaryKey values",
                                                         choices = c("")),
-                                            selectInput(inputId = "pointnbr_var",
-                                                        label = "Variable containing the ordinal hit numbers",
-                                                        choices = c("")),
-                                            selectInput(inputId = "layer_var",
-                                                        label = "Variable containing the hit record layers",
-                                                        choices = c(""))),
-                           # Gap-specific variables
-                           conditionalPanel(condition = "input.data_type == 'gap'",
-                                            selectInput(inputId = "linelengthamount_var",
-                                                        label = "Variable containing line lengths",
-                                                        choices = c("")),
-                                            selectInput(inputId = "measure_var",
-                                                        label = "Variable containing the measurement units",
-                                                        choices = c("")),
-                                            selectInput(inputId = "rectype_var",
-                                                        label = "Variable containing the type of gaps",
-                                                        choices = c("")),
-                                            selectInput(inputId = "gap_var",
-                                                        label = "Variable containing gap sizes",
-                                                        choices = c(""))),
-                           # Height-specific variables
-                           conditionalPanel(condition = "input.data_type == 'height'",
-                                            selectInput(inputId = "height_var",
-                                                        label = "Variable containing heights",
-                                                        choices = c("")),
-                                            selectInput(inputId = "species_var",
-                                                        label = "Variable containing the species",
-                                                        choices = c(""))),
-                           # Soil-specific variables
-                           conditionalPanel(condition = "input.data_type == 'soilstability'",
-                                            selectInput(inputId = "rating_var",
-                                                        label = "Variable containing stability ratings",
-                                                        choices = c("")),
-                                            selectInput(inputId = "veg_var",
-                                                        label = "Variable containing vegetative cover type",
-                                                        choices = c(""))),
+                                            # LineKey (potentially) matters to LPI, gap, and height
+                                            conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
+                                                             selectInput(inputId = "linekey_var",
+                                                                         label = "Variable containing LineKey values",
+                                                                         choices = c(""))),
+                                            # LPI-specific variables
+                                            conditionalPanel(condition = "input.data_type == 'lpi'",
+                                                             selectInput(inputId = "code_var",
+                                                                         label = "Variable containing hit codes",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "pointnbr_var",
+                                                                         label = "Variable containing the ordinal hit numbers",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "layer_var",
+                                                                         label = "Variable containing the hit record layers",
+                                                                         choices = c(""))),
+                                            # Gap-specific variables
+                                            conditionalPanel(condition = "input.data_type == 'gap'",
+                                                             selectInput(inputId = "linelengthamount_var",
+                                                                         label = "Variable containing line lengths",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "measure_var",
+                                                                         label = "Variable containing the measurement units",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "rectype_var",
+                                                                         label = "Variable containing the type of gaps",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "gap_var",
+                                                                         label = "Variable containing gap sizes",
+                                                                         choices = c(""))),
+                                            # Height-specific variables
+                                            conditionalPanel(condition = "input.data_type == 'height'",
+                                                             selectInput(inputId = "height_var",
+                                                                         label = "Variable containing heights",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "species_var",
+                                                                         label = "Variable containing the species",
+                                                                         choices = c(""))),
+                                            # Soil-specific variables
+                                            conditionalPanel(condition = "input.data_type == 'soilstability'",
+                                                             selectInput(inputId = "rating_var",
+                                                                         label = "Variable containing stability ratings",
+                                                                         choices = c("")),
+                                                             selectInput(inputId = "veg_var",
+                                                                         label = "Variable containing vegetative cover type",
+                                                                         choices = c("")))),
                            hr(),
                            # Species lookup table stuff
                            conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
@@ -1395,11 +1399,14 @@ server <- function(input, output, session) {
                                                                   current_value %in% c("")
                                                                 }))
                    message("Determining if any required variables are missing/undefined.")
-                   missing_data_vars <- missing_data_vars[!(missing_data_vars %in% current_required_vars[!undefined_data_vars_indices])]
                    
+                   missing_data_vars <- missing_data_vars[!(missing_data_vars %in% current_required_vars[!undefined_data_vars_indices])]
                    
                    if (length(missing_data_vars) > 0) {
                      message("Missing one or more required variables.")
+                     updateCheckboxInput(session = session,
+                                         inputId = "show_var_config",
+                                         value = TRUE)
                      missing_vars_notification <- paste0("The following required variables are missing: ",
                                                          paste(missing_data_vars,
                                                                collapse = ", "))
@@ -1416,7 +1423,7 @@ server <- function(input, output, session) {
                                    inputId = "maintabs",
                                    selected = "Data")
                })
-  
+
   ##### Updating available metadata variables when input$primarykey_var updates #####
   observeEvent(eventExpr = {input$primarykey_var},
                handlerExpr = {
