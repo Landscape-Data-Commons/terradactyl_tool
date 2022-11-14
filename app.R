@@ -86,14 +86,11 @@ ui <- fluidPage(
                        selectInput(inputId = "query_method",
                                    label = "Query method",
                                    choices = c("Spatial" = "spatial",
-                                               "Keys" = "keys")),
-                       conditionalPanel(condition = "input.query_method == 'keys'",
-                                        selectInput(inputId = "key_type",
-                                                    label = "LDC search type",
-                                                    choices = c("By ecological site" = "EcologicalSiteID",
-                                                                "By PrimaryKey" = "PrimaryKey",
-                                                                "By ProjectKey" = "ProjectKey"),
-                                                    selected = "ecosite"),
+                                               "By ecological site" = "EcologicalSiteID",
+                                               "By PrimaryKey" = "PrimaryKey",
+                                               "By ProjectKey" = "ProjectKey"),
+                                   selected = "spatial"),
+                       conditionalPanel(condition = "input.query_method == 'EcologicalSiteID' | input.query_method == 'PrimaryKey' | input.query_method == 'ProjectKey'",
                                         textInput(inputId = "keys",
                                                   label = "Search key values",
                                                   value = "",
@@ -776,7 +773,7 @@ server <- function(input, output, session) {
                  workspace$current_data_source <- "ldc"
                  message("Data source set to LDC")
                  
-                 if (input$query_method == "keys") {
+                 if (input$query_method != "spatial") {
                    message("Nullifying workspace$mapping_polygons for mapping reasons")
                    workspace$mapping_polygons <- NULL
                    message("Querying by keys")
@@ -799,11 +796,11 @@ server <- function(input, output, session) {
                      
                      # The API queryable tables don't include ecosite, so we grab
                      # the header table and get primary keys from that
-                     if (input$key_type == "EcologicalSiteID") {
+                     if (input$query_method == "EcologicalSiteID") {
                        message("key_type is EcologicalSiteID")
                        message("Retrieving headers")
                        current_headers <- tryCatch(fetch_ldc(keys = current_key_string,
-                                                             key_type = input$key_type,
+                                                             key_type = input$query_method,
                                                              data_type = "header",
                                                              verbose = TRUE),
                                                    error = function(error){
@@ -862,7 +859,7 @@ server <- function(input, output, session) {
                                                      })
                        
                        results <- tryCatch(fetch_ldc(keys = current_keys_chunks,
-                                                     key_type = input$key_type,
+                                                     key_type = input$query_method,
                                                      data_type = input$data_type,
                                                      verbose = TRUE),
                                            error = function(error){
@@ -941,14 +938,14 @@ server <- function(input, output, session) {
                        }
                        
                        message("Determining if keys are missing.")
-                       message(paste0("input$key_type is: ",
-                                      paste(input$key_type,
+                       message(paste0("input$query_method is: ",
+                                      paste(input$query_method,
                                             collapse = ", ")))
                        # Because ecosites were two-stage, we check in with headers
-                       if (input$key_type %in% c("EcologicalSiteID")) {
-                         workspace$queried_keys <- unique(current_headers[[input$key_type]])
+                       if (input$query_method %in% c("EcologicalSiteID")) {
+                         workspace$queried_keys <- unique(current_headers[[input$query_method]])
                        } else {
-                         workspace$queried_keys <- unique(results[[input$key_type]])
+                         workspace$queried_keys <- unique(results[[input$query_method]])
                        }
                        
                        workspace$missing_keys <- current_key_vector[!(current_key_vector %in% workspace$queried_keys)]
