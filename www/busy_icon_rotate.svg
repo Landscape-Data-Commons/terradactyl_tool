@@ -1,0 +1,61 @@
+<svg
+  xmlns = "http://www.w3.org/2000/svg"
+  width = "32px"
+  height = "32px">
+  <circle
+    class = "flickering"
+    cx = "16"
+	cy = "16"
+	r = "12.5"
+	fill = "none"
+	vector-effect = "non-scaling-stroke"
+	stroke = "#404040"
+	stroke-width = "7px"
+  />
+  <circle
+    class = "flickering"
+    cx = "16"
+	cy = "16"
+	r = "12.5"
+	fill = "none"
+	vector-effect = "non-scaling-stroke"
+	stroke = "white"
+	stroke-width = "5px"
+	stroke-dasharray = "6px 1px"
+  />
+  <style>
+   .flickering {
+      transform-origin: 16px 16px;
+      animation-name: flicker;
+	  animation-duration: 4s;
+	  animation-iteration-count: infinite;
+	  animation-timing-function: linear;
+   }
+   @keyframes flicker {
+      0% {
+	     transform: rotate(0deg);
+	  }
+	  15% {
+	     transform: rotate(90deg);
+	  }
+	  20% {
+	     transform: rotate(100deg);
+	  }
+	  30% {
+	     transform: rotate(50deg);
+	  }
+	  50% {
+	     transform: rotate(0deg);
+	  }
+	  80% {
+	     transform: rotate(180deg);
+	  }
+	  90% {
+	     transform: rotate(200deg);
+	  }
+	  100% {
+	     transform: rotate(0deg);
+	  }
+   }
+  </style>
+</svg>

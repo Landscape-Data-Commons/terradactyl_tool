@@ -745,7 +745,7 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 showNotification(ui = "Downloading data from the LDC. Please wait.",
+                 showNotification(ui = HTML("<img src = 'busy_icon_rotate.svg' style = 'width: 32px; height: 32px'/> Fetching data!"),
                                   duration = NULL,
                                   closeButton = FALSE,
                                   id = "downloading",
@@ -1740,7 +1740,7 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("Should be good to go. Calculating!")
-                   showNotification(ui = "Calculating!",
+                   showNotification(ui = "<img src = 'busy_icon_rotate.svg' style = 'width: 32px; height: 32px'/> Calculating!",
                                     id = "calculating",
                                     duration = NULL,
                                     closeButton = FALSE,
