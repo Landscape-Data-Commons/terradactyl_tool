@@ -287,6 +287,12 @@ ui <- fluidPage(
                                                                     "Basal" = "basal",
                                                                     "Perennial canopy" = "perennial canopy"),
                                                         selected = "canopy"),
+                                            checkboxGroupInput(inputId = "gap_indicator_types",
+                                                               label = "Gap indicator types to calculate",
+                                                               choices = c("Percent of line(s)" = "percent",
+                                                                           "Number of gaps" = "n",
+                                                                           "Length of gaps" = "length"),
+                                                               selected = c("percent")),
                                             selectInput(inputId = "gap_unit",
                                                         label = "Summary unit",
                                                         choices = c("Plot" = "plot",
@@ -1242,7 +1248,7 @@ server <- function(input, output, session) {
                      message("No numeric variables to round in display data")
                    }
                  }
-
+                 
                  
                  message("Rendering display data")
                  output$data <- DT::renderDataTable(display_data,
@@ -1740,7 +1746,7 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("Should be good to go. Calculating!")
-                   showNotification(ui = "<img src = 'busy_icon_rotate.svg' style = 'width: 32px; height: 32px'/> Calculating!",
+                   showNotification(ui = "Calculating!",
                                     id = "calculating",
                                     duration = NULL,
                                     closeButton = FALSE,
@@ -1841,45 +1847,58 @@ server <- function(input, output, session) {
                             
                             if (any(is.na(current_gap_breaks))) {
                               message("At least one of the gap breakpoints isn't numeric!")
-                              showNotification(ui = "One or more of the gap breakpoints is non-numeric. Please provide the gap breaks separated by commas.",
-                                               duration = NA,
-                                               closeButton = TRUE,
-                                               id = "bad_gap_breaks")
+                              gap_results <- "One or more of the gap breakpoints is non-numeric. Please provide the gap breaks separated by commas."
+                            } else if (length(input$gap_indicator_types) < 1) {
+                              message("No indicator type selected")
+                              gap_results <- "No indicator types selected to calculate."
                             } else {
-                              message("Gap breaks are all good!")
+                              message("Gap breaks are all good and at least one indicator type is selected")
                               message("Calcaulating gap")
                               gap_results <- tryCatch(terradactyl::gap_cover(gap_tall = workspace$calc_data,
-                                                                    tall = input$gap_output_format == "long",
-                                                                    breaks = current_gap_breaks,
-                                                                    type = input$gap_type,
-                                                                    by_line = (input$gap_unit == "line")),
+                                                                             tall = input$gap_output_format == "long",
+                                                                             breaks = current_gap_breaks,
+                                                                             type = input$gap_type,
+                                                                             by_line = (input$gap_unit == "line")),
                                                       error = function(error){
                                                         error
                                                       })
+                              gap_results <- gap_results[input$gap_indicator_types]
+                              message(paste0("Remaining names of gap results are: ",
+                                             paste(names(gap_results),
+                                                   collapse = ", ")))
+                              message("Gaps calculated")
                             }
                             
-                            message("Gaps calculated")
-                            # Apparently gap_cover() returns a list of data frames
-                            # when tall = FALSE so let's combine them
-                            if (input$gap_output_format == "wide") {
-                              # First up is to rename the variables using the stats
-                              for (index in seq_len(length(gap_results))) {
-                                current_stat <- names(gap_results)[index]
-                                current_vars <- names(gap_results[[index]])
-                                gap_class_var_indices <- grepl(current_vars,
-                                                               pattern = "\\d|NoGap")
-                                gap_class_vars <- current_vars[gap_class_var_indices]
-                                names(gap_results[[index]])[gap_class_var_indices] <- paste0(gap_class_vars,
-                                                                                             "_",
-                                                                                             current_stat)
+                            # Only if we actually calculated anything!
+                            if (!is.character(gap_results)) {
+                              message("Gap results aren't character")
+                              # Apparently gap_cover() returns a list of data frames
+                              # when tall = FALSE so let's combine them
+                              if (input$gap_output_format == "wide") {
+                                # First up is to rename the variables using the stats
+                                for (index in seq_len(length(gap_results))) {
+                                  current_stat <- names(gap_results)[index]
+                                  current_vars <- names(gap_results[[index]])
+                                  gap_class_var_indices <- grepl(current_vars,
+                                                                 pattern = "\\d|NoGap")
+                                  gap_class_vars <- current_vars[gap_class_var_indices]
+                                  names(gap_results[[index]])[gap_class_var_indices] <- paste0(gap_class_vars,
+                                                                                               "_",
+                                                                                               current_stat)
+                                }
+                                # Then mash them together
+                                current_results <- Reduce(f = dplyr::full_join,
+                                                          x = gap_results)
+                              } else {
+                                # If the results are long, we're already ready to go
+                                current_results <- do.call(rbind,
+                                                           gap_results)
                               }
-                              # Then mash them together
-                              current_results <- Reduce(f = dplyr::full_join,
-                                                        x = gap_results)
                             } else {
-                              # If the results are long, we're already ready to go
+                              message("Gap results are an error message")
                               current_results <- gap_results
                             }
+                            
                           },
                           "height" = {
                             message("Handling grouping variables")
@@ -1977,7 +1996,7 @@ server <- function(input, output, session) {
                    
                    message(paste0("class(current_results) i: ",
                                   paste0(class(current_results),
-                                               collapse = ", ")))
+                                         collapse = ", ")))
                    # This is where we do error handling
                    if ("character" %in% class(current_results)) {
                      showNotification(ui = paste0("The calculation produced the following error: ",
