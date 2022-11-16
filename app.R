@@ -760,7 +760,7 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 showNotification(ui = HTML("<img src = 'busy_icon_rotate.svg' style = 'width: 32px; height: 32px'/> Fetching data!"),
+                 showNotification(ui = HTML("Fetching data!"),
                                   duration = NULL,
                                   closeButton = FALSE,
                                   id = "downloading",
