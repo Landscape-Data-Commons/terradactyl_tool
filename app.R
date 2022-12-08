@@ -4,6 +4,7 @@ library(DT)
 library(stringr)
 library(tippy)
 library(leaflet)
+library(sf)
 source("functions.R")
 
 # Define UI for application
