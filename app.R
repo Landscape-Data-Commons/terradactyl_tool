@@ -137,60 +137,60 @@ ui <- fluidPage(
                                       label = "What do these options mean?"),
                            fluidRow(
                              column(width = 5,
-                               checkboxInput(inputId = "show_var_config",
-                                             label = "Show variable configuration options",
-                                             value = FALSE),
-                               conditionalPanel(condition = "input.show_var_config",
-                                                helpText("If a variable name is already selected, it should be correct."),
-                                                selectInput(inputId = "primarykey_var",
-                                                            label = "Variable containing PrimaryKey values",
-                                                            choices = c("")),
-                                                # LineKey (potentially) matters to LPI, gap, and height
-                                                conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
-                                                                 selectInput(inputId = "linekey_var",
-                                                                             label = "Variable containing LineKey values",
-                                                                             choices = c(""))),
-                                                # LPI-specific variables
-                                                conditionalPanel(condition = "input.data_type == 'lpi'",
-                                                                 selectInput(inputId = "code_var",
-                                                                             label = "Variable containing hit codes",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "pointnbr_var",
-                                                                             label = "Variable containing the ordinal hit numbers",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "layer_var",
-                                                                             label = "Variable containing the hit record layers",
-                                                                             choices = c(""))),
-                                                # Gap-specific variables
-                                                conditionalPanel(condition = "input.data_type == 'gap'",
-                                                                 selectInput(inputId = "linelengthamount_var",
-                                                                             label = "Variable containing line lengths",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "measure_var",
-                                                                             label = "Variable containing the measurement units",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "rectype_var",
-                                                                             label = "Variable containing the type of gaps",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "gap_var",
-                                                                             label = "Variable containing gap sizes",
-                                                                             choices = c(""))),
-                                                # Height-specific variables
-                                                conditionalPanel(condition = "input.data_type == 'height'",
-                                                                 selectInput(inputId = "height_var",
-                                                                             label = "Variable containing heights",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "species_var",
-                                                                             label = "Variable containing the species",
-                                                                             choices = c(""))),
-                                                # Soil-specific variables
-                                                conditionalPanel(condition = "input.data_type == 'soilstability'",
-                                                                 selectInput(inputId = "rating_var",
-                                                                             label = "Variable containing stability ratings",
-                                                                             choices = c("")),
-                                                                 selectInput(inputId = "veg_var",
-                                                                             label = "Variable containing vegetative cover type",
-                                                                             choices = c("")))),
+                                    checkboxInput(inputId = "show_var_config",
+                                                  label = "Show variable configuration options",
+                                                  value = FALSE),
+                                    conditionalPanel(condition = "input.show_var_config",
+                                                     helpText("If a variable name is already selected, it should be correct."),
+                                                     selectInput(inputId = "primarykey_var",
+                                                                 label = "Variable containing PrimaryKey values",
+                                                                 choices = c("")),
+                                                     # LineKey (potentially) matters to LPI, gap, and height
+                                                     conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
+                                                                      selectInput(inputId = "linekey_var",
+                                                                                  label = "Variable containing LineKey values",
+                                                                                  choices = c(""))),
+                                                     # LPI-specific variables
+                                                     conditionalPanel(condition = "input.data_type == 'lpi'",
+                                                                      selectInput(inputId = "code_var",
+                                                                                  label = "Variable containing hit codes",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "pointnbr_var",
+                                                                                  label = "Variable containing the ordinal hit numbers",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "layer_var",
+                                                                                  label = "Variable containing the hit record layers",
+                                                                                  choices = c(""))),
+                                                     # Gap-specific variables
+                                                     conditionalPanel(condition = "input.data_type == 'gap'",
+                                                                      selectInput(inputId = "linelengthamount_var",
+                                                                                  label = "Variable containing line lengths",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "measure_var",
+                                                                                  label = "Variable containing the measurement units",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "rectype_var",
+                                                                                  label = "Variable containing the type of gaps",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "gap_var",
+                                                                                  label = "Variable containing gap sizes",
+                                                                                  choices = c(""))),
+                                                     # Height-specific variables
+                                                     conditionalPanel(condition = "input.data_type == 'height'",
+                                                                      selectInput(inputId = "height_var",
+                                                                                  label = "Variable containing heights",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "species_var",
+                                                                                  label = "Variable containing the species",
+                                                                                  choices = c(""))),
+                                                     # Soil-specific variables
+                                                     conditionalPanel(condition = "input.data_type == 'soilstability'",
+                                                                      selectInput(inputId = "rating_var",
+                                                                                  label = "Variable containing stability ratings",
+                                                                                  choices = c("")),
+                                                                      selectInput(inputId = "veg_var",
+                                                                                  label = "Variable containing vegetative cover type",
+                                                                                  choices = c("")))),
                              ),
                              column(width = 6,
                                     # Species lookup table stuff
@@ -261,22 +261,31 @@ ui <- fluidPage(
                            actionLink(inputId = "indicator_help",
                                       label = "What do these options mean?"),
                            conditionalPanel(condition = "input.data_type == 'lpi'",
-                                            radioButtons(inputId = "lpi_hit",
-                                                         label = "Use first, any, or basal hit?",
-                                                         choices = c("Any hit" = "any",
-                                                                     "First hit" = "first",
-                                                                     "Basal hit" = "basal")),
-                                            # tippy can't work with selectInput(multiple = TRUE)
-                                            # So we can wrap it in a div() and tippy that
-                                            div(id = "lpi_grouping_vars_wrapper",
-                                                selectInput(inputId = "lpi_grouping_vars",
-                                                            label = "Grouping variables",
-                                                            multiple = TRUE,
-                                                            choices = c(""))),
-                                            tippy_this(elementId = "lpi_grouping_vars_wrapper",
-                                                       tooltip = "E.g. code or growth habit and duration",
-                                                       placement = "right",
-                                                       delay = c(50, 0)),
+                                            selectInput(inputId = "lpi_hit",
+                                                        label = "Cover calculation type",
+                                                        choices = c("Any hit" = "any",
+                                                                    "First hit" = "first",
+                                                                    "Basal hit" = "basal",
+                                                                    "Species" = "species",
+                                                                    "Bare soil" = "bare_ground",
+                                                                    "Litter" = "litter",
+                                                                    "Between-plant" = "between_plant",
+                                                                    "Total foliar" = "total_foliar",
+                                                                    "Non-plant surface" = "nonplant_ground")),
+                                            # Grouping variables are only options for first, any, and basal
+                                            conditionalPanel(condition = "input.lpi_hit == 'any' | input.lpi_hit == 'first' | input.lpi_hit == 'basal'",
+                                                             # tippy can't work with selectInput(multiple = TRUE)
+                                                             # So we can wrap it in a div() and tippy that
+                                                             div(id = "lpi_grouping_vars_wrapper",
+                                                                 selectInput(inputId = "lpi_grouping_vars",
+                                                                             label = "Grouping variables",
+                                                                             multiple = TRUE,
+                                                                             choices = c(""))),
+                                                             tippy_this(elementId = "lpi_grouping_vars_wrapper",
+                                                                        tooltip = "E.g. code or growth habit and duration",
+                                                                        placement = "right",
+                                                                        delay = c(50, 0))
+                                            ),
                                             selectInput(inputId = "lpi_unit",
                                                         label = "Summary unit",
                                                         choices = c("Plot" = "plot",
@@ -1793,42 +1802,55 @@ server <- function(input, output, session) {
                    switch(input$data_type,
                           "lpi" = {
                             message("Calculating cover from LPI.")
-                            # Handle the grouping variables (if any)!
-                            message("input$lpi_grouping_vars is:")
-                            message(input$lpi_grouping_vars)
                             
-                            current_lpi_grouping_vars <- input$lpi_grouping_vars
-                            current_lpi_grouping_vars <- current_lpi_grouping_vars[!(current_lpi_grouping_vars %in% c(""))]
-                            
-                            if (length(current_lpi_grouping_vars) > 0) {
-                              lpi_grouping_vars_vector <- current_lpi_grouping_vars
+                            if (input$lpi_hit %in% c("any", "first", "basal")) {
+                              message("This is a generalized LPI calc and will use pct_cover()")
+                              # Handle the grouping variables (if any)!
+                              message("input$lpi_grouping_vars is:")
+                              message(input$lpi_grouping_vars)
                               
-                              message("There are grouping variables.")
-                              current_lpi_vars <- names(workspace$calc_data)
-                              missing_lpi_grouping_vars <- lpi_grouping_vars_vector[!(lpi_grouping_vars_vector %in% current_lpi_vars)]
-                              available_lpi_grouping_vars <- lpi_grouping_vars_vector[lpi_grouping_vars_vector %in% current_lpi_vars]
+                              current_lpi_grouping_vars <- input$lpi_grouping_vars
+                              current_lpi_grouping_vars <- current_lpi_grouping_vars[!(current_lpi_grouping_vars %in% c(""))]
                               
-                              if (length(missing_lpi_grouping_vars) < 1) {
-                                message("No variables missing!")
-                                lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
-                                                           "lpi_tall = workspace$calc_data,",
-                                                           "tall = input$lpi_output_format == 'long',",
-                                                           "hit = input$lpi_hit,",
-                                                           "by_line = input$lpi_unit == 'line',",
-                                                           paste(lpi_grouping_vars_vector,
-                                                                 collapse = ","),
-                                                           "),error = function(error){error})")
+                              if (length(current_lpi_grouping_vars) > 0) {
+                                lpi_grouping_vars_vector <- current_lpi_grouping_vars
+                                
+                                message("There are grouping variables.")
+                                current_lpi_vars <- names(workspace$calc_data)
+                                missing_lpi_grouping_vars <- lpi_grouping_vars_vector[!(lpi_grouping_vars_vector %in% current_lpi_vars)]
+                                available_lpi_grouping_vars <- lpi_grouping_vars_vector[lpi_grouping_vars_vector %in% current_lpi_vars]
+                                
+                                if (length(missing_lpi_grouping_vars) < 1) {
+                                  message("No variables missing!")
+                                  lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
+                                                             "lpi_tall = workspace$calc_data,",
+                                                             "tall = input$lpi_output_format == 'long',",
+                                                             "hit = input$lpi_hit,",
+                                                             "by_line = input$lpi_unit == 'line',",
+                                                             paste(lpi_grouping_vars_vector,
+                                                                   collapse = ","),
+                                                             "),error = function(error){error})")
+                                } else {
+                                  message("Missing one or more variables.")
+                                  missing_lpi_grouping_vars_warning <- paste0("The following variables are missing: ",
+                                                                              paste(missing_lpi_grouping_vars,
+                                                                                    collapse = ", "),
+                                                                              ". Results will be calculated without grouping.")
+                                  showNotification(ui = missing_lpi_grouping_vars_warning,
+                                                   duration = NULL,
+                                                   closeButton = TRUE,
+                                                   id = "missing_lpi_grouping_vars",
+                                                   type = "warning")
+                                  lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
+                                                             "lpi_tall = workspace$calc_data,",
+                                                             "tall = input$lpi_output_format == 'long',",
+                                                             "hit = input$lpi_hit,",
+                                                             "by_line = input$lpi_unit == 'line'",
+                                                             "),error = function(error){error})")
+                                }
+                                
                               } else {
-                                message("Missing one or more variables.")
-                                missing_lpi_grouping_vars_warning <- paste0("The following variables are missing: ",
-                                                                            paste(missing_lpi_grouping_vars,
-                                                                                  collapse = ", "),
-                                                                            ". Results will be calculated without grouping.")
-                                showNotification(ui = missing_lpi_grouping_vars_warning,
-                                                 duration = NULL,
-                                                 closeButton = TRUE,
-                                                 id = "missing_lpi_grouping_vars",
-                                                 type = "warning")
+                                message("No grouping variables.")
                                 lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
                                                            "lpi_tall = workspace$calc_data,",
                                                            "tall = input$lpi_output_format == 'long',",
@@ -1836,15 +1858,51 @@ server <- function(input, output, session) {
                                                            "by_line = input$lpi_unit == 'line'",
                                                            "),error = function(error){error})")
                               }
-                              
                             } else {
-                              message("No grouping variables.")
-                              lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
-                                                         "lpi_tall = workspace$calc_data,",
-                                                         "tall = input$lpi_output_format == 'long',",
-                                                         "hit = input$lpi_hit,",
-                                                         "by_line = input$lpi_unit == 'line'",
-                                                         "),error = function(error){error})")
+                              message("This is a specialized LPI call and will be using a wrapper for pct_cover()")
+                              switch(input$lpi_hit,
+                                     "species" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_species(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     },
+                                     "bare_ground" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_bare_soil(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     },
+                                     "litter" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_litter(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     },
+                                     "between_plant" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_between_plant(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     },
+                                     "total_foliar" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_total_foliar(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     },
+                                     "nonplant_ground" = {
+                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_all_ground(",
+                                                                  "lpi_tall = workspace$calc_data,",
+                                                                  "tall = input$lpi_output_format == 'long',",
+                                                                  "by_line = input$lpi_unit == 'line'",
+                                                                  "),error = function(error){error})")
+                                     })
                             }
                             
                             message("The function call is:")
