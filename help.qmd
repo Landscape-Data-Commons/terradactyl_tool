@@ -127,9 +127,26 @@ Once the growth habit and duration variables are selected, clicking the "Add gen
 
 ### Line-Point Intercept {#lpi-config}
 
-#### LPI hit {#lpi-hit-config}
+#### Cover calculation type {#lpi-cover-calculation-type}
 
-There are two options for which "hit" to calculate from with LPI data. When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using "any hit" then every layer is considered as contributing to cover while "first hit" only considers the topmost recorded hits and "basal hit" only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using "first hit" would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using "any hit" then the perennial forb would contribute to cover by perennial forbs *and* the annual grass would contribute to to cover by annual grasses.
+There are several options for how to calculate cover from LPI data. Three of them ("Any", "First", and "Basal") are generalized and customizable with [grouping variables](#lpi-grouping-variables-config) to allow custom calculated indicators like percent cover by plant functional group. The other options produce standard indicators.
+
+The customizable options differ only in terms of which LPI records are considered as part of the calculations. All three should be used with [grouping variables](#lpi-grouping-variables-config); *not* using grouping variables will result in all values being 100% due simply calculating the percent of pin drops that had records (all of them).
+
+-   Any hit - Default calculation approach. Considers every record at a pin drop, e.g. a pin drop that recorded "AGCR2" as the top canopy and "BRTE" as a lower canopy layer would contribute to cover for both species. The calculated cover values for a [summarization unit](#lpi-summarization-unit-config) may sum to more than 100%.
+-   First hit - Considers only the topmost LPI record for each pin drop, e.g.  a pin drop that recorded "AGCR2" as the top canopy and "BRTE" as a lower canopy layer would contribute to cover *only* for "AGCR2". The calculated cover values for a [summarization unit](#lpi-summarization-unit-config) should never sum to more than 100%.
+-   Basal hit - Considers only LPI records in which the [layer](#layer-var) is "SoilSurface", e.g.  a pin drop that recorded "AGCR2" as the top canopy and "S" as a surface record would contribute to cover *only* for "S". The calculated cover values for a [summarization unit](#lpi-summarization-unit-config) should never sum to more than 100%.
+
+The standard indicator options require no decision-making beyond selecting the correct one. Note that these are simply specialized versions of the customizable options and assume that the data use the same LPI record codes as AIM, e.g. "S" for soil hits.
+
+-   Species - The percent cover by each species. This assumes that all records for plants use species codes or names greater than three characters long. This uses an any hit approach.
+-   Bare soil - The percent cover by soil where there was no cover provided by plants. This will only work correctly if using data that codes soil as "S", "PC", "FG", "AG", or "LM", which is true of AIM data. This uses a first hit approach.
+-   Litter - Percent cover by types of litter. This only considers litter coded as "L", "WL", "NL", "HL", "AM", "DN", or "ER" in the data, which is the case for AIM data. This uses and any hit approach.
+-   Between-plant - The percent cover by non-plants (e.g., rocks, litter) *only* where there was not also plant cover. This assumes that all records for plants use species codes or names greater than three characters long. This uses a first hit approach.
+-   Total foliar - The percent cover by plants. This assumes that all records for plants use species codes or names greater than three characters long. This uses a first hit approach.
+-   Non-plant surface - The percent cover by non-plants. This assumes that all records for plants use species codes or names greater than three characters long. This uses a basal hit approach.
+
+When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using "any hit" then every layer is considered as contributing to cover while "first hit" only considers the topmost recorded hits and "basal hit" only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using "first hit" would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using "any hit" then the perennial forb would contribute to cover by perennial forbs *and* the annual grass would contribute to to cover by annual grasses.
 
 ![An example pin drop. Each hit record is labeled with the type of calculation (first, any, or basal) it would be included in.](hit_type_figure_small.png)
 
@@ -137,7 +154,10 @@ When using "first hit" or "basal hit" all your calculated cover values on a plot
 
 #### Grouping variables {#lpi-grouping-variables-config}
 
-These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
+These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location, which should always result in 100%. In order to calculate finer-grained cover values, additional grouping variables need to be selected. Commonly-used grouping variables include:
+
+
+For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.
 
 #### Summary Unit {#lpi-summarization-unit-config}
 
