@@ -11,5 +11,5 @@ COPY . /home/docker/terradactyl-tool
 # select port
 EXPOSE 3838
 #CMD R -e "shiny::runApp('/terradactyl', host = '0.0.0.0', port = 3838)"
-#CMD R -e "shiny::runApp('/home/docker/terradactyl-tool')"
-CMD ["tail","-f", "/dev/null"]
+CMD R -e "shiny::runApp('/home/docker/terradactyl-tool')"
+#CMD ["tail","-f", "/dev/null"]
