@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.1.189">
+<meta name="generator" content="quarto-1.2.269">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -55,6 +55,8 @@ ul.task-list li input[type="checkbox"] {
   </ul></li>
   <li><a href="#data-configuration" id="toc-data-configuration" class="nav-link" data-scroll-target="#data-configuration">Data configuration</a>
   <ul>
+  <li><a href="#variable-configuration" id="toc-variable-configuration" class="nav-link" data-scroll-target="#variable-configuration">Variable configuration options</a>
+  <ul class="collapse">
   <li><a href="#primary-key" id="toc-primary-key" class="nav-link" data-scroll-target="#primary-key">PrimaryKey</a></li>
   <li><a href="#line-key-var" id="toc-line-key-var" class="nav-link" data-scroll-target="#line-key-var">LineKey</a></li>
   <li><a href="#hit-codes-var" id="toc-hit-codes-var" class="nav-link" data-scroll-target="#hit-codes-var">Hit codes</a></li>
@@ -69,11 +71,20 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#stability-ratings-var" id="toc-stability-ratings-var" class="nav-link" data-scroll-target="#stability-ratings-var">Stability ratings</a></li>
   <li><a href="#vegetative-cover-var" id="toc-vegetative-cover-var" class="nav-link" data-scroll-target="#vegetative-cover-var">Vegetative cover</a></li>
   </ul></li>
+  <li><a href="#species-lookup" id="toc-species-lookup" class="nav-link" data-scroll-target="#species-lookup">Species lookup table</a>
+  <ul class="collapse">
+  <li><a href="#species-lookup-source" id="toc-species-lookup-source" class="nav-link" data-scroll-target="#species-lookup-source">Source</a></li>
+  <li><a href="#join-species" id="toc-join-species" class="nav-link" data-scroll-target="#join-species">Join species information to data</a></li>
+  <li><a href="#download-current-species" id="toc-download-current-species" class="nav-link" data-scroll-target="#download-current-species">Download current species information</a></li>
+  <li><a href="#species-joining-variables" id="toc-species-joining-variables" class="nav-link" data-scroll-target="#species-joining-variables">Species joining variables</a></li>
+  <li><a href="#include-generic-species" id="toc-include-generic-species" class="nav-link" data-scroll-target="#include-generic-species">Include generic species codes</a></li>
+  </ul></li>
+  </ul></li>
   <li><a href="#indicator-configuration" id="toc-indicator-configuration" class="nav-link" data-scroll-target="#indicator-configuration">Indicator configuration</a>
   <ul>
   <li><a href="#lpi-config" id="toc-lpi-config" class="nav-link" data-scroll-target="#lpi-config">Line-Point Intercept</a>
   <ul class="collapse">
-  <li><a href="#lpi-hit-config" id="toc-lpi-hit-config" class="nav-link" data-scroll-target="#lpi-hit-config">LPI hit</a></li>
+  <li><a href="#lpi-cover-calculation-type" id="toc-lpi-cover-calculation-type" class="nav-link" data-scroll-target="#lpi-cover-calculation-type">Cover calculation type</a></li>
   <li><a href="#lpi-grouping-variables-config" id="toc-lpi-grouping-variables-config" class="nav-link" data-scroll-target="#lpi-grouping-variables-config">Grouping variables</a></li>
   <li><a href="#lpi-summarization-unit-config" id="toc-lpi-summarization-unit-config" class="nav-link" data-scroll-target="#lpi-summarization-unit-config">Summary Unit</a></li>
   <li><a href="#lpi-output-format-config" id="toc-lpi-output-format-config" class="nav-link" data-scroll-target="#lpi-output-format-config">Output format</a></li>
@@ -160,6 +171,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="data-configuration" class="level2">
 <h2 class="anchored" data-anchor-id="data-configuration">Data configuration</h2>
+<section id="variable-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="variable-configuration">Variable configuration options</h3>
 <section id="primary-key" class="level4">
 <h4 class="anchored" data-anchor-id="primary-key">PrimaryKey</h4>
 <p>This must contain a unique value for each sampling event, e.g., plot visit. All records associated with a plot visit should have the same PrimaryKey, but if a plot was sampled more than once, each sampling event should have its own distinct PrimaryKey. If your data contain a variable called <code>PrimaryKey</code> then the tool will assume it contains PrimaryKeys.</p>
@@ -213,13 +226,57 @@ ul.task-list li input[type="checkbox"] {
 <p>In soil stability data, every record must have an associated vegetative cover designation. See the <a href="https://www.landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/">Monitoring Manual for Grassland, Shrubland, and Savanna Ecosystems Vol. 1</a> for information on valid codes. If your data contain a variable called <code>Veg</code> then the tool will assume it contains the vegetative cover types.</p>
 </section>
 </section>
+<section id="species-lookup" class="level3">
+<h3 class="anchored" data-anchor-id="species-lookup">Species lookup table</h3>
+<section id="species-lookup-source" class="level4">
+<h4 class="anchored" data-anchor-id="species-lookup-source">Source</h4>
+<p>If you have no additional species information you’d like to add, select None. Otherwise you have two options: You can use a lookup table derived from <a href="https://plants.usda.gov">USDA Plants</a> that includes both growth habit (e.g., forb or shrub) and duration (i.e., annual or perennial) for every species in the database <em>or</em> you can upload one of your own with any species traits you want to include.</p>
+<p>A custom lookup table must have a variable or column containing the species—if you’re using AIM data or any data from the LDC these should be the species codes found in <a href="https://plants.usda.gov">USDA Plants</a>—and one variable or column for each type of trait, e.g.&nbsp;one for growth habit and one for noxious status. Every species in the data should be represented in the lookup table and every species should have a value for each trait, e.g., if your lookup table includes a variable for noxious status then every species must be marked as “noxious” or “non-noxious” with none left blank.</p>
+</section>
+<section id="join-species" class="level4">
+<h4 class="anchored" data-anchor-id="join-species">Join species information to data</h4>
+<p>Once you’ve identifed the <a href="#species-joining-variables">species joining variables</a> and—if relevant—chosen to <a href="#include-generic-species">include generic species</a>, you can use the “Join species information to data” to add the traits from your lookup table to the data. If you make a mistake (e.g., joining before adding generic species) you can reset your data to its original state with the “Reset data” button in the Data tab.</p>
+<p>If there are species in the data that are not represented in the lookup table, they will be added to the top of the lookup table but without any of the traits populated.</p>
+</section>
+<section id="download-current-species" class="level4">
+<h4 class="anchored" data-anchor-id="download-current-species">Download current species information</h4>
+<p>You can use the “Download current species information” to download the current species lookup table. This is most useful after you <a href="#join-species">join species</a> to the data and have a modified lookup table which includes additional species from the data. You can download the lookup table, populate the traits for the newly-added species, and then use it as a custom uploaded lookup table in order to make sure that all plant records are included in the calculations.</p>
+</section>
+<section id="species-joining-variables" class="level4">
+<h4 class="anchored" data-anchor-id="species-joining-variables">Species joining variables</h4>
+<p>In order to join the lookup table to the data, you must specify the variables that contain the species in both the data and the lookup table. If you’re using AIM data or any data from the LDC, then the species joining variable in the data will be called “code” and the tool should have already selected it for you. The species joining variable in the lookup table may also be “code” (if you’re using the default lookup table) but may have another name if you’re using a custom lookup table.</p>
+</section>
+<section id="include-generic-species" class="level4">
+<h4 class="anchored" data-anchor-id="include-generic-species">Include generic species codes</h4>
+<p>AIM data may include records in which a plant was not identified to species and a standardized generic code was used instead, e.g., “PF069” for the sixty-ninth unidentified perennial forb species encountered during data collection. If the option to include generic species codes is selected, the tool can add entries to the species lookup table for each generic code it finds in the data.</p>
+<p>The only information that can be added is the growth habit and duration of the species and the lookup table must already contain variables for those two traits. The names of those variables must be specified, although they will already be correctly identified if you use the default lookup table or a custom lookup table in which they’re named “growth_habit” and “duration”.</p>
+<p>Once the growth habit and duration variables are selected, clicking the “Add generic species codes to lookup table” button will add the relevant generic codes to your lookup table. This must be done <em>before</em> joining the lookup table to the data or else the generic species codes will not be included.</p>
+</section>
+</section>
+</section>
 <section id="indicator-configuration" class="level2">
 <h2 class="anchored" data-anchor-id="indicator-configuration">Indicator configuration</h2>
 <section id="lpi-config" class="level3">
 <h3 class="anchored" data-anchor-id="lpi-config">Line-Point Intercept</h3>
-<section id="lpi-hit-config" class="level4">
-<h4 class="anchored" data-anchor-id="lpi-hit-config">LPI hit</h4>
-<p>There are two options for which “hit” to calculate from with LPI data. When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using “any hit” then every layer is considered as contributing to cover while “first hit” only considers the topmost recorded hits and “basal hit” only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using “first hit” would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using “any hit” then the perennial forb would contribute to cover by perennial forbs <em>and</em> the annual grass would contribute to to cover by annual grasses.</p>
+<section id="lpi-cover-calculation-type" class="level4">
+<h4 class="anchored" data-anchor-id="lpi-cover-calculation-type">Cover calculation type</h4>
+<p>There are several options for how to calculate cover from LPI data. Three of them (“Any”, “First”, and “Basal”) are generalized and customizable with <a href="#lpi-grouping-variables-config">grouping variables</a> to allow custom calculated indicators like percent cover by plant functional group. The other options produce standard indicators.</p>
+<p>The customizable options differ only in terms of which LPI records are considered as part of the calculations. All three should be used with <a href="#lpi-grouping-variables-config">grouping variables</a>; <em>not</em> using grouping variables will result in all values being 100% due simply calculating the percent of pin drops that had records (all of them).</p>
+<ul>
+<li>Any hit - Default calculation approach. Considers every record at a pin drop, e.g.&nbsp;a pin drop that recorded “AGCR2” as the top canopy and “BRTE” as a lower canopy layer would contribute to cover for both species. The calculated cover values for a <a href="#lpi-summarization-unit-config">summarization unit</a> may sum to more than 100%.</li>
+<li>First hit - Considers only the topmost LPI record for each pin drop, e.g.&nbsp;a pin drop that recorded “AGCR2” as the top canopy and “BRTE” as a lower canopy layer would contribute to cover <em>only</em> for “AGCR2”. The calculated cover values for a <a href="#lpi-summarization-unit-config">summarization unit</a> should never sum to more than 100%.</li>
+<li>Basal hit - Considers only LPI records in which the <a href="#layer-var">layer</a> is “SoilSurface”, e.g.&nbsp;a pin drop that recorded “AGCR2” as the top canopy and “S” as a surface record would contribute to cover <em>only</em> for “S”. The calculated cover values for a <a href="#lpi-summarization-unit-config">summarization unit</a> should never sum to more than 100%.</li>
+</ul>
+<p>The standard indicator options require no decision-making beyond selecting the correct one. Note that these are simply specialized versions of the customizable options and assume that the data use the same LPI record codes as AIM, e.g.&nbsp;“S” for soil hits.</p>
+<ul>
+<li>Species - The percent cover by each species. This assumes that all records for plants use species codes or names greater than three characters long. This uses an any hit approach.</li>
+<li>Bare soil - The percent cover by soil where there was no cover provided by plants. This will only work correctly if using data that codes soil as “S”, “PC”, “FG”, “AG”, or “LM”, which is true of AIM data. This uses a first hit approach.</li>
+<li>Litter - Percent cover by types of litter. This only considers litter coded as “L”, “WL”, “NL”, “HL”, “AM”, “DN”, or “ER” in the data, which is the case for AIM data. This uses and any hit approach.</li>
+<li>Between-plant - The percent cover by non-plants (e.g., rocks, litter) <em>only</em> where there was not also plant cover. This assumes that all records for plants use species codes or names greater than three characters long. This uses a first hit approach.</li>
+<li>Total foliar - The percent cover by plants. This assumes that all records for plants use species codes or names greater than three characters long. This uses a first hit approach.</li>
+<li>Non-plant surface - The percent cover by non-plants. This assumes that all records for plants use species codes or names greater than three characters long. This uses a basal hit approach.</li>
+</ul>
+<p>When a pin is dropped during LPI, all intercepted canopy layers and the soil surface are recorded. When calculating using “any hit” then every layer is considered as contributing to cover while “first hit” only considers the topmost recorded hits and “basal hit” only considers the surface records. For example, if a pin first touches a perennial forb then an annual grass, using “first hit” would ignore the annual grass record and that would not contribute to the percent cover by annual grass because it was not the topmost recorded cover. If using “any hit” then the perennial forb would contribute to cover by perennial forbs <em>and</em> the annual grass would contribute to to cover by annual grasses.</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="hit_type_figure_small.png" class="img-fluid figure-img"></p>
@@ -230,7 +287,8 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="lpi-grouping-variables-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-grouping-variables-config">Grouping variables</h4>
-<p>These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location. In order to calculate finer-grained cover values, additional grouping variables need to be selected. For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
+<p>These are additional variables beyond the sampling location to group the data by for calculating cover. The default behavior is to group by sampling location and calculate the percent cover for that location, which should always result in 100%. In order to calculate finer-grained cover values, additional grouping variables need to be selected. Commonly-used grouping variables include:</p>
+<p>For example, in order to calculate cover by species for each sampling location, the variable containing the species codes or names would need to be selected. The selected variables are additive, so selecting both a variable containing plant duration and a variable containing plant growth habit would result in cover being calculated for each combination of those two, e.g., annual forbs and perennial grasses.</p>
 </section>
 <section id="lpi-summarization-unit-config" class="level4">
 <h4 class="anchored" data-anchor-id="lpi-summarization-unit-config">Summary Unit</h4>
@@ -306,15 +364,17 @@ ul.task-list li input[type="checkbox"] {
 <h2 class="anchored" data-anchor-id="citations">Citations</h2>
 <section id="suggested-citations" class="level3">
 <h3 class="anchored" data-anchor-id="suggested-citations">Suggested citations</h3>
-<p>McCord, S.E., J.R. Brehm, S.H. Burnett, B.L. Edwards, M. Hernandez-Narvaez, E. Kachergis, L.J. Metz, F. Pierson, K. S. Ramirez, N.G. Stauffer, N.P. Webb, C. E. Tweedie. A framework and toolset for standardizing ecosystem indicators. Ecological Indicators. In Press.</p>
+<p>McCord, S.E., J.R. Brehm, S.H. Burnett, C. Dietrich, B. Edwards, M. Hernandez-Narvaez, E. Kachergis, L.J. Metz, F. Pierson, K.S. Ramirez, N.G. Stauffer, N.P. Webb, C.E. Tweedie. A framework and toolset for standardizing ecosystem indicators. Ecological Indicators, vol 144, 2022. <a href="https://doi.org/10.1016/j.ecolind.2022.109511">https://doi.org/10.1016/j.ecolind.2022.109511</a>.</p>
 </section>
 <section id="packages" class="level3">
 <h3 class="anchored" data-anchor-id="packages">Packages</h3>
-<p>Sarah E. McCord, Joseph R. Brehm, and Nelson G. Stauffer (2022). terradactyl: Tools for Creating and Using TerrADat. R package version 0.1.5. <a href="https://github.com/Landscape-Data-Commons/terradactyl_tool">https://github.com/Landscape-Data-Commons/terradactyl</a></p>
+<p>Sarah E. McCord, Joseph R. Brehm, and Nelson G. Stauffer (2022). terradactyl: Tools for Creating and Using TerrADat. R package version 1.1.0. <a href="https://github.com/Landscape-Data-Commons/terradactyl_tool">https://github.com/Landscape-Data-Commons/terradactyl</a></p>
 <p>Winston Chang, Joe Cheng, JJ Allaire, Carson Sievert, Barret Schloerke, Yihui Xie, Jeff Allen, Jonathan McPherson, Alan Dipert, and Barbara Borges (2021). shiny: Web Application Framework for R. R package version 1.7.1. <a href="https://CRAN.R-project.org/package=shiny" class="uri">https://CRAN.R-project.org/package=shiny</a></p>
 <p>Hadley Wickham, Romain François, Lionel Henry, and Kirill Müller (2022). dplyr: A Grammar of Data Manipulation. R package version 1.0.8. <a href="https://CRAN.R-project.org/package=dplyr" class="uri">https://CRAN.R-project.org/package=dplyr</a></p>
 <p>Yihui Xie, Joe Cheng, and Xianying Tan (2022). DT: A Wrapper of the JavaScript Library ‘DataTables’. R package version 0.24. <a href="https://CRAN.R-project.org/package=DT" class="uri">https://CRAN.R-project.org/package=DT</a></p>
 <p>Hadley Wickham (2019). stringr: Simple, Consistent Wrappers for Common String Operations. R package version 1.4.0. <a href="https://CRAN.R-project.org/package=stringr" class="uri">https://CRAN.R-project.org/package=stringr</a></p>
+<p>Pebesma, E., 2018. Simple Features for R: Standardized Support for Spatial Vector Data. The R Journal 10 (1), 439-446, <a href="https://doi.org/10.32614/RJ-2018-009" class="uri">https://doi.org/10.32614/RJ-2018-009</a></p>
+<p>Joe Cheng, Bhaskar Karambelkar and Yihui Xie (2022). leaflet: Create Interactive Web Maps with the JavaScript ‘Leaflet’ Library. R package version 2.1.1. <a href="https://CRAN.R-project.org/package=leaflet" class="uri">https://CRAN.R-project.org/package=leaflet</a></p>
 <p>John Coene (2021). tippy: Add Tooltips to ‘R markdown’ Documents or ‘Shiny’ Apps. R package version 0.1.0. <a href="https://CRAN.R-project.org/package=tippy" class="uri">https://CRAN.R-project.org/package=tippy</a></p>
 </section>
 </section>
@@ -362,7 +422,24 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     button.classList.add('code-copy-button-checked');
     var currentTitle = button.getAttribute("title");
     button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
     setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
       button.setAttribute("title", currentTitle);
       button.classList.remove('code-copy-button-checked');
     }, 1000);
@@ -398,24 +475,42 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       return note.innerHTML;
     });
   }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
   var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
   for (var i=0; i<bibliorefs.length; i++) {
     const ref = bibliorefs[i];
-    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
-    tippyHover(ref, function() {
-      var popup = window.document.createElement('div');
-      cites.forEach(function(cite) {
-        var citeDiv = window.document.createElement('div');
-        citeDiv.classList.add('hanging-indent');
-        citeDiv.classList.add('csl-entry');
-        var biblioDiv = window.document.getElementById('ref-' + cite);
-        if (biblioDiv) {
-          citeDiv.innerHTML = biblioDiv.innerHTML;
-        }
-        popup.appendChild(citeDiv);
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
       });
-      return popup.innerHTML;
-    });
+    }
   }
 });
 </script>

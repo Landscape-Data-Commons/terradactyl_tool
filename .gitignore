@@ -88,3 +88,9 @@ test_geodatabase.gdb/gdb
 test_geodatabase.gdb/timestamps
 test_shapefiles.zip
 test_shapefiles_bad.zip
+jer_boundary.zip
+www/busy_icon.svg
+www/busy_icon_flicker.svg
+www/busy_icon_pulse.svg
+www/test_animated_svg.svg
+sage_species.csv
