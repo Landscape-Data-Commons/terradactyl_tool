@@ -2065,7 +2065,7 @@ server <- function(input, output, session) {
                                                         })
                           })
                    
-                   message(paste0("class(current_results) i: ",
+                   message(paste0("class(current_results) is: ",
                                   paste0(class(current_results),
                                          collapse = ", ")))
                    # This is where we do error handling
@@ -2081,6 +2081,11 @@ server <- function(input, output, session) {
                      message("Results appear valid.")
                      workspace$results <- current_results
                    } else {
+                     message("Something went deeply wrong and the calculation returned neither results nor an error")
+                     message(paste0("Asking is.null(current_results) returns ", is.null(current_results)))
+                     message(paste0("The current class of current_results is ", class(current_results)))
+                     message("Pasting current_results results in:")
+                     message(paste0(current_results))
                      showNotification(ui = "Something went very wrong but did not produce an error message.",
                                       duration = NULL,
                                       closeButton = TRUE,
