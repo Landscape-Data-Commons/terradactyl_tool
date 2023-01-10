@@ -5,13 +5,11 @@ RUN echo "local({options(shiny.port = 3838, shiny.host = '0.0.0.0')})" > /usr/li
 # change user
 USER docker
 # make app folder
-RUN mkdir /home/docker/terradactyl-tool
+RUN mkdir /home/docker/rangeland-indicator-calculator
 # copy app to image
-COPY . /home/docker/terradactyl-tool
+COPY . /home/docker/rangeland-indicator-calculator
 # set working directory
-RUN R -e "setwd('/home/docker/terradactyl-tool')"
+RUN R -e "setwd('/home/docker/rangeland-indicator-calculator')"
 # select port
 EXPOSE 3838
-#CMD R -e "shiny::runApp('/terradactyl', host = '0.0.0.0', port = 3838)"
-CMD R -e "shiny::runApp('/home/docker/terradactyl-tool')"
-#CMD ["tail","-f", "/dev/null"]
+CMD R -e "shiny::runApp('/home/docker/rangeland-indicator-calculator')"
