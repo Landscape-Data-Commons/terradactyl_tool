@@ -55,8 +55,9 @@ ui <- fluidPage(
   
   #### Interface ###################################
   # Application title
-  titlePanel(img(src = "combined_logos.png",
-                 align = "right"),
+  titlePanel(img(src = "combined_logos_hires.png",
+                 align = "right",
+                 height = "45em"),
              windowTitle = "Rangeland Indicator Calculator"),
   titlePanel(title = "Rangeland Indicator Calculator"),
   
@@ -2048,7 +2049,7 @@ server <- function(input, output, session) {
                             message("The function call is:")
                             message(height_cover_string)
                             message("Parsing")
-                            Current_results <- eval(parse(text = height_cover_string))
+                            current_results <- eval(parse(text = height_cover_string))
                             message("Parsed")
                             
                           },
