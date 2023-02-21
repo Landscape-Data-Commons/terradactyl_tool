@@ -55,8 +55,9 @@ ui <- fluidPage(
   
   #### Interface ###################################
   # Application title
-  titlePanel(img(src = "combined_logos.png",
-                 align = "right"),
+  titlePanel(img(src = "combined_logos_hires.png",
+                 align = "right",
+                 height = "45em"),
              windowTitle = "Rangeland Indicator Calculator"),
   titlePanel(title = "Rangeland Indicator Calculator"),
   
@@ -131,7 +132,7 @@ ui <- fluidPage(
                                       tooltip = "Reset data to original uploaded/downloaded state",
                                       placement = "right",
                                       delay = c(50, 0)),
-                           DT::dataTableOutput(outputId = "data")),
+                           DT::DTOutput(outputId = "data")),
                   tabPanel(title = "Configure Data",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
@@ -254,7 +255,7 @@ ui <- fluidPage(
                              )
                            ),
                            conditionalPanel(condition = "input.join_species > 0",
-                                            DT::dataTableOutput(outputId = "species_lut"))
+                                            DT::DTOutput(outputId = "species_lut"))
                            
                   ),
                   tabPanel(title = "Calculate Indicators",
@@ -379,7 +380,7 @@ ui <- fluidPage(
                            HTML("<br>"),
                            textOutput(outputId = "metadata_text"),
                            HTML("<br>"),
-                           DT::dataTableOutput(outputId = "results_table")),
+                           DT::DTOutput(outputId = "results_table")),
                   tabPanel(title = "Help",
                            includeHTML("help.html"))
       )
@@ -1270,7 +1271,7 @@ server <- function(input, output, session) {
                  
                  
                  message("Rendering display data")
-                 output$data <- DT::renderDataTable(display_data,
+                 output$data <- DT::renderDT(display_data,
                                                     options = list(pageLength = 100,
                                                                    fixedHeader = TRUE), 
                                                     extensions = "FixedHeader")
@@ -1624,7 +1625,7 @@ server <- function(input, output, session) {
                      }
                      
                      # Render the species list
-                     output$species_lut <- DT::renderDataTable(workspace$species_data,
+                     output$species_lut <- DT::renderDT(workspace$species_data,
                                                                options = list(pageLength = 25,
                                                                               fixedHeader = TRUE), 
                                                                extensions = "FixedHeader")
@@ -2048,7 +2049,7 @@ server <- function(input, output, session) {
                             message("The function call is:")
                             message(height_cover_string)
                             message("Parsing")
-                            Current_results <- eval(parse(text = height_cover_string))
+                            current_results <- eval(parse(text = height_cover_string))
                             message("Parsed")
                             
                           },
@@ -2144,7 +2145,9 @@ server <- function(input, output, session) {
                handlerExpr = {
                  message("The results have updated!")
                  if (!is.null(workspace$results)) {
-                   message(head(workspace$results))
+                   message(paste0("The class of results is: ", paste(class(workspace$results), sep = ", ")))
+                   message(paste0("The number of rows in results is: ", nrow(workspace$results)))
+                   message(paste0("The number of columns in results is: ", ncol(workspace$results)))
                    
                    # But we want to round to 2 decimal places for ease-of-reading
                    display_results <- workspace$results
@@ -2170,7 +2173,7 @@ server <- function(input, output, session) {
                                                                     digits = 2))
                    }
                    
-                   output$results_table <- DT::renderDataTable(display_results,
+                   output$results_table <- DT::renderDT(display_results,
                                                                options = list(pageLength = 100,
                                                                               fixedHeader = TRUE), 
                                                                extensions = "FixedHeader")
