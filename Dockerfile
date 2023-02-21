@@ -2,6 +2,8 @@ FROM landscapedatacommons/r-base:4.2.2
 LABEL maintainer='Ken Ramsey <kramsey@jornada-vmail.nmsu.edu>'
 # create Rprofile.site file in container
 RUN echo "local({options(shiny.port = 3838, shiny.host = '0.0.0.0')})" > /usr/lib/R/etc/Rprofile.site
+# give docker user permissions to /tmp
+RUN chown -R root:docker /tmp
 # change user
 USER docker
 # make app folder
