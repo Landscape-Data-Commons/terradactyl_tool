@@ -2145,7 +2145,9 @@ server <- function(input, output, session) {
                handlerExpr = {
                  message("The results have updated!")
                  if (!is.null(workspace$results)) {
-                   message(head(workspace$results))
+                   message(paste0("The class of results is: ", paste(class(workspace$results), sep = ", ")))
+                   message(paste0("The number of rows in results is: ", nrow(workspace$results)))
+                   message(paste0("The number of columns in results is: ", ncol(workspace$results)))
                    
                    # But we want to round to 2 decimal places for ease-of-reading
                    display_results <- workspace$results
