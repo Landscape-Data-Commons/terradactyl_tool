@@ -132,7 +132,7 @@ ui <- fluidPage(
                                       tooltip = "Reset data to original uploaded/downloaded state",
                                       placement = "right",
                                       delay = c(50, 0)),
-                           DT::dataTableOutput(outputId = "data")),
+                           DT::DTOutput(outputId = "data")),
                   tabPanel(title = "Configure Data",
                            actionLink(inputId = "data_help",
                                       label = "What do these options mean?"),
@@ -255,7 +255,7 @@ ui <- fluidPage(
                              )
                            ),
                            conditionalPanel(condition = "input.join_species > 0",
-                                            DT::dataTableOutput(outputId = "species_lut"))
+                                            DT::DTOutput(outputId = "species_lut"))
                            
                   ),
                   tabPanel(title = "Calculate Indicators",
@@ -380,7 +380,7 @@ ui <- fluidPage(
                            HTML("<br>"),
                            textOutput(outputId = "metadata_text"),
                            HTML("<br>"),
-                           DT::dataTableOutput(outputId = "results_table")),
+                           DT::DTOutput(outputId = "results_table")),
                   tabPanel(title = "Help",
                            includeHTML("help.html"))
       )
@@ -1271,7 +1271,7 @@ server <- function(input, output, session) {
                  
                  
                  message("Rendering display data")
-                 output$data <- DT::renderDataTable(display_data,
+                 output$data <- DT::renderDT(display_data,
                                                     options = list(pageLength = 100,
                                                                    fixedHeader = TRUE), 
                                                     extensions = "FixedHeader")
@@ -1625,7 +1625,7 @@ server <- function(input, output, session) {
                      }
                      
                      # Render the species list
-                     output$species_lut <- DT::renderDataTable(workspace$species_data,
+                     output$species_lut <- DT::renderDT(workspace$species_data,
                                                                options = list(pageLength = 25,
                                                                               fixedHeader = TRUE), 
                                                                extensions = "FixedHeader")
@@ -2171,7 +2171,7 @@ server <- function(input, output, session) {
                                                                     digits = 2))
                    }
                    
-                   output$results_table <- DT::renderDataTable(display_results,
+                   output$results_table <- DT::renderDT(display_results,
                                                                options = list(pageLength = 100,
                                                                               fixedHeader = TRUE), 
                                                                extensions = "FixedHeader")
