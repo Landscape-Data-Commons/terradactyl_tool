@@ -1995,7 +1995,7 @@ server <- function(input, output, session) {
                             height_by_line <- input$height_unit == "line"
                             output_tall <- input$height_output_format == "long"
                             
-                            if (height_grouping_vars_vector != "") {
+                            if (!("" %in% height_grouping_vars_vector)) {
                               message("There are grouping variables!")
                               current_height_vars <- names(workspace$calc_data)
                               missing_height_grouping_vars <- height_grouping_vars_vector[!(height_grouping_vars_vector %in% current_height_vars)]
