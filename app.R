@@ -382,6 +382,7 @@ ui <- fluidPage(
                            HTML("<br>"),
                            DT::DTOutput(outputId = "results_table")),
                   tabPanel(title = "Help",
+                           HTML("For further help or to report a bug, please contact <a href='mailto:nelson.stauffer@usda.gov' target='_blank'>Nelson Stauffer</>."),
                            includeHTML("help.html"))
       )
     )
