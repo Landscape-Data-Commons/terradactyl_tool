@@ -40,5 +40,5 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            docker service update shinyproxy_rangeland-indicator-calculator \
+            docker service update toolbox_rangeland-indicator-calculator \
             --image=docker.io/landscapedatacommons/rangeland-indicator-calculator:4.2.2
