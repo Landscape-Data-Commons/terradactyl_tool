@@ -44,38 +44,18 @@ ui <- fluidPage(
                                  multiple = FALSE,
                                  accept = ".csv")
       ),
-      
-      conditionalPanel(condition = "input.data_source == 'ldc'",
-                       selectInput(inputId = "query_method",
-                                   label = "Query method",
-                                   choices = c("Spatial" = "spatial",
-                                               "By ecological site" = "EcologicalSiteID",
-                                               "By PrimaryKey" = "PrimaryKey",
-                                               "By ProjectKey" = "ProjectKey"),
-                                   selected = "spatial"),
-                       conditionalPanel(condition = "input.query_method == 'EcologicalSiteID' | input.query_method == 'PrimaryKey' | input.query_method == 'ProjectKey'",
-                                        textInput(inputId = "keys",
-                                                  label = "Search key values",
-                                                  value = "",
-                                                  placeholder = "R042XB012NM"),
-                                        tippy_this(elementId = "keys",
-                                                   tooltip = "Separate multiple values with commas.",
-                                                   placement = "right",
-                                                   delay = c(50, 0))),
-                       conditionalPanel(condition = "input.query_method == 'spatial'",
-                                        fileInput(inputId = "polygons",
-                                                  label = "Polygons ZIP file",
-                                                  multiple = FALSE,
-                                                  accept = ".zip"),
-                                        selectInput(inputId = "polygons_layer",
-                                                    label = "Polygons name",
-                                                    choices = c(""),
-                                                    selected = ""),
-                                        checkboxInput(inputId = "repair_polygons",
-                                                      label = "Repair polygons",
-                                                      value = FALSE)),
-                       actionButton(inputId = "fetch_data",
-                                    label = "Fetch data")),
+      # If the data are going to come from the LDC, display options for querying
+      uiOutput("query_method_ui"),
+      # If the query will be key-based, show the text box input for keys
+      uiOutput("keys_input_ui"),
+      # If the query will be spatial, show the upload bar
+      uiOutput("spatial_input_ui"),
+      # If there's an uploaded polygon file, show the options to select a feature
+      uiOutput("select_polygon_ui"),
+      # If there's an uploaded polygon file, show the option to repair the polygons
+      uiOutput("repair_polygon_ui"),
+      # If querying the LDC and teh query criteria are selected, show the fetch button
+      uiOutput("fetch_ui"),
       hr()
     ),
     
@@ -390,6 +370,76 @@ server <- function(input, output, session) {
                                                    "soilstability" = c("PrimaryKey",
                                                                        "Rating",
                                                                        "Veg")))
+  
+  ##### Conditional UI elements #####
+  # Query method for when grabbing data from the LDC
+  output$query_method_ui <- renderUI(expr = if (req(input$data_source) == "ldc") {
+    message("data_source is 'ldc'. Rendering query_method UI element.")
+    selectInput(inputId = "query_method",
+                label = "Query method",
+                choices = c("Spatial" = "spatial",
+                            "By ecological site" = "EcologicalSiteID",
+                            "By PrimaryKey" = "PrimaryKey",
+                            "By ProjectKey" = "ProjectKey"),
+                selected = "spatial")
+  })
+  
+  # Add a fetch button when grabbing data from the LDC and the query criteria
+  # are available
+  # Apparently since the tool will never have input$keys and input$polygons_layer
+  # at the same time, I can't capture them both in a single conditional, but I
+  # can do it in two separate ones rendering an identical element because I know
+  # they'll never come into conflict
+  output$fetch_ui <- renderUI(expr = if (req(input$keys) != "") {
+    actionButton(inputId = "fetch_data",
+                 label = "Fetch data")
+  })
+  output$fetch_ui <- renderUI(expr = if (req(input$polygons_layer) != "") {
+    actionButton(inputId = "fetch_data",
+                 label = "Fetch data")
+  })
+  
+  # Keys when grabbing data from the LDC by key values
+  output$keys_input_ui <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey")) {
+    message("query_method is in c('EcologicalSiteID', 'PrimaryKey', 'ProjectKey'). Rendering keys UI element.")
+    # Use different placeholders for different key types!
+    if (input$query_method == "EcologicalSiteID") {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "",
+                placeholder = "R042XB012NM")
+    } else if (input$query_method == "PrimaryKey") {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "")
+    } else {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "")
+    }
+  })
+  
+  # Uploading spatial data
+  output$spatial_input_ui <- renderUI(expr = if (req(input$query_method) == "spatial") {
+    fileInput(inputId = "polygons",
+              label = "Polygons ZIP file",
+              multiple = FALSE,
+              accept = ".zip")
+  })
+  # Only allow polygon selection if there's an uploaded polygon
+  output$select_polygon_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial") {
+    selectInput(inputId = "polygons_layer",
+                label = "Polygons name",
+                choices = c(""),
+                selected = "")
+  })
+  # Only allow repair if there's an uploaded polygon
+  output$repair_polygon_ui <- renderUI(expr = if (req(input$polygons) != "") {
+    checkboxInput(inputId = "repair_polygons",
+                  label = "Repair polygons",
+                  value = FALSE)
+  })
+  
   
   ##### Directing to help #####
   observeEvent(eventExpr = input$indicator_help,
@@ -1234,9 +1284,9 @@ server <- function(input, output, session) {
                  
                  message("Rendering display data")
                  output$data <- DT::renderDT(display_data,
-                                                    options = list(pageLength = 100,
-                                                                   fixedHeader = TRUE), 
-                                                    extensions = "FixedHeader")
+                                             options = list(pageLength = 100,
+                                                            fixedHeader = TRUE), 
+                                             extensions = "FixedHeader")
                  
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
@@ -1588,9 +1638,9 @@ server <- function(input, output, session) {
                      
                      # Render the species list
                      output$species_lut <- DT::renderDT(workspace$species_data,
-                                                               options = list(pageLength = 25,
-                                                                              fixedHeader = TRUE), 
-                                                               extensions = "FixedHeader")
+                                                        options = list(pageLength = 25,
+                                                                       fixedHeader = TRUE), 
+                                                        extensions = "FixedHeader")
                      
                      
                      message("Joining species information to data.")
@@ -2136,9 +2186,9 @@ server <- function(input, output, session) {
                    }
                    
                    output$results_table <- DT::renderDT(display_results,
-                                                               options = list(pageLength = 100,
-                                                                              fixedHeader = TRUE), 
-                                                               extensions = "FixedHeader")
+                                                        options = list(pageLength = 100,
+                                                                       fixedHeader = TRUE), 
+                                                        extensions = "FixedHeader")
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
                                                      packageVersion("terradactyl"),
