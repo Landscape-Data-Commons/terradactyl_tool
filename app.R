@@ -11,46 +11,7 @@ source("functions.R")
 ui <- fluidPage(
   # Formatting for notification and error messages
   tags$head(
-    tags$style(
-      HTML(
-        ".shiny-notification {
-          position:fixed;
-          top: calc(50%);
-          left: calc(50%);
-          width: calc(35%);
-          opacity: 1;
-          font-weight: bold;
-          font-size: large;
-          box-shadow: 0 0 0 rgba(181,181,181, 0.4);
-          animation: pulse 2s infinite;
-        }
-        @-webkit-keyframes pulse {
-          0% {
-            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-          }
-          70% {
-            -webkit-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-          }
-          100% {
-            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-          }
-        }
-        @keyframes pulse {
-          0% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-          }
-          70% {
-            -moz-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-            box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-          }
-          100% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-          }
-        }"
-      )
-    )
+    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
   ),
   
   #### Interface ###################################

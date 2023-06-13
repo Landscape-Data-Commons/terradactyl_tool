@@ -1,0 +1,306 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+
+/* HTML element styling */
+body{
+  font-family: 'Open Sans', sans-serif;
+  padding-top: 70px;
+}
+
+hr {
+  border-top: 1px solid #808080;
+}
+
+br {
+  display: block;
+}
+
+h3, h4{
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+div.footer a{
+  color: white;
+}
+
+/* Class styling */
+/* Side panel */
+/* Numeric icons in side panel */
+.num-icon{
+  height:40px;
+  width:35px;
+  filter: brightness(1.75);
+  margin: -5px -5px -10px -5px;
+}
+/* Select import method dropdown */
+.control-label{
+  margin-top:10px;
+}
+
+/* Reduce padding around side panel */
+.col-sm-4{
+  padding: 0 5px;
+}
+
+/* Information section on main tab */
+.app-info{
+  background-color: #4f4f4f;
+  color: white;
+  font-weight: 400;
+  margin: -11px -11px 5px;
+  border-radius: 5px 5px 0 0;
+  padding: 10px 10px 20px;
+}
+
+/* Well is the side panel div */
+.well{
+  box-shadow: 3px 3px 3px 3px grey;
+  background-color: #fafafa;
+  margin: 10px 10px 50px 0;
+  padding:10px;
+}
+
+.shiny-input-container{
+  margin-bottom:10px;
+}
+
+/* Main panel */
+.info-icon{
+  display: inline-block;
+  vertical-align: middle;
+  filter: invert(22%) sepia(0%) saturate(4292%) hue-rotate(84deg) brightness(102%) contrast(102%);
+}
+
+/* information sections */
+.info{
+  margin: 0 0 5px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  }
+
+.load-message{
+  text-align: center;
+}
+
+/* Navbar */
+.navbar{
+  font-family: 'Alegreya Sans', sans-serif;
+}
+.navbar-brand{
+  margin: -15px 0 0 0
+}
+
+.content {
+  padding-top: 65px;
+}
+
+/* Colors for navbar */
+.navbar-default .navbar-nav > .active > a,
+                             .navbar-default .navbar-nav > .active > a:focus {background-color:#368244 !important;}
+
+/* Formatting for shiny containers */
+.checkbox {
+  margin-top: 0;
+}
+
+.small-box {
+  height: 120px;
+}
+
+.small-box {
+  margin: 5px -10px;
+}
+
+.small-box.bg-black {
+  background-color: #00000000 !important;
+  color: #000000 !important;
+  box-shadow: 0 0 0 !important;
+}
+
+.topimg {
+    margin:-10px -10px 0 -10px;
+    vertical-align: middle;
+  }
+
+.control-label{
+  margin-top:0;
+}
+
+/* Site summary on each tab */
+.tab-title{
+  font-weight:900;
+}
+
+.site-summary{
+  display: flex; /* equal height of the children */
+  margin-bottom:30px;
+}
+
+.site-summary-item{
+  /* flex: 1; additionally, equal width */
+  padding: 1em;
+}
+
+.summary-text{
+  padding-left:10px;
+}
+
+/* Footer */
+.footer{
+  position: fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  background-color: #333;
+  color: white;
+  text-align:center;
+  font-weight: bold;
+  font-size:1.2rem;
+  margin-top:auto;
+}
+
+.modal-btn{
+  padding:0;
+  margin: 0;
+  width: 20px;
+  font-size: 0.75rem;
+}
+
+.slider-left{
+  padding-right: 10px;
+}
+
+.modal-right{
+  padding-left: 0;
+  margin-left:-10px;
+}
+
+.line-break {
+  width: 100%;
+}
+
+.more-margin{
+  margin-top: 20px;
+}
+
+.stocking-plot{
+  margin-top:30px;
+}
+
+.stock-math-row{
+  margin-bottom: 20px;
+}
+
+.stock-math{
+  margin-bottom: 20px;
+}
+
+/* ID styling */
+#shp_filt{
+  margin-bottom:20px;
+}
+
+#draw_map{
+  margin:10px 0 20px 0;
+}
+
+/* Clean up main tab panel */
+#file_in{
+  margin-bottom:-15px;
+}
+
+#slider{
+  margin-bottom:-15px;
+}
+
+#filetype{
+  margin-bottom:-15px;
+}
+
+/* File upload spacing */
+#file1_progress {
+  margin-bottom: 10px;
+}
+#file2_progress {
+  margin-bottom: 10px;
+  }
+
+#draw_json_button{
+  margin: 8px 35% 5px;
+}
+
+#shp_json_button{
+  margin: 8px 35% 5px;
+}
+
+/* Land unit names */
+#textLandUnit1{
+  height: 30px;
+}
+#textLandUnit2{
+  height: 30px;
+}
+#textLandUnit3{
+  height: 30px;
+}
+#numberWeight{
+  height: 30px;
+}
+#numberAcres .form-control{
+  height: 30px;
+}
+
+
+/* Spacing below bottom element to prevent footer overlap */
+#historicTable{
+  margin-bottom: 50px;
+}
+#currentPlot_cum{
+  margin-bottom: 50px;
+}
+#stockingTable{
+  margin-bottom: 50px;
+}
+
+/* Adjusting the notification aesthetics and position */
+.shiny-notification {
+          position:fixed;
+          top: calc(50%);
+          left: calc(50%);
+          width: calc(35%);
+          opacity: 1;
+          font-weight: bold;
+          font-size: large;
+          box-shadow: 0 0 0 rgba(181,181,181, 0.4);
+          animation: pulse 2s infinite;
+        }
+        @-webkit-keyframes pulse {
+          0% {
+            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
+          }
+          70% {
+            -webkit-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
+          }
+          100% {
+            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
+          }
+        }
+        @keyframes pulse {
+          0% {
+            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
+            box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
+          }
+          70% {
+            -moz-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
+            box-shadow: 0 0 0 10px rgba(181,181,181, 0);
+          }
+          100% {
+            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
+            box-shadow: 0 0 0 0 rgba(181,181,181, 0);
+          }
+        }
