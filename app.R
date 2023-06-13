@@ -493,7 +493,8 @@ server <- function(input, output, session) {
                    message("File unzipped")
                    # Get the shapefile name
                    extracted_files <- list.files(dirname(input$polygons$datapath),
-                                                 full.names = TRUE)
+                                                 full.names = TRUE,
+                                                 recursive = TRUE)
                    
                    # Look for extracted shapefiles
                    shp_indices <- grepl(extracted_files,
@@ -505,13 +506,21 @@ server <- function(input, output, session) {
                    upload_has_shp <- any(shp_indices)
                    
                    # Look for extracted geodatabases
+                   # Now because this is recursive, we're turning up the files
+                   # inside the GDBs, so we need to get just the GDB path
                    gdb_indices <- grepl(extracted_files,
-                                        pattern = "\\.gdb$",
+                                        pattern = "\\.gdb",
                                         ignore.case = TRUE)
+                   gdb_paths <- unique(stringr::str_extract(string = extracted_files[gdb_indices],
+                                                            pattern = ".*(?=\\.gdb/)"))
+                   gdb_paths <- paste0(gdb_paths,
+                                       ".gdb")
+                   gdb_paths <- gdb_paths[!(gdb_paths %in% c(".gdb"))]
+                   
                    message(paste0("Found ",
-                                  sum(gdb_indices),
+                                  length(gdb_paths),
                                   " geodatabases"))
-                   upload_has_gdb <- any(gdb_indices)
+                   upload_has_gdb <- length(gdb_paths) > 0
                    
                    # Prioritize geodatabases
                    if (upload_has_gdb) {
@@ -519,18 +528,16 @@ server <- function(input, output, session) {
                      message("Working from extracted geodatabase")
                      # If there's more than one geodatabase, just use the first
                      # but warn the user
-                     if (sum(gdb_indices) > 1) {
+                     if (length(gdb_paths) > 1) {
                        message("Multiple GDBs detected. Using 'first' one")
-                       showNotification(ui = "More than one geodatabase found. Please upload one at a time.",
+                       showNotification(ui = "More than one geodatabase found in ZIP file. Please upload one at a time.",
                                         duration = NULL,
                                         closeButton = TRUE,
                                         type = "warning",
                                         id = "multiple_gdb_warning")
-                       current_gdb_path <- extracted_files[gdb_indices][1]
-                     } else {
-                       message("Only one GDB to work with")
-                       current_gdb_path <- extracted_files[gdb_indices]
                      }
+                     current_gdb_path <- gdb_paths[1]
+                     
                      # So I can reference this when reading in layers later
                      workspace$gdb_filepath <- current_gdb_path
                      # Find which layers are available
