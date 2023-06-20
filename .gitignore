@@ -98,3 +98,4 @@ Watersheds.zip
 test_geodatabase.gdb/a00000001.freelist
 test_geodatabase.gdb/a00000004.freelist
 www/combined_logos.svg
+*.dcf
