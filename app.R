@@ -551,7 +551,108 @@ server <- function(input, output, session) {
   # The handling for the download button is in the chunk that creates the
   # the download file
   
+  #### Help buttons #############################################################
+  observeEvent(eventExpr = input$data_source_info,
+               handlerExpr = {
+                 message("Displaying info about data sources")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "If you want to retrieve data from the Landscape Data Commons to calculate indicators from, you can use this tool to search for and fetch the relevant data.",
+                                            br(),
+                                            br(),
+                                            "If you already have tabular data as a CSV, you can upload that file.",
+                                            
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
   
+  observeEvent(eventExpr = input$query_method_info,
+               handlerExpr = {
+                 message("Displaying info about LDC query methods")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are multiple ways to retrieve data from the Landscape Data Commons.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data that falls within a polygon feature class.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more ecological site IDs. You may find these through the Ecosystem Dynamics Interpretive Tool.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more PrimaryKeys (identifiers unique to each visit to each sampling location).",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more ProjectKeys (identifiers unique to sampling efforts).",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$keys_input_info,
+               handlerExpr = {
+                 message("Displaying info about keys")
+                 switch(input$query_method,
+                        "EcologicalSiteID" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "Ecological sites are areas on a landscape which are alike in terms of abiotic factors (e.g., topography, hydrology, climate) and the kind and amount of vegetation they support. More information and ecological site IDs can be found in the Ecosystem Dynamics Interpretive Tool.",
+                                                     footer = tagList(modalButton("Close"))))
+                        },
+                        "PrimaryKey" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "Each data collection event (i.e., visit) at a sampling location has a unique identifier stored as a value called a PrimaryKey. If you know the PrimaryKey values for the data you want, you can use them to retrieve only those data.",
+                                                     footer = tagList(modalButton("Close"))))
+                        },
+                        "ProjectKey" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "All data in the Landscape Data Commons is associated with a project. If you know the ProjectKey values associated with the data you want, you can use them to retrieve only those data.",
+                                                     footer = tagList(modalButton("Close"))))
+                        })
+               })
+  
+  observeEvent(eventExpr = input$spatial_input_info,
+               handlerExpr = {
+                 message("Displaying info about spatial inputs")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "You can retrieve all data from the Landscape Data Commons which fall within a polygon feature class, provided either as a shapefile or a feature class in a geodatabase.",
+                                            br(),
+                                            br(),
+                                            "The uploaded file must be a ZIP file containing either all the files making up a polygon shapefile (e.g., polygons.shp, polygons.shx, polygons.dbf, and polygons.prj) or a geodatabase containing at least one polygon feature class.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$select_polygons_info,
+               handlerExpr = {
+                 message("Displaying info about selecting the polygons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "If your uploaded polygons include more than one feature class (e.g., two shapefiles or a geodatabase with multiple feature classes), then you must select which to use to retrieve data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$repair_polygons_info,
+               handlerExpr = {
+                 message("Displaying info about repairing polygons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Polygons which appear fine in software suites like Arc may still have underlying geometry issues. In the case that your polygons have issues like ring self-intersections, you may use the 'Repair polygons' function to attempt to correct them.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
   
   ##### Directing to help #####
   observeEvent(eventExpr = input$indicator_help,
@@ -564,6 +665,14 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$data_help,
                handlerExpr = {
                  message("Help button pressed. Switching tabs")
+                 updateTabsetPanel(session = session,
+                                   inputId = "maintabs",
+                                   selected = "Help")
+               })
+  observeEvent(eventExpr = input$help_link,
+               handlerExpr = {
+                 message("Help button pressed. Switching tabs")
+                 updateTa
                  updateTabsetPanel(session = session,
                                    inputId = "maintabs",
                                    selected = "Help")
