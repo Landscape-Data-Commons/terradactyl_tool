@@ -4,6 +4,7 @@ library(DT)
 library(stringr)
 library(tippy)
 library(leaflet)
+library(leaflet.extras)
 library(sf)
 source("functions.R")
 
