@@ -856,10 +856,6 @@ server <- function(input, output, session) {
                                                                  dist = 0)
                    }
                  }
-                 # message("Jumping to map tab")
-                 # updateTabsetPanel(session = session,
-                 #                   inputId = "maintabs",
-                 #                   selected = "Map")
                })
   
   ##### CSV upload handling #####
