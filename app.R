@@ -372,7 +372,6 @@ ui <- fluidPage(
              includeHTML("help.html")),
   )
 )
-
 #### Server ######################
 server <- function(input, output, session) {
   ##### Intialization #####
@@ -833,7 +832,142 @@ server <- function(input, output, session) {
                  }
                })
   
-  #### Mapping freshly uploaded polygons ####
+  #### Map time ####
+  observeEvent(eventExpr = list(workspace$mapping_header_sf,
+                                workspace$mapping_polygons),
+               handlerExpr = {
+                 message("Something changed for mapping purposes.")
+                 # Initialize the map
+                 map <- leaflet::leaflet()
+                 
+                 # Add some basic info
+                 map <- leaflet::addTiles(map = map)
+                 
+                 # Add the polygons
+                 message("Checking to see if !is.null(workspace$mapping_polygons)")
+                 if (!is.null(workspace$mapping_polygons)) {
+                   message("!is.null(workspace$mapping_polygons) was TRUE")
+                   # Note that we have to manually remove Z dimensions with sf::st_zm()
+                   # otherwise if there's a Z dimension this fails with an
+                   # inscrutable error.
+                   map <- leaflet::addPolygons(map = map,
+                                               data = sf::st_transform(x = sf::st_zm(workspace$mapping_polygons),
+                                                                       crs = "+proj=longlat +datum=WGS84"),
+                                               fillColor = "coral",
+                                               stroke = FALSE,
+                                               fillOpacity = 0.5)
+                 }
+                 
+                 # Add in the retrieved points
+                 message("Checking to see if !is.null(workspace$mapping_header_sf)")
+                 if (!is.null(workspace$mapping_header_sf)) {
+                   message("!is.null(workspace$mapping_header_sf) was TRUE")
+                   map <- leaflet::addCircleMarkers(map = map,
+                                                    data = sf::st_transform(x = workspace$mapping_header_sf,
+                                                                            crs = "+proj=longlat +datum=WGS84"),
+                                                    stroke = TRUE,
+                                                    opacity = 0.9,
+                                                    color = "white",
+                                                    weight = 1,
+                                                    fillColor = "gray20",
+                                                    fillOpacity = 1,
+                                                    radius = 3)
+                 }
+                 
+                 if (is.null(workspace$mapping_polygons) & is.null(workspace$mapping_header_sf)) {
+                   # Set the framing
+                   map <- setView(map = map,
+                                  lng = -119,
+                                  lat = 38.7,
+                                  zoom = 4.25)
+                   map <- setMaxBounds(map = map,
+                                       lng1 = -125.5,
+                                       lat1 = 25,
+                                       lng2 = -66,
+                                       lat2 = 49.5)
+                 }
+                 
+                 # Add in the drawing controls
+                 map_drawing <- addDrawToolbar(map = map,
+                                               targetGroup = "draw",
+                                               position = 'topleft',
+                                               polylineOptions = FALSE,
+                                               circleOptions = FALSE,
+                                               markerOptions = FALSE,
+                                               circleMarkerOptions = FALSE,
+                                               singleFeature = TRUE)
+                 
+                 message("Rendering map")
+                 output$drawing_map <- leaflet::renderLeaflet(map_drawing)
+                 output$main_map <- leaflet::renderLeaflet(map)
+                 message("Map rendered")
+               })
+  
+  output$main_map_ui <- renderUI({
+    if (req(input$query_method) != "spatial" & (!is.null(workspace$mapping_header_sf) | !is.null(workspace$mapping_polygons))) {
+      message("Attempting to render main_map_ui")
+      leafletOutput(outputId = "main_map",
+                    height = "50vh")
+    }
+  })
+  output$drawing_map_ui <- renderUI({
+    if (req(input$query_method) == "spatial") {
+      message("Attempting to render drawing_map_ui")
+      leafletOutput(outputId = "drawing_map",
+                    height = "50vh")
+    }
+  })
+  
+  ###### Making a polygon sf object from the polygon drawn on the map ##########
+  # This is adapted from the RAP Production Explorer
+  # Character string of coordinates from drawn features on Leaflet map
+  observeEvent(input$drawing_map_draw_new_feature,{
+    message("There's a new polygon drawn on the map! Getting coordinates")
+    # This builds a neat little [x, y] string for each vertex
+    # Frankly, this is a little silly to do considering we're going to split them
+    # into a vector, but I can't be bothered to refactor beyond changing it to
+    # a sapply() because it works as-is and isn't hurting anyone
+    coords <- sapply(X = input$drawing_map_draw_new_feature$geometry$coordinates[1][[1]],
+                     FUN = function(X) {
+                       paste0("[", X[1], ", ", X[2], "]")
+                     })
+    coord_string <- paste0(coords,
+                           collapse = ", ")
+    workspace$drawn_coordinates <- coord_string
+    message("Coordinates saved to workspace$drawn_coordinates")
+  })
+  # Convert the coordinates of the vertices on the map into a polygon sf object!
+  observeEvent(eventExpr = workspace$drawn_coordinates,
+               handlerExpr = {
+                 if (!is.null(workspace$drawn_coordinates)) {
+                   coords <- workspace$drawn_coordinates
+                   message("workspace$drawn_coordinates has updated! Attempting to create a polygon sf object using the coordinates as vertices")
+                   print(coords)
+                   message("Cleaning coordinates and creating vector")
+                   coords_clean <- strsplit(x = gsub(x = coords,
+                                                     pattern = "\\[|\\]",
+                                                     replacement = ""),
+                                            split = ',') 
+                   print(coords_clean)
+                   message("Converting vector to numeric")
+                   coords_numeric <- as.numeric(coords_clean[[1]])
+                   print(coords_numeric)
+                   n_vertices <- length(coords_clean[[1]])/2
+                   message("Creating a matrix from the coordinates")
+                   coords_matrix <- matrix(coords_numeric, nrow = n_vertices, byrow = TRUE)
+                   coords_list <- list(coords_matrix)
+                   message("Making a polygon matrix thingy")
+                   print(coords_list)
+                   polygon <- sf::st_polygon(coords_list)
+                   message("Making an sf object")
+                   polygon <- st_sfc(polygon,
+                                     crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                   workspace$drawn_polygon_sf <- sf::st_sf(polygon)
+                   message("Polygon saved to workspace$drawn_polygon_sf")
+                 }
+               })
+  
+  ###### Getting freshly uploaded polygons set to map #####
   observeEvent(eventExpr = {input$polygons_layer},
                handlerExpr = {
                  message("input$polygons_layer has updated")
