@@ -1193,6 +1193,13 @@ server <- function(input, output, session) {
                        if ("character" %in% class(current_headers)) {
                          results <- NULL
                        } else {
+                         current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                            coords = c("Longitude_NAD83",
+                                                                       "Latitude_NAD83"),
+                                                            crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                         
+                         # This'll be useful so I can make a map
+                         workspace$mapping_header_sf <- current_headers_sf
                          current_primary_keys <- current_headers$PrimaryKey
                          
                          # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
@@ -1387,191 +1394,202 @@ server <- function(input, output, session) {
                      
                    }
                  } else if (input$query_method == "spatial") {
-                   if (input$polygons_layer == "") {
-                     showNotification(ui = "Please upload and select polygons.",
-                                      duration = NULL,
-                                      closeButton = TRUE,
-                                      type = "warning",
-                                      id = "no_polygons_yet_warning")
-                   } else {
-                     message("Attempting to query spatially")
-                     message("Reading in polygons")
-                     if (workspace$polygon_filetype == "gdb") {
-                       workspace$polygons <- sf::st_read(dsn = workspace$gdb_filepath,
-                                                         layer = input$polygons_layer)
-                     } else if (workspace$polygon_filetype == "shp") {
-                       workspace$polygons <- sf::st_read(dsn = input$polygons_layer)
-                     }
-                     message("Making sure the polygons are in NAD83")
-                     workspace$polygons <- sf::st_transform(workspace$polygons,
-                                                            crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
-                     
-                     # If they've asked us to "repair" polygons, buffer by 0
-                     if (input$repair_polygons) {
-                       message("Attempting to repair polygons by buffering by 0")
-                       workspace$polygons <- sf::st_buffer(x = workspace$polygons,
-                                                           dist = 0)
-                     }
-                     message(paste0("Number of individual polygons in workspace$polygons is ",
-                                    nrow(workspace$polygons)))
-                     message("Adding unique_id variable to workspace$polygons")
-                     workspace$polygons[["unique_id"]] <- 1:nrow(workspace$polygons)
-                     
-                     # For mapping purposes
-                     message("Updating workspace$mapping_polygons")
-                     workspace$mapping_polygons <- workspace$polygons
-                     
-                     if (is.null(workspace$headers)) {
-                       message("Retrieving headers")
-                       workspace$headers <- tryCatch(fetch_ldc(keys = NULL,
-                                                               key_type = NULL,
-                                                               data_type = "header",
-                                                               verbose = TRUE),
-                                                     error = function(error){
-                                                       gsub(x = error,
-                                                            pattern = "^Error.+[ ]:[ ]",
-                                                            replacement = "")
-                                                     })
-                       message(paste0("class(workspace$headers) is ",
-                                      paste(class(workspace$headers),
-                                            collapse = ", ")))
-                     }
-                     
-                     current_headers <- workspace$headers
-                     
-                     
-                     # If there was an API error, display that
-                     if ("character" %in% class(current_headers)) {
-                       results <- NULL
-                       showNotification(ui = paste0("API error retrieving headers for spatial query: ",
-                                                    current_headers),
+                   message("Spatial query time!")
+                   
+                   if (input$polygon_source == "upload") {
+                     if (input$polygons_layer == "") {
+                       message("Currently expecting uploaded polygons but there are none selected.")
+                       showNotification(ui = "Please upload and select polygons or drawn a polygon instead.",
                                         duration = NULL,
                                         closeButton = TRUE,
-                                        id = "headers_for_sf_error",
-                                        type = "error")
+                                        type = "warning",
+                                        id = "no_polygons_yet_warning")
                      } else {
-                       # If there was no error, proceed
-                       message("Converting header info to sf object")
-                       current_headers_sf <- sf::st_as_sf(x = current_headers,
-                                                          coords = c("Longitude_NAD83",
-                                                                     "Latitude_NAD83"),
-                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                       message("Reading in polygons")
+                       if (workspace$polygon_filetype == "gdb") {
+                         workspace$polygons <- sf::st_read(dsn = workspace$gdb_filepath,
+                                                           layer = input$polygons_layer)
+                       } else if (workspace$polygon_filetype == "shp") {
+                         workspace$polygons <- sf::st_read(dsn = input$polygons_layer)
+                       }
+                       message("Making sure the polygons are in NAD83")
+                       workspace$polygons <- sf::st_transform(workspace$polygons,
+                                                              crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
                        
-                       # This'll be useful so I can make a map, if that feature is added
-                       workspace$header_sf <- current_headers_sf
-                       workspace$mapping_header_sf <- current_headers_sf
+                       # If they've asked us to "repair" polygons, buffer by 0
+                       if (input$repair_polygons) {
+                         message("Attempting to repair polygons by buffering by 0")
+                         workspace$polygons <- sf::st_buffer(x = workspace$polygons,
+                                                             dist = 0)
+                       }
+                     }
+                   } else {
+                     if (!is.null(workspace$drawn_polygon_sf)) {
+                       message("Using drawn polygon")
+                       workspace$polygons <- workspace$drawn_polygon_sf
+                     }
+                   }
+                   message("Attempting to query spatially")
+                   
+                   message(paste0("Number of individual polygons in workspace$polygons is ",
+                                  nrow(workspace$polygons)))
+                   message("Adding unique_id variable to workspace$polygons")
+                   workspace$polygons[["unique_id"]] <- 1:nrow(workspace$polygons)
+                   
+                   # For mapping purposes
+                   message("Updating workspace$mapping_polygons")
+                   workspace$mapping_polygons <- workspace$polygons
+                   
+                   if (is.null(workspace$headers)) {
+                     message("Retrieving headers")
+                     workspace$headers <- tryCatch(fetch_ldc(keys = NULL,
+                                                             key_type = NULL,
+                                                             data_type = "header",
+                                                             verbose = TRUE),
+                                                   error = function(error){
+                                                     gsub(x = error,
+                                                          pattern = "^Error.+[ ]:[ ]",
+                                                          replacement = "")
+                                                   })
+                     message(paste0("class(workspace$headers) is ",
+                                    paste(class(workspace$headers),
+                                          collapse = ", ")))
+                   }
+                   
+                   current_headers <- workspace$headers
+                   
+                   
+                   # If there was an API error, display that
+                   if ("character" %in% class(current_headers)) {
+                     results <- NULL
+                     showNotification(ui = paste0("API error retrieving headers for spatial query: ",
+                                                  current_headers),
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      id = "headers_for_sf_error",
+                                      type = "error")
+                   } else {
+                     # If there was no error, proceed
+                     message("Converting header info to sf object")
+                     current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                        coords = c("Longitude_NAD83",
+                                                                   "Latitude_NAD83"),
+                                                        crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                     
+                     # This'll be useful so I can make a map, if that feature is added
+                     workspace$header_sf <- current_headers_sf
+                     workspace$mapping_header_sf <- current_headers_sf
+                     
+                     message("Performing sf_intersection()")
+                     points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
+                                                                                  y = sf::st_transform(workspace$polygons[, "unique_id"],
+                                                                                                       crs = sf::st_crs(current_headers_sf))),
+                                                              error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
+                     
+                     if ("character" %in% class(points_polygons_intersection)) {
+                       showNotification(ui = points_polygons_intersection,
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        type = "error",
+                                        id = "intersection_error")
+                     } else {
+                       current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
                        
-                       message("Performing sf_intersection()")
-                       points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
-                                                                                    y = sf::st_transform(workspace$polygons[, "unique_id"],
-                                                                                                         crs = sf::st_crs(current_headers_sf))),
-                                                                error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
-                       
-                       if ("character" %in% class(points_polygons_intersection)) {
-                         showNotification(ui = points_polygons_intersection,
+                       if (length(current_primary_keys) < 1) {
+                         message("No data were found")
+                         showNotification(ui = paste0("No data were found within your polygons."),
                                           duration = NULL,
                                           closeButton = TRUE,
-                                          type = "error",
-                                          id = "intersection_error")
+                                          id = "no_overlap",
+                                          type = "warning")
+                         results <- NULL
                        } else {
-                         current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
+                         message("Primary keys found. Querying now.")
+                         # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                         # 
+                         # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                         #                                keys_vector = current_primary_keys,
+                         #                                key_chunk_size = 100,
+                         #                                key_count = length(current_primary_keys),
+                         #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                         #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                         #                                  max_index <- min(c(key_count, X * key_chunk_size))
+                         #                                  indices <- min_index:max_index
+                         #                                  paste(keys_vector[indices],
+                         #                                        collapse = ",")
+                         #                                })
                          
-                         if (length(current_primary_keys) < 1) {
-                           message("No data were found")
-                           showNotification(ui = paste0("No data were found within your polygons."),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_overlap",
-                                            type = "warning")
-                           results <- NULL
-                         } else {
-                           message("Primary keys found. Querying now.")
-                           # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
-                           # 
-                           # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                           #                                keys_vector = current_primary_keys,
-                           #                                key_chunk_size = 100,
-                           #                                key_count = length(current_primary_keys),
-                           #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                           #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                           #                                  max_index <- min(c(key_count, X * key_chunk_size))
-                           #                                  indices <- min_index:max_index
-                           #                                  paste(keys_vector[indices],
-                           #                                        collapse = ",")
-                           #                                })
-                           
-                           message("Retrieving data using PrimaryKey values from spatial intersection")
-                           results <- tryCatch(fetch_ldc(keys = current_primary_keys,
-                                                         key_type = "PrimaryKey",
-                                                         data_type = input$data_type,
-                                                         key_chunk_size = 100,
-                                                         verbose = TRUE),
-                                               error = function(error){
-                                                 gsub(x = error,
-                                                      pattern = "^Error.+[ ]:[ ]",
-                                                      replacement = "")
-                                               })
-                           message("Querying by primary key complete.")
-                           message(paste0("Number of records retrieved: ",
-                                          length(results)))
-                         }
+                         message("Retrieving data using PrimaryKey values from spatial intersection")
+                         results <- tryCatch(fetch_ldc(keys = current_primary_keys,
+                                                       key_type = "PrimaryKey",
+                                                       data_type = input$data_type,
+                                                       key_chunk_size = 100,
+                                                       verbose = TRUE),
+                                             error = function(error){
+                                               gsub(x = error,
+                                                    pattern = "^Error.+[ ]:[ ]",
+                                                    replacement = "")
+                                             })
+                         message("Querying by primary key complete.")
+                         message(paste0("Number of records retrieved: ",
+                                        length(results)))
+                       }
+                       
+                       # Only keep going if there are results!!!!
+                       if (length(results) > 0 & "data.frame" %in% class(results)) {
+                         message("Making workspace$mapping_header_sf")
+                         workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
                          
-                         # Only keep going if there are results!!!!
-                         if (length(results) > 0 & "data.frame" %in% class(results)) {
-                           message("Making workspace$mapping_header_sf")
-                           workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
-                           
-                           message("Coercing variables to numeric.")
-                           # Convert from character to numeric variables where possible
-                           data_corrected <- lapply(X = names(results),
-                                                    data = results,
-                                                    FUN = function(X, data){
-                                                      # Get the current variable values as a vector
-                                                      vector <- data[[X]]
-                                                      # Try to coerce into numeric
-                                                      numeric_vector <- as.numeric(vector)
-                                                      # If that works without introducing NAs, return the numeric vector
-                                                      # Otherwise, return the original character vector
-                                                      if (all(!is.na(numeric_vector))) {
-                                                        return(numeric_vector)
-                                                      } else {
-                                                        return(vector)
-                                                      }
-                                                    })
-                           
-                           # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
-                           # so I'm resorting to using dplyr
-                           data <- dplyr::bind_cols(data_corrected)
-                           # Correct the names of the variables
-                           names(data) <- names(results)
-                           
-                           # Put it in the workspace list
-                           message("Setting data_fresh to TRUE because we just downloaded it")
-                           workspace$data_fresh <- TRUE
-                           workspace$raw_data <- data
-                         } else if (length(results) == 0) {
-                           message("No records found for those PrimaryKeys")
-                           if (length(current_primary_keys) > 0) {
-                             no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
-                           } else {
-                             no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
-                           }
-                           showNotification(ui = paste0(no_data_spatial_error_message,
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_data_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
+                         message("Coercing variables to numeric.")
+                         # Convert from character to numeric variables where possible
+                         data_corrected <- lapply(X = names(results),
+                                                  data = results,
+                                                  FUN = function(X, data){
+                                                    # Get the current variable values as a vector
+                                                    vector <- data[[X]]
+                                                    # Try to coerce into numeric
+                                                    numeric_vector <- as.numeric(vector)
+                                                    # If that works without introducing NAs, return the numeric vector
+                                                    # Otherwise, return the original character vector
+                                                    if (all(!is.na(numeric_vector))) {
+                                                      return(numeric_vector)
+                                                    } else {
+                                                      return(vector)
+                                                    }
+                                                  })
+                         
+                         # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
+                         # so I'm resorting to using dplyr
+                         data <- dplyr::bind_cols(data_corrected)
+                         # Correct the names of the variables
+                         names(data) <- names(results)
+                         
+                         # Put it in the workspace list
+                         message("Setting data_fresh to TRUE because we just downloaded it")
+                         workspace$data_fresh <- TRUE
+                         workspace$raw_data <- data
+                       } else if (length(results) == 0) {
+                         message("No records found for those PrimaryKeys")
+                         if (length(current_primary_keys) > 0) {
+                           no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
                          } else {
-                           showNotification(ui = paste0("API error retrieving data based on spatial query: ",
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "primarykey_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
+                           no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
                          }
+                         showNotification(ui = paste0(no_data_spatial_error_message,
+                                                      results),
+                                          duration = NULL,
+                                          closeButton = TRUE,
+                                          id = "no_data_spatial_error",
+                                          type = "error")
+                         workspace$raw_data <- NULL
+                       } else {
+                         showNotification(ui = paste0("API error retrieving data based on spatial query: ",
+                                                      results),
+                                          duration = NULL,
+                                          closeButton = TRUE,
+                                          id = "primarykey_spatial_error",
+                                          type = "error")
+                         workspace$raw_data <- NULL
                        }
                      }
                    }
@@ -2059,54 +2077,6 @@ server <- function(input, output, session) {
                                     type = "warning")
                  }
                  
-               })
-  
-  
-  ##### When mapping elements update #####
-  observeEvent(eventExpr = list(workspace$mapping_header_sf,
-                                workspace$mapping_polygons),
-               handlerExpr = {
-                 message("Initializing a fresh map")
-                 # Initialize the map
-                 map <- leaflet::leaflet()
-                 
-                 # Add some basic info
-                 map <- leaflet::addTiles(map = map)
-                 
-                 # Add the polygons
-                 message("Checking to see if !is.null(workspace$mapping_polygons)")
-                 if (!is.null(workspace$mapping_polygons)) {
-                   message("!is.null(workspace$mapping_polygons) was TRUE")
-                   # Note that we have to manually remove Z dimensions with sf::st_zm()
-                   # otherwise if there's a Z dimension this fails with an
-                   # inscrutable error.
-                   map <- leaflet::addPolygons(map = map,
-                                               data = sf::st_transform(x = sf::st_zm(workspace$mapping_polygons),
-                                                                       crs = "+proj=longlat +datum=WGS84"),
-                                               fillColor = "coral",
-                                               stroke = FALSE,
-                                               fillOpacity = 0.5)
-                 }
-                 
-                 # Add in the retrieved points
-                 message("Checking to see if !is.null(workspace$mapping_header_sf)")
-                 if (!is.null(workspace$mapping_header_sf)) {
-                   message("!is.null(workspace$mapping_header_sf) was TRUE")
-                   map <- leaflet::addCircleMarkers(map = map,
-                                                    data = sf::st_transform(x = workspace$mapping_header_sf,
-                                                                            crs = "+proj=longlat +datum=WGS84"),
-                                                    stroke = TRUE,
-                                                    opacity = 0.9,
-                                                    color = "white",
-                                                    weight = 1,
-                                                    fillColor = "gray20",
-                                                    fillOpacity = 1,
-                                                    radius = 3)
-                 }
-                 
-                 message("Rendering map")
-                 output$map <- leaflet::renderLeaflet(map)
-                 message("Map rendered")
                })
   
   ##### Calculating #####
