@@ -1,10 +1,13 @@
 /* Import fonts */
-@import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,300;0,400;0,500;0,700;0,800;0,900;1,100;1,300;1,400;1,500;1,700;1,800;1,900&display=swap');
 
 /* HTML element styling */
+h2{
+  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+}
+
 body{
-  font-family: 'Open Sans', sans-serif;
-  padding-top: 70px;
+  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
 }
 
 hr {
@@ -21,10 +24,17 @@ h3, h4{
 }
 
 div.footer a{
-  color: white;
+  color: #333;
 }
 
 /* Class styling */
+.tool-title{
+  padding-top: 10px;
+  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+  font-weight: bold;
+  font-size: 200%;
+}
+
 /* Side panel */
 /* Numeric icons in side panel */
 .num-icon{
@@ -51,6 +61,11 @@ div.footer a{
   margin: -11px -11px 5px;
   border-radius: 5px 5px 0 0;
   padding: 10px 10px 20px;
+}
+
+/* Set link color in the app info */
+.app-info a, a:link, a:visited{
+  color: #fa8943;
 }
 
 /* Well is the side panel div */
@@ -89,19 +104,21 @@ div.footer a{
 
 /* Navbar */
 .navbar{
-  font-family: 'Alegreya Sans', sans-serif;
+  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
 }
+/* This gets rid of the top margin on the page */
 .navbar-brand{
-  margin: -15px 0 0 0
+  margin: -10px 0 0 0
 }
 
 .content {
-  padding-top: 65px;
+  padding-top: 10px;
 }
 
 /* Colors for navbar */
 .navbar-default .navbar-nav > .active > a,
-                             .navbar-default .navbar-nav > .active > a:focus {background-color:#368244 !important;}
+                             .navbar-default .navbar-nav > .active > a:focus {background-color:#fa8943 !important;
+                             }
 
 /* Formatting for shiny containers */
 .checkbox {
@@ -131,36 +148,18 @@ div.footer a{
   margin-top:0;
 }
 
-/* Site summary on each tab */
-.tab-title{
-  font-weight:900;
-}
-
-.site-summary{
-  display: flex; /* equal height of the children */
-  margin-bottom:30px;
-}
-
-.site-summary-item{
-  /* flex: 1; additionally, equal width */
-  padding: 1em;
-}
-
-.summary-text{
-  padding-left:10px;
-}
-
 /* Footer */
 .footer{
   position: fixed;
   bottom:0;
   left:0;
   width:100%;
-  background-color: #333;
+  /* background-color: #333; */
+  background-color: #e0e0e0;
   color: white;
   text-align:center;
   font-weight: bold;
-  font-size:1.2rem;
+  font-size:2rem;
   margin-top:auto;
 }
 
@@ -269,38 +268,50 @@ div.footer a{
 
 /* Adjusting the notification aesthetics and position */
 .shiny-notification {
-          position:fixed;
-          top: calc(50%);
-          left: calc(50%);
-          width: calc(35%);
+          position: fixed;
+          top: calc(25%);
+          left: calc(5%);
+          /* These two width arguments make it so that the message fits to the
+          content of the notification but starts to wrap if it'd exceed a
+          certain width */
+          width: fit-content;
+          max-width: calc(20%);
           opacity: 1;
+          background-color: #4f4f4f;
+          color: white;
+          font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
           font-weight: bold;
           font-size: large;
-          box-shadow: 0 0 0 rgba(181,181,181, 0.4);
+          box-shadow: 0 0 0 rgba(181,181,181, 0.6);
           animation: pulse 2s infinite;
-        }
-        @-webkit-keyframes pulse {
+}
+.shiny-notification-close {
+  color: white;
+  font-weight: bold;
+  font-size: large;
+}
+@-webkit-keyframes pulse {
           0% {
-            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
+            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0.6);
           }
           70% {
-            -webkit-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
+            -webkit-box-shadow: 0 0 0 15px rgba(181,181,181, 0);
           }
           100% {
             -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
           }
         }
-        @keyframes pulse {
-          0% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-          }
-          70% {
-            -moz-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-            box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-          }
-          100% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-          }
-        }
+@keyframes pulse {
+  0% {
+    -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0.6);
+    box-shadow: 0 0 0 0 rgba(181,181,181, 0.6);
+  }
+  70% {
+    -moz-box-shadow: 0 0 0 15px rgba(181,181,181, 0);
+    box-shadow: 0 0 0 15px rgba(181,181,181, 0);
+  }
+  100% {
+    -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
+    box-shadow: 0 0 0 0 rgba(181,181,181, 0);
+  }
+}
