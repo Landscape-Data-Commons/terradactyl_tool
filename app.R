@@ -2569,12 +2569,19 @@ server <- function(input, output, session) {
                                         workspace$current_results_filename), file)
                      })
                    message("downloadHandler() call complete.")
+                   # Display download button only if there are data for download
+                   output$download_button_ui <- renderUI(expr = {
+                     downloadButton(outputId = 'downloadable_data',
+                                    label = 'Download results')
+                   })
                  } else {
                    message("workspace$results is NULL")
+                   output$download_button_ui <- renderUI(expr = {return(NULL)})
                  }
                })
   
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
