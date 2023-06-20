@@ -418,6 +418,7 @@ server <- function(input, output, session) {
                                                                        "Veg")))
   
   ##### Conditional UI elements #####
+  ###### Sidebar ######
   # Query method for when grabbing data from the LDC
   output$query_method_ui <- renderUI(expr = if (req(input$data_source) == "ldc") {
     message("data_source is 'ldc'. Rendering query_method UI element.")
@@ -429,6 +430,30 @@ server <- function(input, output, session) {
                             "By ProjectKey" = "ProjectKey"),
                 selected = "spatial")
   })
+  output$query_method_info_ui <- renderUI(expr = if (req(input$data_source) == "ldc") {
+    message("data_source is 'ldc'. Rendering query_method_info UI element.")
+    actionButton(inputId = "query_method_info",
+                 label = "",
+                 icon = icon("info"))
+  })
+  
+  output$polygon_source_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc") {
+    radioButtons(inputId = "polygon_source",
+                 label = "Polygon source",
+                 choices = c("Uploaded" = "upload",
+                             "Drawn" = "draw"),
+                 inline = TRUE)
+  })
+  
+  output$polygon_draw_prompt <- renderUI(expr = if(req(input$polygon_source) == "draw") {
+    HTML(text = paste0(img(src = "polygon_tool_icons.png",
+                           height = "60px",
+                           display = "inline",
+                           align = "left",
+                           hspace = "5px",
+                           vspace = "5px"),
+                       "Please use the buttons found on the left side of the map to draw your polygon boundary."))
+  })
   
   # Add a fetch button when grabbing data from the LDC and the query criteria
   # are available
@@ -436,11 +461,15 @@ server <- function(input, output, session) {
   # at the same time, I can't capture them both in a single conditional, but I
   # can do it in two separate ones rendering an identical element because I know
   # they'll never come into conflict
-  output$fetch_ui <- renderUI(expr = if (req(input$keys) != "") {
+  output$fetch_ui1 <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey") & req(input$keys) != "") {
     actionButton(inputId = "fetch_data",
                  label = "Fetch data")
   })
-  output$fetch_ui <- renderUI(expr = if (req(input$polygons_layer) != "") {
+  output$fetch_ui2 <- renderUI(expr = if (req(input$query_method) == "spatial" & (req(input$polygon_source) == "upload" & req(input$polygons_layer) != "")) {
+    actionButton(inputId = "fetch_data",
+                 label = "Fetch data")
+  })
+  output$fetch_ui3 <- renderUI(expr = if (req(input$query_method) == "spatial" & (req(input$polygon_source) == "draw" & !is.null(req(workspace$drawn_polygon_sf)))) {
     actionButton(inputId = "fetch_data",
                  label = "Fetch data")
   })
@@ -465,26 +494,63 @@ server <- function(input, output, session) {
     }
   })
   
+  output$keys_input_info_ui <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey")) {
+    message("data_source is 'ldc'. Rendering keys_input_info UI element.")
+    actionButton(inputId = "keys_input_info",
+                 label = "",
+                 icon = icon("info"))
+  })
+  
   # Uploading spatial data
-  output$spatial_input_ui <- renderUI(expr = if (req(input$query_method) == "spatial") {
+  output$spatial_input_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("query_method is 'spatial'. Rendering spatial_input UI element.")
     fileInput(inputId = "polygons",
               label = "Polygons ZIP file",
               multiple = FALSE,
               accept = ".zip")
   })
+  output$spatial_input_info_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("query_method is 'spatial'. Rendering spatial_input_info UI element.")
+    actionButton(inputId = "spatial_input_info",
+                 label = "",
+                 icon = icon("info"))
+  })
   # Only allow polygon selection if there's an uploaded polygon
-  output$select_polygon_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial") {
+  output$select_polygon_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons available to select from. Rendering polygons_layer UI element.")
     selectInput(inputId = "polygons_layer",
                 label = "Polygons name",
                 choices = c(""),
                 selected = "")
   })
+  output$select_polygon_info_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons available to select from. Rendering polygons_layer UI element.")
+    actionButton(inputId = "select_polygons_info",
+                 label = "",
+                 icon = icon("info"))
+  })
   # Only allow repair if there's an uploaded polygon
-  output$repair_polygon_ui <- renderUI(expr = if (req(input$polygons) != "") {
+  output$repair_polygons_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons selected. Rendering repair_polygons UI element")
     checkboxInput(inputId = "repair_polygons",
                   label = "Repair polygons",
                   value = FALSE)
   })
+  output$repair_polygons_info_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc") {
+    message("There are polygons selected. Rendering repair_polygons_info UI element")
+    actionButton(inputId = "repair_polygons_info",
+                 label = "",
+                 icon = icon("info"))
+  })
+  
+  ###### Configure Data tab ######
+  
+  ###### Calculate Indicators tab ######
+  
+  ###### Results tab ######
+  # The handling for the download button is in the chunk that creates the
+  # the download file
+  
   
   
   ##### Directing to help #####
