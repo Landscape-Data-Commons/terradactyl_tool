@@ -1642,8 +1642,11 @@ server <- function(input, output, session) {
                  
                  message("Rendering display data")
                  output$data <- DT::renderDT(display_data,
-                                             options = list(pageLength = 100,
-                                                            fixedHeader = TRUE), 
+                                             width = "100%",
+                                             rownames = FALSE,
+                                             options = list(pageLength = 10,
+                                                            fixedHeader = TRUE,
+                                                            scrollX = TRUE), 
                                              extensions = "FixedHeader")
                  
                  if (is.null(workspace$data)) {
@@ -1996,8 +1999,9 @@ server <- function(input, output, session) {
                      
                      # Render the species list
                      output$species_lut <- DT::renderDT(workspace$species_data,
-                                                        options = list(pageLength = 25,
-                                                                       fixedHeader = TRUE), 
+                                                        options = list(pageLength = 10,
+                                                                       fixedHeader = TRUE,
+                                                                       scrollX = TRUE), 
                                                         extensions = "FixedHeader")
                      
                      
@@ -2544,8 +2548,9 @@ server <- function(input, output, session) {
                    }
                    
                    output$results_table <- DT::renderDT(display_results,
-                                                        options = list(pageLength = 100,
-                                                                       fixedHeader = TRUE), 
+                                                        options = list(pageLength = 10,
+                                                                       fixedHeader = TRUE,
+                                                                       scrollX = TRUE), 
                                                         extensions = "FixedHeader")
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
