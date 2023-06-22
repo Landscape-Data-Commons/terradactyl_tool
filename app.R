@@ -33,16 +33,11 @@ ui <- fluidPage(
       '))
   ),
   navbarPage(
-    # title = img(src = "combined_logos_hires.png",
-    #             height = "45px"),
     title = tags$div(class = "tool-title",
                      "Rangeland Indicator Calculator"),
     id = "navbar-full",
     position = "static-top",
     footer = tags$div(class = "footer",
-                      # p(p(a(href = 'mailto:nelson.stauffer@usda.gov',
-                      #       'Contact us with questions',
-                      #       target = "_blank")))),
                       p(column(width = 6,
                                p(a(href = 'mailto:nelson.stauffer@usda.gov', 'Contact us with questions', target =
                                      "_blank"))),
@@ -129,8 +124,6 @@ ui <- fluidPage(
                mainPanel(
                  uiOutput("drawing_map_ui"),
                  uiOutput("main_map_ui"),
-                 # leaflet::leafletOutput(outputId = "map",
-                 #                        height = "80vh"),
                  includeHTML("instructions.html")
                ))),
     ###### Data #####################################
