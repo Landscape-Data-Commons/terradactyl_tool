@@ -3,11 +3,11 @@
 
 /* HTML element styling */
 h2{
-  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 body{
-  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 
 hr {
@@ -27,22 +27,49 @@ div.footer a{
   color: #333;
 }
 
+/* Set link color in the app info */
+/* .app-info a, a:link, a:visited{
+  color: #fa8943;
+} */
+a, a:link, a:visited{
+  color: #fa8943;
+}
+
 /* Class styling */
+.progress-bar {
+  
+  background-color: #fa8943;
+}
+
 .tool-title{
   padding-top: 10px;
-  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-weight: bold;
   font-size: 200%;
 }
 
-/* Side panel */
-/* Numeric icons in side panel */
-.num-icon{
-  height:40px;
-  width:35px;
-  filter: brightness(1.75);
-  margin: -5px -5px -10px -5px;
+.action-button {
+  background-color: #4f4f4f;
+  color: white;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: bold;
 }
+
+/* Side panel */
+/* Coloring radio buttons and checkboxes */
+.shiny-bound-input {
+  accent-color: #fa8943;
+}
+
+/* Text linking to Data and Data Configuration tabs once data are ready */
+.data-prompt {
+  font-weight: bold;
+}
+
+.nav-tabs {
+  font-weight: bold;
+}
+
 /* Select import method dropdown */
 .control-label{
   margin-top:10px;
@@ -63,16 +90,12 @@ div.footer a{
   padding: 10px 10px 20px;
 }
 
-/* Set link color in the app info */
-.app-info a, a:link, a:visited{
-  color: #fa8943;
-}
-
 /* Well is the side panel div */
 .well{
   box-shadow: 3px 3px 3px 3px grey;
   background-color: #fafafa;
-  margin: 10px 10px 50px 0;
+  /* Expanded the bottom margin to try to avoid overlap with the footer */
+  margin: 10px 10px 200px 0;
   padding:10px;
 }
 
@@ -81,11 +104,11 @@ div.footer a{
 }
 
 /* Main panel */
-.info-icon{
+/* .info-icon{
   display: inline-block;
   vertical-align: middle;
   filter: invert(22%) sepia(0%) saturate(4292%) hue-rotate(84deg) brightness(102%) contrast(102%);
-}
+} */
 
 /* information sections */
 .info{
@@ -99,12 +122,14 @@ div.footer a{
   }
 
 .load-message{
+  font-family: 'Montserrat', sans-serif;
+  font-weight: bold;
   text-align: center;
 }
 
 /* Navbar */
 .navbar{
-  font-family: 'Montserrat', 'Comic Sans MS', sans-serif;
+  font-family: 'Montserrat', sans-serif;
 }
 /* This gets rid of the top margin on the page */
 .navbar-brand{
@@ -121,6 +146,13 @@ div.footer a{
                              }
 
 /* Formatting for shiny containers */
+.info-btn {
+  background-color: #4f4f4f;
+  color: white;
+  vertical-align: middle;
+  border-radius: 30%;
+}
+
 .checkbox {
   margin-top: 0;
 }
@@ -154,9 +186,9 @@ div.footer a{
   bottom:0;
   left:0;
   width:100%;
-  /* background-color: #333; */
   background-color: #e0e0e0;
   color: white;
+  vertical-align: middle;
   text-align:center;
   font-weight: bold;
   font-size:2rem;
