@@ -14,7 +14,23 @@ ui <- fluidPage(
   title = "Rangeland Indicator Calculator",
   useShinyjs(),
   tags$head(
-    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
+    # Use the styles.css file for (nearly) all our styling needs
+    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+    # A function that lets us create links to tabs since there's no
+    # equivalent to updateTabsetPanel() like updateTabPanel() for some reason.
+    # This lets us make links with a(onclick = "fakeClick('Tab Name')")
+    # This comes from StackOverflow, I think?
+    tags$script(HTML('
+        var fakeClick = function(tabName) {
+          var dropdownList = document.getElementsByTagName("a");
+          for (var i = 0; i < dropdownList.length; i++) {
+            var link = dropdownList[i];
+            if(link.getAttribute("data-value") == tabName) {
+              link.click();
+            };
+          }
+        };
+      '))
   ),
   navbarPage(
     # title = img(src = "combined_logos_hires.png",
