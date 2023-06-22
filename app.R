@@ -12,7 +12,6 @@ source("functions.R")
 # Define UI for application
 ui <- fluidPage(
   title = "Rangeland Indicator Calculator",
-  # Formatting for notification and error messages
   useShinyjs(),
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
