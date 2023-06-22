@@ -1152,11 +1152,11 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 showNotification(ui = HTML("Fetching data!"),
-                                  duration = NULL,
-                                  closeButton = FALSE,
-                                  id = "downloading",
-                                  type = "message")
+                 # showNotification(ui = HTML("Fetching data!"),
+                 #                  duration = NULL,
+                 #                  closeButton = FALSE,
+                 #                  id = "downloading",
+                 #                  type = "message")
                  
                  # Set this variable so we can handle the data appropriately based on source
                  # Since there are from the LDC, we'll also be looking for header info
@@ -1605,7 +1605,7 @@ server <- function(input, output, session) {
                      }
                    }
                  }
-                 removeNotification(id = "downloading")
+                 # removeNotification(id = "downloading")
                })
   
   ##### When raw_data updates #####
@@ -2124,11 +2124,11 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("Should be good to go. Calculating!")
-                   showNotification(ui = "Calculating!",
-                                    id = "calculating",
-                                    duration = NULL,
-                                    closeButton = FALSE,
-                                    type = "message")
+                   # showNotification(ui = "Calculating!",
+                   #                  id = "calculating",
+                   #                  duration = NULL,
+                   #                  closeButton = FALSE,
+                   #                  type = "message")
                    
                    message("Copying workspace$data to workspace$calc_data")
                    workspace$calc_data <- workspace$data
@@ -2490,8 +2490,8 @@ server <- function(input, output, session) {
                                        selected = "Results")
                    }
                    
-                   removeNotification(session = session,
-                                      id = "calculating")
+                   # removeNotification(session = session,
+                   #                    id = "calculating")
                  }
                })
   
