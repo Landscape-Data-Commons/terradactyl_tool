@@ -444,7 +444,8 @@ server <- function(input, output, session) {
     message("data_source is 'ldc'. Rendering query_method_info UI element.")
     actionButton(inputId = "query_method_info",
                  label = "",
-                 icon = icon("info"))
+                 class = "info-btn",
+                 icon = icon("circle-question"))
   })
   
   output$polygon_source_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc") {
@@ -508,7 +509,8 @@ server <- function(input, output, session) {
     message("data_source is 'ldc'. Rendering keys_input_info UI element.")
     actionButton(inputId = "keys_input_info",
                  label = "",
-                 icon = icon("info"))
+                 class = "info-btn",
+                 icon = icon("circle-question"))
   })
   
   # Uploading spatial data
@@ -523,7 +525,8 @@ server <- function(input, output, session) {
     message("query_method is 'spatial'. Rendering spatial_input_info UI element.")
     actionButton(inputId = "spatial_input_info",
                  label = "",
-                 icon = icon("info"))
+                 class = "info-btn",
+                 icon = icon("circle-question"))
   })
   # Only allow polygon selection if there's an uploaded polygon
   output$select_polygon_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
@@ -537,7 +540,8 @@ server <- function(input, output, session) {
     message("There are polygons available to select from. Rendering polygons_layer UI element.")
     actionButton(inputId = "select_polygons_info",
                  label = "",
-                 icon = icon("info"))
+                 class = "info-btn",
+                 icon = icon("circle-question"))
   })
   # Only allow repair if there's an uploaded polygon
   output$repair_polygons_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
@@ -550,7 +554,8 @@ server <- function(input, output, session) {
     message("There are polygons selected. Rendering repair_polygons_info UI element")
     actionButton(inputId = "repair_polygons_info",
                  label = "",
-                 icon = icon("info"))
+                 class = "info-btn",
+                 icon = icon("circle-question"))
   })
   
   ###### Configure Data tab ######
@@ -562,12 +567,34 @@ server <- function(input, output, session) {
   # the download file
   
   #### Help buttons #############################################################
+  observeEvent(eventExpr = input$data_type_info,
+               handlerExpr = {
+                 message("Displaying info about data type")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Different kinds of indicators can be calculated from the different data types.",
+                                            br(),
+                                            br(),
+                                            "Cover indicators (e.g., percent foliar cover, percent bare ground, percent cover by annual invasive forbs) can be calculated from line-point intercept data.",
+                                            br(),
+                                            br(),
+                                            "Mean heights (e.g., mean plant height, mean sagebrush height, mean graminoid height) can be calculated from height data.",
+                                            br(),
+                                            br(),
+                                            "Percent or amount of gaps by size class (e.g., percent of plot in gaps 25-50 cm across, length of transect in gaps greater than 200 cm across) can be calculated from gap data.",
+                                            br(),
+                                            br(),
+                                            "Mean soil aggregate stability ratings (e.g., mean soil stabilty, mean soil stability under perennial plant canopy) can be calculated from soil stability data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
   observeEvent(eventExpr = input$data_source_info,
                handlerExpr = {
                  message("Displaying info about data sources")
                  showModal(ui = modalDialog(size = "s",
                                             easyClose = TRUE,
-                                            "If you want to retrieve data from the Landscape Data Commons to calculate indicators from, you can use this tool to search for and fetch the relevant data.",
+                                            "If you want to retrieve data from the Landscape Data Commons to calculate indicators from, you can use this tool to query the database and fetch the relevant data.",
                                             br(),
                                             br(),
                                             "If you already have tabular data as a CSV, you can upload that file.",
@@ -660,6 +687,109 @@ server <- function(input, output, session) {
                  showModal(ui = modalDialog(size = "s",
                                             easyClose = TRUE,
                                             "Polygons which appear fine in software suites like Arc may still have underlying geometry issues. In the case that your polygons have issues like ring self-intersections, you may use the 'Repair polygons' function to attempt to correct them.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$data_buttons_info,
+               handlerExpr = {
+                 message("Displaying info about data buttons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "To remove all current data, use the Clear Data button.",
+                                            br(),
+                                            br(),
+                                            "To reset the data to its original state (e.g., before species information was added), use the Reset Data button.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$primarykey_var_info,
+               handlerExpr = {
+                 message("Displaying info about PrimaryKeys")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing unique identifiers for each sampling event and is called 'PrimaryKey' in the Landscape Data Commons. All data collected on a visit to a sampling location must share a PrimaryKey value. Separate sampling events (e.g., resampling a year later) must have their own PrimaryKey values.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$linekey_var_info,
+               handlerExpr = {
+                 message("Displaying info about PrimaryKeys")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing unique identifiers for each transect sampled and is called 'LineKey' in the Landscape Data Commons. All data collected on the same transect during a sampling event must share a LineKey value. LineKey values only need to be unique within a sampling event, i.e., every sampling event may have three transects with the LineKey values '1', '2', and '3'.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$code_var_info,
+               handlerExpr = {
+                 message("Displaying info about the code variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the species or other code (e.g. 'WL' for woody litter or 'S' for soil) associated with the records and is called 'code' in the Landscape Data Commons. See the Help tab for additional information.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$pointnbr_var_info,
+               handlerExpr = {
+                 message("Displaying info about the point number variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the point along the transect where the records come from, e.g., '1' for all records associated with the first pin drop, '2' for the second, '3' for the third. This variable is called 'PointNbr' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$layer_var_info,
+               handlerExpr = {
+                 message("Displaying info about layer variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the layer associated with each record, e.g., 'TopCanopy', 'Lower1', 'SoilSurface'. This variable is called 'layer' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$linelengthamount_var_info,
+               handlerExpr = {
+                 message("Displaying info about LineLengthAmount variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the length of the transect associated with the record. This variable is called 'LineLengthAmount' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$measure_var_info,
+               handlerExpr = {
+                 message("Displaying info about measure variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the measurement units associated with each record, i.e. 1 for metric (meters for line length and centimeters for gaps) and 2 for imperial (feet for line length and inches for gaps). This variable is called 'Measure' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$rectype_var_info,
+               handlerExpr = {
+                 message("Displaying info about rectype variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the type of gap associated with each record, i.e. 'C' for canopy gaps considering all foliage, 'P' for canopy gaps considering only perennial foliage, and 'B' for basal gaps. This variable is called 'RecType' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_var_info,
+               handlerExpr = {
+                 message("Displaying info about gap variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the size of the recorded gaps. This variable is called 'Gap' in the Landscape Data Commons.",
                                             footer = tagList(modalButton("Close")))
                  )
                })
