@@ -2,7 +2,7 @@
   xmlns = "http://www.w3.org/2000/svg"
   width = "200px"
   height = "200px">
-  <circle class = "pulsing-ring" cx = "100" cy = "100" r = "65" fill = "none" stroke-width = "4" stroke = "#d4af37"></circle>
+  <circle class = "pulsing-ring" cx = "100" cy = "100" r = "65" fill = "none" stroke-width = "4" stroke = "#fa8943"></circle>
   <circle class = "ring-of-rings" cx = "150" cy = "100"></circle>
   <circle class = "ring-of-rings" cx = "131.17" cy = "139.09"></circle>
   <circle class = "ring-of-rings" cx = "88.87" cy = "148.75"></circle>
@@ -18,7 +18,7 @@
     r: 10;
 	fill: none;
 	stroke-width: 3;
-	stroke: #d4af37;
+	stroke: #fa8943;
     transform-origin: center;
 	animation-name: carousel-clockwise;
 	animation-duration: 30s;
@@ -27,7 +27,7 @@
   }
   .outer-ring {
 	fill: none;
-	stroke: #d4af37;
+	stroke: #fa8943;
     transform-origin: center;
 	animation-name: carousel-counterclockwise;
 	animation-duration: 15s;

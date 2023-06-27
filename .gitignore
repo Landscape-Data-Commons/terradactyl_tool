@@ -27,8 +27,6 @@ instructions_files/libs/quarto-html/quarto-syntax-highlighting.css
 instructions_files/libs/quarto-html/quarto.js
 instructions_files/libs/quarto-html/tippy.css
 instructions_files/libs/quarto-html/tippy.umd.min.js
-*.R
-*.png
 testing_minimum_gap_data.csv
 testing_minimum_height_data.csv
 testing_minimum_lpi_data.csv
@@ -99,3 +97,7 @@ test_geodatabase.gdb/a00000001.freelist
 test_geodatabase.gdb/a00000004.freelist
 www/combined_logos.svg
 *.dcf
+*.ai
+scratchpad.R
+www/combined_logos_hires_old.png
+www/combined_logos_tall.png
