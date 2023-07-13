@@ -18,10 +18,10 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
     # A function that lets us create links to tabs since there's no
     # equivalent to updateTabsetPanel() like updateTabPanel() for some reason.
-    # This lets us make links with a(onclick = "fakeClick('Tab Name')")
+    # This lets us make links with a(onclick = "tabJump('Tab Name')")
     # This comes from StackOverflow, I think?
     tags$script(HTML('
-        var fakeClick = function(tabName) {
+        var tabJump = function(tabName) {
           var dropdownList = document.getElementsByTagName("a");
           for (var i = 0; i < dropdownList.length; i++) {
             var link = dropdownList[i];
@@ -140,7 +140,7 @@ ui <- fluidPage(
                    condition = "$('html').hasClass('shiny-busy')",
                    br(),
                    HTML(
-                     "<div class = 'load-message'><img src = 'busy_icon.svg' height = '40rem'>Working! Please wait.<img src = 'busy_icon.svg' height = '40rem'></div>"
+                     "<div class = 'load-message'><img src = 'busy_icon_complex.svg' height = '60rem'>Working! Please wait.<img src = 'busy_icon_complex.svg' height = '60rem'></div>"
                    )
                  ),
                  br(),
@@ -198,15 +198,6 @@ ui <- fluidPage(
                                                                                                                           class = "info-btn",
                                                                                                                           icon = icon("circle-question")))),
                                                                                              fluidRow(column(width = 10,
-                                                                                                             selectInput(inputId = "pointnbr_var",
-                                                                                                                         label = "Variable containing the ordinal hit numbers",
-                                                                                                                         choices = c(""))),
-                                                                                                      column(width = 1,
-                                                                                                             actionButton(inputId = "pointnbr_var_info",
-                                                                                                                          label = "",
-                                                                                                                          class = "info-btn",
-                                                                                                                          icon = icon("circle-question")))),
-                                                                                             fluidRow(column(width = 10,
                                                                                                              selectInput(inputId = "layer_var",
                                                                                                                          label = "Variable containing the hit record layers",
                                                                                                                          choices = c(""))),
@@ -214,8 +205,16 @@ ui <- fluidPage(
                                                                                                              actionButton(inputId = "layer_var_info",
                                                                                                                           label = "",
                                                                                                                           class = "info-btn",
-                                                                                                                          icon = icon("circle-question")))
-                                                                                             )
+                                                                                                                          icon = icon("circle-question")))),
+                                                                                             fluidRow(column(width = 10,
+                                                                                                             selectInput(inputId = "pointnbr_var",
+                                                                                                                         label = "Variable containing the ordinal hit numbers",
+                                                                                                                         choices = c(""))),
+                                                                                                      column(width = 1,
+                                                                                                             actionButton(inputId = "pointnbr_var_info",
+                                                                                                                          label = "",
+                                                                                                                          class = "info-btn",
+                                                                                                                          icon = icon("circle-question"))))
                                                                             ),
                                                                             # Gap-specific variables
                                                                             conditionalPanel(condition = "input.data_type == 'gap'",
@@ -315,16 +314,17 @@ ui <- fluidPage(
                                                                                                                           label = "",
                                                                                                                           class = "info-btn",
                                                                                                                           icon = icon("circle-question")))),
-                                                                                             fluidRow(column(width = 10,
-                                                                                                             checkboxInput(inputId = "add_generic_species",
-                                                                                                                           label = "Include generic species codes",
-                                                                                                                           value = TRUE)),
-                                                                                                      column(width = 1,
-                                                                                                             actionButton(inputId = "add_generic_species_info",
-                                                                                                                          label = "",
-                                                                                                                          class = "info-btn",
-                                                                                                                          icon = icon("circle-question")))),
-                                                                                             conditionalPanel(condition = "input.add_generic_species",
+                                                                                             conditionalPanel(condition = "input.species_source != 'none'",
+                                                                                                              fluidRow(column(width = 10,
+                                                                                                                              checkboxInput(inputId = "add_generic_species",
+                                                                                                                                            label = "Include generic species codes",
+                                                                                                                                            value = TRUE)),
+                                                                                                                       column(width = 1,
+                                                                                                                              actionButton(inputId = "add_generic_species_info",
+                                                                                                                                           label = "",
+                                                                                                                                           class = "info-btn",
+                                                                                                                                           icon = icon("circle-question"))))),
+                                                                                             conditionalPanel(condition = "input.add_generic_species && input.species_source != 'none'",
                                                                                                               fluidRow(column(width = 10,
                                                                                                                               selectInput(inputId = "growth_habit_var",
                                                                                                                                           label = "Growth habit variable in lookup table",
@@ -347,12 +347,7 @@ ui <- fluidPage(
                                                                                                                                            label = "",
                                                                                                                                            class = "info-btn",
                                                                                                                                            icon = icon("circle-question")))),
-                                                                                                              conditionalPanel(condition = "input.growth_habit_var != '' && input.duration_var != ''",
-                                                                                                                               fluidRow(column(width = 12,
-                                                                                                                                               align = "center",
-                                                                                                                                               actionButton(inputId = "add_generic_species_button",
-                                                                                                                                                            label = "Add generic species codes to lookup table"))
-                                                                                                                               ))
+                                                                                                              uiOutput(outputId = "add_generic_species_button_ui")
                                                                                              ),
                                                                                              conditionalPanel(condition = "input.species_source != 'none'",
                                                                                                               br(),
@@ -413,6 +408,10 @@ ui <- fluidPage(
                                                                                              )
                                                                             )
                                                                    )),
+                                                       uiOutput(outputId = "proceed_to_calculate_lpi_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_height_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_gap_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_soil_ui"),
                                                        fluidRow(br(),
                                                                 column(width = 4,
                                                                        offset = 1,
@@ -460,9 +459,6 @@ ui <- fluidPage(
                                                              icon = icon("circle-question")))),
                                 # Grouping variables are only options for first, any, and basal
                                 conditionalPanel(condition = "input.lpi_hit == 'any' | input.lpi_hit == 'first' | input.lpi_hit == 'basal'",
-                                                 # tippy can't work with selectInput(multiple = TRUE)
-                                                 # So we can wrap it in a div() and tippy that
-                                                 # div(id = "lpi_grouping_vars_wrapper",
                                                  fluidRow(column(width = 10,
                                                                  selectInput(inputId = "lpi_grouping_vars",
                                                                              label = "Grouping variables",
@@ -472,11 +468,7 @@ ui <- fluidPage(
                                                                  actionButton(inputId = "lpi_grouping_vars_info",
                                                                               label = "",
                                                                               class = "info-btn",
-                                                                              icon = icon("circle-question"))))#),
-                                                 # tippy_this(elementId = "lpi_grouping_vars_wrapper",
-                                                 #            tooltip = "E.g. code or growth habit and duration",
-                                                 #            placement = "right",
-                                                 #            delay = c(50, 0))
+                                                                              icon = icon("circle-question"))))
                                 ),
                                 fluidRow(column(width = 10,
                                                 selectInput(inputId = "lpi_unit",
@@ -565,9 +557,6 @@ ui <- fluidPage(
                                                              label = "",
                                                              class = "info-btn",
                                                              icon = icon("circle-question")))),
-                                # tippy can't work with selectInput(multiple = TRUE)
-                                # So we can wrap it in a div() and tippy that
-                                # div(id = "height_grouping_vars_wrapper",
                                 fluidRow(column(width = 10,
                                                 selectInput(inputId = "height_grouping_vars",
                                                             label = "Grouping variables",
@@ -578,10 +567,6 @@ ui <- fluidPage(
                                                              label = "",
                                                              class = "info-btn",
                                                              icon = icon("circle-question")))),
-                                # tippy_this(elementId = "height_grouping_vars_wrapper",
-                                #            tooltip = "E.g. species or growth habit and duration",
-                                #            placement = "right",
-                                #            delay = c(50, 0)),
                                 fluidRow(column(width = 10,
                                                 selectInput(inputId = "height_unit",
                                                             label = "Summary unit",
@@ -611,9 +596,10 @@ ui <- fluidPage(
                                                                    choices = c("All cover types" = "all",
                                                                                "Perennial cover" = "covered",
                                                                                "No cover" = "uncovered",
-                                                                               "By cover type" = "by_type"))),
+                                                                               "By cover type" = "by_type"),
+                                                                   selected = "all")),
                                          column(width = 1,
-                                                actionButton(inputId = "soil_covergroups__info",
+                                                actionButton(inputId = "soil_covergroups_info",
                                                              label = "",
                                                              class = "info-btn",
                                                              icon = icon("circle-question")))),
@@ -648,7 +634,7 @@ ui <- fluidPage(
                  condition = "$('html').hasClass('shiny-busy')",
                  br(),
                  HTML(
-                   "<div class = 'load-message'><img src = 'busy_icon.svg' height = '40rem'>Working! Please wait.<img src = 'busy_icon.svg' height = '40rem'></div>"
+                   "<div class = 'load-message'><img src = 'busy_icon_complex.svg' height = '60rem'>Working! Please wait.<img src = 'busy_icon_complex.svg' height = '60rem'></div>"
                  )
                )),
                mainPanel(fluidRow(column(width = 10,
@@ -792,13 +778,13 @@ server <- function(input, output, session) {
   # Note that we have to do this with a() and an onclick argument that calls the
   # function defined way up at the top of all this. The a() is necessary because
   # we can't nest another layer of quotes in a string, being limited to "" and ''
-  output$data_available_ui <- renderUI(if (!is.null(workspace$data)) {
+  output$data_available_ui <- renderUI(if (req(!is.null(workspace$data))) {
     tagList(br(),
             fluidRow(column(width = 10,
                             p(class = "data-prompt",
                               "You have data available! The next step is to check the configuration in the",
                               a("Configure Data tab.",
-                                onclick = "fakeClick('Configure Data')")))))
+                                onclick = "tabJump('Configure Data')")))))
   })
   
   # Keys when grabbing data from the LDC by key values
@@ -875,19 +861,54 @@ server <- function(input, output, session) {
   })
   
   ###### Configure Data tab ######
+  output$add_generic_species_button_ui <- renderUI( if(req(!is.null(workspace$data)) & req(input$add_generic_species) & req(input$growth_habit_var != "") & req(input$duration_var != "")) {
+    fluidRow(column(width = 12,
+                    align = "center",
+                    actionButton(inputId = "add_generic_species_button",
+                                 label = "Add generic species codes to lookup table")))
+  })
   
   ###### Calculate Indicators tab ######
   # Okay! So this is gnarly as hell, but we want to add a message directing the
   # user to the Calculate Indicators tab if the configuration is set.
   # That means different conditions for each data type because they have different
   # required variables.
-  output$proceed_to_calculate_ui <- renderUI(if (!any(c(input$primarykey_var, input$linekey_var) %in% c(""))) {
+  # We'll just render this for each data type
+  output$proceed_to_calculate_lpi_ui <- renderUI(if (input$data_type == "lpi" & !any(c(input$primarykey_var, input$linekey_var, input$code_var, input$pointnbr_var, input$layer_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for LPI!")
     tagList(br(),
             fluidRow(column(width = 10,
                             p(class = "data-prompt",
                               "The data configuration appears to be complete! The next step is to calculate the indicators in the",
                               a("Calculate Indicators tab.",
-                                onclick = "fakeClick('Calculate Indicators')")))))
+                                onclick = "tabJump('Calculate Indicators')")))))
+  })
+  output$proceed_to_calculate_gap_ui <- renderUI(if (input$data_type == "gap" & !any(c(input$primarykey_var, input$linekey_var, input$linelengthamount_var, input$measure_var, input$rectype_var, input$gap_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for gap!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "data-prompt",
+                              "The data configuration appears to be complete! The next step is to calculate the indicators in the",
+                              a("Calculate Indicators tab.",
+                                onclick = "tabJump('Calculate Indicators')")))))
+  })
+  output$proceed_to_calculate_height_ui <- renderUI(if (input$data_type == "height" & !any(c(input$primarykey_var, input$linekey_var, input$height_var, input$species_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for height!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "data-prompt",
+                              "The data configuration appears to be complete! The next step is to calculate the indicators in the",
+                              a("Calculate Indicators tab.",
+                                onclick = "tabJump('Calculate Indicators')")))))
+  })
+  output$proceed_to_calculate_soil_ui <- renderUI(if (input$data_type == "soilstability" & !any(c(input$primarykey_var, input$rating_var, input$veg_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for soil stability!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "data-prompt",
+                              "The data configuration appears to be complete! The next step is to calculate the indicators in the",
+                              a("Calculate Indicators tab.",
+                                onclick = "tabJump('Calculate Indicators')")))))
   })
   
   
@@ -954,6 +975,8 @@ server <- function(input, output, session) {
                  )
                })
   
+  ###### Configure Data tab ####################################################
+  ####### Variable configuration ###############################################
   observeEvent(eventExpr = input$keys_input_info,
                handlerExpr = {
                  message("Displaying info about keys")
@@ -995,7 +1018,7 @@ server <- function(input, output, session) {
                                             "You can retrieve all data from the Landscape Data Commons which fall within a polygon feature class, provided either as a shapefile or a feature class in a geodatabase.",
                                             br(),
                                             br(),
-                                            "The uploaded file must be a ZIP file containing either all the files making up a polygon shapefile (e.g., polygons.shp, polygons.shx, polygons.dbf, and polygons.prj) or a geodatabase containing at least one polygon feature class.",
+                                            "The uploaded file must be a ZIP file containing either all the files making up a polygon shapefile (i.e., polygons.shp, polygons.shx, polygons.dbf, and polygons.prj) or a geodatabase containing at least one polygon feature class.",
                                             footer = tagList(modalButton("Close")))
                  )
                })
@@ -1163,12 +1186,13 @@ server <- function(input, output, session) {
                                             br(),
                                             "See the",
                                             a("Help tab",
-                                              onclick = "fakeClick('Help')"),
+                                              onclick = "tabJump('Help')"),
                                             "for details on valid values.",
                                             footer = tagList(modalButton("Close")))
                  )
                })
   
+  ###### Species information ###################################################
   observeEvent(eventExpr = input$species_source_info,
                handlerExpr = {
                  message("Displaying info about species source")
@@ -1260,6 +1284,277 @@ server <- function(input, output, session) {
                                             footer = tagList(modalButton("Close")))
                  )
                })
+  ###### Calculate Indicators tab ##############################################
+  ####### LPI ##################################################################
+  observeEvent(eventExpr = input$lpi_hit_info,
+               handlerExpr = {
+                 message("Displaying info about LPI hit")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are three ways to consider pin drop records for cover calculations.",
+                                            br(),
+                                            br(),
+                                            "Any hit means that cover can be contributed by any canopy layer. This means that a single point can contribute cover for each layer, potentially resulting in cover values that sum to over 100% for a sampling location.",
+                                            br(),
+                                            br(),
+                                            "First hit means that cover is only contributed by the first canopy layer to contain a code, e.g. a species code, rock fragment code, litter code. This means that cover values on a plot will never sum to more than 100%.",
+                                            br(),
+                                            br(),
+                                            "Basal hit means that cover is contributed only by the surface layer, not canopy layers. This means that cover on a plot will never sum to more than 100%.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_grouping_vars_info,
+               handlerExpr = {
+                 message("Displaying info about LPI grouping variables")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The variable or variables to group the data by for cover calculations. For example, grouping by the variable containing species would result in cover by species. Grouping by growth habit and duration would result in cover for each combination of values from those two variables, e.g., annual forbs or perennial grasses.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_unit_info,
+               handlerExpr = {
+                 message("Displaying info about summary units")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about output formats")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., annual forb cover) and another containing the indicator value (e.g., 69%).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### Height ###############################################################
+  observeEvent(eventExpr = input$height_omit_zero_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Exclude or include heights of 0.",
+                                            br(),
+                                            br(),
+                                            "Including 0 heights will produce a mean height estimate for the whole summary unit, including the areas that have no measurable vegetation. This is most likely to be useful for remote sensing applications where the summary unit probably makes up a pixel.",
+                                            br(),
+                                            br(),
+                                            "Excluding 0 heights will produce a mean estimate for only measured vegetation. This is more likely to be useful for applications like habitat suitability assessments.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_grouping_vars_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The variable or variables to group the data by for indicator calculations. For example, grouping by the variable containing species would result in mean heights by species. Grouping by growth habit and duration would result in mean heights for each combination of values from those two variables, e.g., annual forbs or perennial grasses.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_unit_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., mean height of shrubs) and another containing the indicator value (e.g., 69 cm).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  
+  ####### Gap ##################################################################
+  observeEvent(eventExpr = input$gap_breaks_info,
+               handlerExpr = {
+                 message("Displaying info about gap sizes")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The gap size class breakpoints. These must be numeric values separated by commas.",
+                                            br(),
+                                            br(),
+                                            "If, for example, the breakpoints were '25, 51, 101, 201' then the gap size classes used for calculations would be 25 to 50, 51 to 100, 101 to 200, and 201 or greater.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_type_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are three types of gap that can be considered. These are indicated in the data with the variable selected for type of gap in the",
+                                            a("Configure Data tab.",
+                                              onclick = "tabJump('Configure Data')"),
+                                            br(),
+                                            br(),
+                                            "Canopy gap considers gaps in the canopy which are stopped by canopy contributed by any rooted vascular plant.",
+                                            br(),
+                                            br(),
+                                            "Perennial-only gap considers gaps in the canopy which are stopped only by perennial rooted vascular plants, ignoring annual or biennial plants.",
+                                            br(),
+                                            br(),
+                                            "Basal gap considers gaps along the soil surface which are stopped by rooted vascular plants emerging from the soil surface.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_indicator_types_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are three options for gap indicators which can be calculated. One or more may be calculated at once.",
+                                            br(),
+                                            br(),
+                                            "Percent of line(s) will produce the percentage of measured transects which fell within gaps of the defined size classes, e.g. 42% in gaps 25 to 50 cm across.",
+                                            br(),
+                                            br(),
+                                            "Number of gaps will produce a count of the gaps in each size class, e.g. 7 gaps 25 to 50 cm across.",
+                                            br(),
+                                            br(),
+                                            "Length of gaps will produce a count of the number of units of length recorded in each gap size class, e.g., 420 cm in gaps 25 to 50 cm across.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_unit_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., percent in gaps 25 to 50 cm across) and another containing the indicator value (e.g., 69%).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### Soil stability########################################################
+  observeEvent(eventExpr = input$soil_covergroups_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are four options for how soil stability indicators can be calculated. One or more may be calculated at once.",
+                                            br(),
+                                            br(),
+                                            "Considering all cover types will find the mean rating, using all stability values regardless of the cover type they were collected from under.",
+                                            br(),
+                                            br(),
+                                            "'Perennial cover' will find the mean rating using only stability values collected from under perennial vegetative cover.",
+                                            br(),
+                                            br(),
+                                            "'No cover' will find the mean rating using only stability values collected from points without vegetative cover.",
+                                            br(),
+                                            br(),
+                                            "'By cover type' will find the mean rating for stability values by each recorded cover type, e.g., if some data were from under perennial forbs and some under shrubs then the indicators calculated would be mean ratings for under perennial forb cover and under shrubs.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$soil_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., mean rating) and another containing the indicator value (e.g., 4.2).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### All indicators #######################################################
+  # Note that for some (presumably very good) reason, I have it so that each
+  # data type has its own version of shared inputs (e.g. LPI and heights have
+  # their own grouping variable input value) 
+  observeEvent(eventExpr = input$additional_output_vars_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "By default, the results of indicator calculations will only contain the PrimaryKey values. In order to include additional metadata found in the data (e.g., coordinates, ecological site, habitat status), select those variables.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
   
   ##### Polygon upload handling #####
   # When input$polygons updates, look at its filepath and read in the CSV
