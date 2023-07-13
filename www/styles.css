@@ -57,6 +57,12 @@ a, a:link, a:visited{
   accent-color: #fa8943;
 }
 
+/* No idea why this doesn't apparently have any influence
+Also, shiny-options-group gets overridden???? */
+.shiny-input-checkboxgroup {
+  margin-top: -5px;
+}
+
 /* Text linking to Data and Data Configuration tabs once data are ready */
 .data-prompt {
   font-weight: bold;
@@ -103,6 +109,7 @@ a, a:link, a:visited{
 .load-message{
   font-family: 'Montserrat', sans-serif;
   font-weight: bold;
+  font-size: 1.5em;
   text-align: center;
 }
 
@@ -160,6 +167,7 @@ a, a:link, a:visited{
   font-weight: bold;
   font-size: 2rem;
   margin-top: auto;
+  z-index: 420;
 }
 
 .modal-footer {
