@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.1.189">
+<meta name="generator" content="quarto-1.2.335">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -45,9 +45,11 @@ ul.task-list li input[type="checkbox"] {
 
 
 
+<p>The Rangeland Indicator Calculator calculates ecological indicators from monitoring data collected following methods in the <em>Monitoring Manual for Grassland, Shrubland, and Savannah Ecosystems</em> using the R package <a href="https://github.com/Landscape-Data-Commons/terradactyl">terradactyl</a>. (<a href="https://www.sciencedirect.com/science/article/pii/S1470160X22009840">McCord et al.&nbsp;2022</a>) These indicators can be used for interpreting the data and making land management decisions. The data can either be retrieved from the <a href="https://landscapedatacommons.org">Landscape Data Commons</a> (LDC) through this interface or uploaded instead.</p>
 <ol type="1">
-<li><p>Select the type of data you will be working with and either upload a CSV file containing the data or download the appropriate data from the <a href="https://landscapedatacommons.org/">Landscape Data Commons (LDC)</a>. If downloading from the LDC, you must specify how you’re searching for data (by ecological site ID, project key, or primary key) and the values to search for, separated by commas, e.g.&nbsp;<em>R042XB012NM, R036XB006NM</em>.</p></li>
-<li><p>In the “Data configuration” tab, confirm the variables in your data which correspond to the required variables then click the “Update data variables” button. Optionally, you may choose to also add species information via joining from a lookup table. If you make a mistake with either, you can reset your data under the “Data” tab.</p></li>
+<li><p>Select the Data Type, or method, that you would like to use to calculate indicators. Line-point intercept can be used to calculate vegetation and ground cover; height provides indicators of vegetation height; gap intercept provides indicators cover of gaps between vegetation; and soil stability provides indicators of wet soil aggregate stability.</p></li>
+<li><p>Select the type of data you will be working with and either upload a CSV file containing the data or download the appropriate data from the LDC using the pane on the left. If you are uploading data, check the help tab to find the formatting rules. If downloading from the LDC through this tool, you must specify how you’re searching for data. You can search the LDC spatially with your own polygons by uploading a ZIP file containing the files that make up a polygon shapefile or a ZIP containing a geodatabase with the polygons as a feature class. If you would rather, you can instead search by ecological site IDs, project keys, or primary keys.</p></li>
+<li><p>In the “Data configuration” tab, confirm the variables in your data which correspond to the required variables; they should be correct already if your data come from the LDC. Optionally with LPI and height data, you may choose to also add species information via joining from a lookup table. If you make a mistake when joining species information, you can reset your data under the “Data” tab.</p></li>
 <li><p>In the “Indicator calculation” tab select the options for the indicators you wish to calculate then use the “Calculate” button to produce results in the “Results” tab.</p></li>
 </ol>
 
@@ -94,7 +96,24 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     button.classList.add('code-copy-button-checked');
     var currentTitle = button.getAttribute("title");
     button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
     setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
       button.setAttribute("title", currentTitle);
       button.classList.remove('code-copy-button-checked');
     }, 1000);
@@ -130,24 +149,42 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       return note.innerHTML;
     });
   }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
   var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
   for (var i=0; i<bibliorefs.length; i++) {
     const ref = bibliorefs[i];
-    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
-    tippyHover(ref, function() {
-      var popup = window.document.createElement('div');
-      cites.forEach(function(cite) {
-        var citeDiv = window.document.createElement('div');
-        citeDiv.classList.add('hanging-indent');
-        citeDiv.classList.add('csl-entry');
-        var biblioDiv = window.document.getElementById('ref-' + cite);
-        if (biblioDiv) {
-          citeDiv.innerHTML = biblioDiv.innerHTML;
-        }
-        popup.appendChild(citeDiv);
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
       });
-      return popup.innerHTML;
-    });
+    }
   }
 });
 </script>

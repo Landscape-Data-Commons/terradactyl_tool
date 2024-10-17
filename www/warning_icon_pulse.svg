@@ -1,0 +1,46 @@
+<svg
+  xmlns = "http://www.w3.org/2000/svg"
+  width = "32px"
+  height = "32px">
+  <text
+    x = "23%"
+	y = "100%"
+    class = "pulse"
+	stroke = "red"
+	fill = "red">
+    !!!
+  </text>
+<style>
+  .pulse {
+      font: normal 32px sans-serif;
+      transform-origin: center;
+	  animation-delay: -2s;
+	  animation-name: pulsing;
+	  animation-duration: 3.5s;
+	  animation-iteration-count: infinite;
+	  animation-timing-function: linear;
+   }
+   @keyframes pulsing {
+     0% {
+	   transform: scale(0);
+	   opacity: 0;
+	 }
+	 50% {
+	   transform: scale(0.5);
+	   opacity: 0;
+	 }
+	 60% {
+	   transform: scale(0.75);
+	   opacity: 0.5;
+	 }
+	 85% {
+	   transform: scale(0.95);
+	   opacity: 1;
+	 }
+	 100% {
+	   transform: scale(1);
+	   opacity: 0;
+	 }
+   }
+</style>
+</svg>
