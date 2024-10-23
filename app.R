@@ -2,393 +2,751 @@ library(shiny)
 library(dplyr)
 library(DT)
 library(stringr)
-library(tippy)
+library(cicerone)
 library(leaflet)
+library(leaflet.extras)
 library(sf)
+library(shinyjs)
 source("functions.R")
 
 # Define UI for application
 ui <- fluidPage(
-  # Formatting for notification and error messages
+  title = "Rangeland Indicator Calculator",
+  useShinyjs(),
+  use_cicerone(),
   tags$head(
-    tags$style(
-      HTML(
-        ".shiny-notification {
-          position:fixed;
-          top: calc(50%);
-          left: calc(50%);
-          width: calc(35%);
-          opacity: 1;
-          font-weight: bold;
-          font-size: large;
-          box-shadow: 0 0 0 rgba(181,181,181, 0.4);
-          animation: pulse 2s infinite;
-        }
-        @-webkit-keyframes pulse {
-          0% {
-            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
+    # Add in Google Analytics tracking
+    includeHTML("google-analytics.html"),
+    # Use the styles.css file for (nearly) all our styling needs
+    tags$link(rel = "stylesheet", type = "text/css", href = "styles.css"),
+    # A function that lets us create links to tabs since there's no
+    # equivalent to updateTabsetPanel() like updateTabPanel() for some reason.
+    # This lets us make links with a(onclick = "tabJump('Tab Name')")
+    # This comes from StackOverflow, I think?
+    tags$script(HTML('
+        var tabJump = function(tabName) {
+          var dropdownList = document.getElementsByTagName("a");
+          for (var i = 0; i < dropdownList.length; i++) {
+            var link = dropdownList[i];
+            if(link.getAttribute("data-value") == tabName) {
+              link.click();
+            };
           }
-          70% {
-            -webkit-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-          }
-          100% {
-            -webkit-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-          }
-        }
-        @keyframes pulse {
-          0% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0.4);
-          }
-          70% {
-            -moz-box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-            box-shadow: 0 0 0 10px rgba(181,181,181, 0);
-          }
-          100% {
-            -moz-box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-            box-shadow: 0 0 0 0 rgba(181,181,181, 0);
-          }
-        }"
-      )
-    )
+        };
+      '))
   ),
-  
-  #### Interface ###################################
-  # Application title
-  titlePanel(img(src = "combined_logos_hires.png",
-                 align = "right",
-                 height = "45em"),
-             windowTitle = "Rangeland Indicator Calculator"),
-  titlePanel(title = "Rangeland Indicator Calculator"),
-  
-  ##### Sidebar #####
-  sidebarLayout(
-    sidebarPanel(
-      HTML("Calculate indicators from core monitoring data, powered by <a href='https://github.com/Landscape-Data-Commons/terradactyl' target='_blank'>terradactyl</a>"),
-      hr(),
-      selectInput(inputId = "data_type",
-                  label = "Data type",
-                  choices = c("Line-Point Intercept" = "lpi",
-                              "Height" = "height",
-                              "Gap" = "gap",
-                              "Soil Stability" = "soilstability"),
-                  selected = "lpi"),
-      radioButtons(inputId = "data_source",
-                   label = "Data source",
-                   choices = c("Query Landscape Data Commons" = "ldc",
-                               "Upload" = "upload")),
-      conditionalPanel(condition = "input.data_source == 'upload'",
-                       fileInput(inputId = "raw_data",
-                                 label = "Data CSV",
-                                 multiple = FALSE,
-                                 accept = ".csv")
-      ),
-      
-      conditionalPanel(condition = "input.data_source == 'ldc'",
-                       selectInput(inputId = "query_method",
-                                   label = "Query method",
-                                   choices = c("Spatial" = "spatial",
-                                               "By ecological site" = "EcologicalSiteID",
-                                               "By PrimaryKey" = "PrimaryKey",
-                                               "By ProjectKey" = "ProjectKey"),
-                                   selected = "spatial"),
-                       conditionalPanel(condition = "input.query_method == 'EcologicalSiteID' | input.query_method == 'PrimaryKey' | input.query_method == 'ProjectKey'",
-                                        textInput(inputId = "keys",
-                                                  label = "Search key values",
-                                                  value = "",
-                                                  placeholder = "R042XB012NM"),
-                                        tippy_this(elementId = "keys",
-                                                   tooltip = "Separate multiple values with commas.",
-                                                   placement = "right",
-                                                   delay = c(50, 0))),
-                       conditionalPanel(condition = "input.query_method == 'spatial'",
-                                        fileInput(inputId = "polygons",
-                                                  label = "Polygons ZIP file",
-                                                  multiple = FALSE,
-                                                  accept = ".zip"),
-                                        selectInput(inputId = "polygons_layer",
-                                                    label = "Polygons name",
-                                                    choices = c(""),
-                                                    selected = ""),
-                                        checkboxInput(inputId = "repair_polygons",
-                                                      label = "Repair polygons",
-                                                      value = FALSE)),
-                       actionButton(inputId = "fetch_data",
-                                    label = "Fetch data")),
-      hr()
+  navbarPage(
+    title = tags$div(class = "tool-title",
+                     "Rangeland Indicator Calculator"),
+    id = "navbar-full",
+    position = "static-top",
+    footer = tags$div(class = "footer",
+                      p(column(width = 3,
+                               p(a(href = 'mailto:nelson.stauffer@usda.gov',
+                                   'Contact us with questions',
+                                   target = "_blank"))),
+                        column(width = 9,
+                               align = "right",
+                               class = "image-row",
+                               p(class = "logo",
+                                 a(href = "https://landscapedatacommons.org",
+                                   target = "blank",
+                                   img(src = "ldc_logo.png",
+                                       height = "60px"))),
+                               p(class = "logo",
+                                 a(href = "https://nrcs.usda.gov",
+                                   target = "blank",
+                                   img(src = "nrcs_logo.png",
+                                       height = "60px"))),
+                               p(class = "logo",
+                                 a(href = "https://blm.gov",
+                                   target = "blank",
+                                   img(src = "blm_logo.png",
+                                       height = "60px"))),
+                               p(class = "logo",
+                                 a(href = "https://jornada.nmsu.edu",
+                                   target = "blank",
+                                   img(src = "jer_logo.png",
+                                       height = "60px"))),
+                               p(class = "logo",
+                                 a(href = "https://ltar.ars.usda.gov/",
+                                   target = "blank",
+                                   img(src = "ltar_logo.png",
+                                       height = "60px"))))
+                      )
     ),
-    
-    
-    ##### Tabs #####
-    mainPanel(
-      tabsetPanel(type = "tabs",
-                  id = "maintabs",
-                  tabPanel(title = "Start",
-                           includeHTML("instructions.html")),
-                  tabPanel(title = "Data",
-                           actionButton(inputId = "reset_data",
-                                        label = "Reset data"),
-                           tippy_this(elementId = "reset_data",
-                                      tooltip = "Reset data to original uploaded/downloaded state",
-                                      placement = "right",
-                                      delay = c(50, 0)),
-                           DT::DTOutput(outputId = "data")),
-                  tabPanel(title = "Configure Data",
-                           actionLink(inputId = "data_help",
-                                      label = "What do these options mean?"),
-                           fluidRow(
-                             column(width = 5,
-                                    checkboxInput(inputId = "show_var_config",
-                                                  label = "Show variable configuration options",
-                                                  value = FALSE),
-                                    conditionalPanel(condition = "input.show_var_config",
-                                                     helpText("If a variable name is already selected, it should be correct."),
-                                                     selectInput(inputId = "primarykey_var",
-                                                                 label = "Variable containing PrimaryKey values",
-                                                                 choices = c("")),
-                                                     # LineKey (potentially) matters to LPI, gap, and height
-                                                     conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
-                                                                      selectInput(inputId = "linekey_var",
-                                                                                  label = "Variable containing LineKey values",
-                                                                                  choices = c(""))),
-                                                     # LPI-specific variables
-                                                     conditionalPanel(condition = "input.data_type == 'lpi'",
-                                                                      selectInput(inputId = "code_var",
-                                                                                  label = "Variable containing hit codes",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "pointnbr_var",
-                                                                                  label = "Variable containing the ordinal hit numbers",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "layer_var",
-                                                                                  label = "Variable containing the hit record layers",
-                                                                                  choices = c(""))),
-                                                     # Gap-specific variables
-                                                     conditionalPanel(condition = "input.data_type == 'gap'",
-                                                                      selectInput(inputId = "linelengthamount_var",
-                                                                                  label = "Variable containing line lengths",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "measure_var",
-                                                                                  label = "Variable containing the measurement units",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "rectype_var",
-                                                                                  label = "Variable containing the type of gaps",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "gap_var",
-                                                                                  label = "Variable containing gap sizes",
-                                                                                  choices = c(""))),
-                                                     # Height-specific variables
-                                                     conditionalPanel(condition = "input.data_type == 'height'",
-                                                                      selectInput(inputId = "height_var",
-                                                                                  label = "Variable containing heights",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "species_var",
-                                                                                  label = "Variable containing the species",
-                                                                                  choices = c(""))),
-                                                     # Soil-specific variables
-                                                     conditionalPanel(condition = "input.data_type == 'soilstability'",
-                                                                      selectInput(inputId = "rating_var",
-                                                                                  label = "Variable containing stability ratings",
-                                                                                  choices = c("")),
-                                                                      selectInput(inputId = "veg_var",
-                                                                                  label = "Variable containing vegetative cover type",
-                                                                                  choices = c("")))),
-                             ),
-                             column(width = 6,
-                                    # Species lookup table stuff
-                                    conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
-                                                     radioButtons(inputId = "species_source",
-                                                                  label = "Species lookup table source",
-                                                                  choices = c("None" = "none",
-                                                                              "Default USDA Plants" = "default",
-                                                                              "Upload" = "upload"),
-                                                                  selected = "none"),
-                                                     conditionalPanel(condition = "input.species_source != 'none'",
-                                                                      conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
-                                                                                       actionButton(inputId = "join_species",
-                                                                                                    label = "Join species information to data"),
-                                                                                       HTML("<br>"),
-                                                                                       conditionalPanel(condition = "input.join_species > 0",
-                                                                                                        HTML("<br>"),
-                                                                                                        downloadButton(outputId = 'downloadable_species',
-                                                                                                                       label = 'Download current species information'),
-                                                                                                        HTML("<br>"))
-                                                                                       
-                                                                      ),
-                                                                      HTML("<br>"),
-                                                                      conditionalPanel(condition = "input.species_source == 'upload'",
-                                                                                       fileInput(inputId = "species_data",
-                                                                                                 label = "Species CSV",
-                                                                                                 multiple = FALSE,
-                                                                                                 accept = ".csv")),
-                                                                      selectInput(inputId = "data_joining_var",
-                                                                                  label = "Species joining variable in data",
-                                                                                  choices = c(""),
-                                                                                  selected = "",
-                                                                                  multiple = FALSE),
-                                                                      selectInput(inputId = "species_joining_var",
-                                                                                  label = "Species joining variable in lookup table",
-                                                                                  choices = c(""),
-                                                                                  selected = "",
-                                                                                  multiple = FALSE),
-                                                                      checkboxInput(inputId = "add_generic_species",
-                                                                                    label = "Include generic species codes",
-                                                                                    value = TRUE),
-                                                                      tippy_this(elementId = "add_generic_species",
-                                                                                 tooltip = "Once variables are set, click the button to add generic species below",
-                                                                                 placement = "right",
-                                                                                 delay = c(50, 0)),
-                                                                      conditionalPanel(condition = "input.add_generic_species",
-                                                                                       actionButton(inputId = "add_generic_species_button",
-                                                                                                    label = "Add generic species codes to lookup table"),
-                                                                                       selectInput(inputId = "growth_habit_var",
-                                                                                                   label = "Growth habit variable in lookup table",
-                                                                                                   choices = c(""),
-                                                                                                   selected = "",
-                                                                                                   multiple = FALSE),
-                                                                                       selectInput(inputId = "duration_var",
-                                                                                                   label = "Duration variable in lookup table",
-                                                                                                   choices = c(""),
-                                                                                                   selected = "",
-                                                                                                   multiple = FALSE))
-                                                     )
-                                    )
-                             )
-                           ),
-                           conditionalPanel(condition = "input.join_species > 0",
-                                            DT::DTOutput(outputId = "species_lut"))
-                           
-                  ),
-                  tabPanel(title = "Calculate Indicators",
-                           actionLink(inputId = "indicator_help",
-                                      label = "What do these options mean?"),
-                           conditionalPanel(condition = "input.data_type == 'lpi'",
-                                            selectInput(inputId = "lpi_hit",
-                                                        label = "Cover calculation type",
-                                                        choices = c("Any hit" = "any",
-                                                                    "First hit" = "first",
-                                                                    "Basal hit" = "basal",
-                                                                    "Species" = "species",
-                                                                    "Bare soil" = "bare_ground",
-                                                                    "Litter" = "litter",
-                                                                    "Between-plant" = "between_plant",
-                                                                    "Total foliar" = "total_foliar",
-                                                                    "Non-plant surface" = "nonplant_ground")),
-                                            # Grouping variables are only options for first, any, and basal
-                                            conditionalPanel(condition = "input.lpi_hit == 'any' | input.lpi_hit == 'first' | input.lpi_hit == 'basal'",
-                                                             # tippy can't work with selectInput(multiple = TRUE)
-                                                             # So we can wrap it in a div() and tippy that
-                                                             div(id = "lpi_grouping_vars_wrapper",
-                                                                 selectInput(inputId = "lpi_grouping_vars",
-                                                                             label = "Grouping variables",
-                                                                             multiple = TRUE,
-                                                                             choices = c(""))),
-                                                             tippy_this(elementId = "lpi_grouping_vars_wrapper",
-                                                                        tooltip = "E.g. code or growth habit and duration",
-                                                                        placement = "right",
-                                                                        delay = c(50, 0))
-                                            ),
-                                            selectInput(inputId = "lpi_unit",
-                                                        label = "Summary unit",
-                                                        choices = c("Plot" = "plot",
-                                                                    "Line" = "line"),
-                                                        selected = "plot"),
-                                            selectInput(inputId = "lpi_output_format",
-                                                        label = "Output format",
-                                                        choices = c("Wide" = "wide",
-                                                                    "Long" = "long"))
-                           ),
-                           conditionalPanel(condition = "input.data_type == 'gap'",
-                                            textInput(inputId = "gap_breaks",
-                                                      label = "Gap size breakpoints",
-                                                      value = "25, 51, 101, 201"),
-                                            selectInput(inputId = "gap_type",
-                                                        label = "Gap type",
-                                                        choices = c("Canopy" = "canopy",
-                                                                    "Basal" = "basal",
-                                                                    "Perennial canopy" = "perennial canopy"),
-                                                        selected = "canopy"),
-                                            checkboxGroupInput(inputId = "gap_indicator_types",
-                                                               label = "Gap indicator types to calculate",
-                                                               choices = c("Percent of line(s)" = "percent",
-                                                                           "Number of gaps" = "n",
-                                                                           "Length of gaps" = "length"),
-                                                               selected = c("percent")),
-                                            selectInput(inputId = "gap_unit",
-                                                        label = "Summary unit",
-                                                        choices = c("Plot" = "plot",
-                                                                    "Line" = "line"),
-                                                        selected = "plot"),
-                                            selectInput(inputId = "gap_output_format",
-                                                        label = "Output format",
-                                                        choices = c("Wide" = "wide",
-                                                                    "Long" = "long"))
-                           ),
-                           conditionalPanel(condition = "input.data_type == 'height'",
-                                            checkboxInput(inputId = "height_omit_zero",
-                                                          label = "Omit heights of 0 from calculation"),
-                                            # tippy can't work with selectInput(multiple = TRUE)
-                                            # So we can wrap it in a div() and tippy that
-                                            div(id = "height_grouping_vars_wrapper",
-                                                selectInput(inputId = "height_grouping_vars",
-                                                            label = "Grouping variables",
-                                                            multiple = TRUE,
-                                                            choices = c(""))),
-                                            tippy_this(elementId = "height_grouping_vars_wrapper",
-                                                       tooltip = "E.g. species or growth habit and duration",
-                                                       placement = "right",
-                                                       delay = c(50, 0)),
-                                            selectInput(inputId = "height_unit",
-                                                        label = "Summary unit",
-                                                        choices = c("Plot" = "plot",
-                                                                    "Line" = "line"),
-                                                        selected = "plot"),
-                                            selectInput(inputId = "height_output_format",
-                                                        label = "Output format",
-                                                        choices = c("Wide" = "wide",
-                                                                    "Long" = "long"))
-                           ),
-                           conditionalPanel(condition = "input.data_type == 'soilstability'",
-                                            checkboxGroupInput(inputId = "soil_covergroups",
-                                                               label = "Vegetative cover grouping",
-                                                               choices = c("All cover types" = "all",
-                                                                           "Perennial cover" = "covered",
-                                                                           "No cover" = "uncovered",
-                                                                           "By cover type" = "by_type")),
-                                            selectInput(inputId = "soil_output_format",
-                                                        label = "Output format",
-                                                        choices = c("Wide" = "wide",
-                                                                    "Long" = "long"))
-                           ),
-                           selectInput(inputId = "additional_output_vars",
-                                       label = "Additional metadata variables",
-                                       choices = c(""),
-                                       selected = "",
-                                       multiple = TRUE),
-                           hr(),
-                           actionButton(inputId = "calculate_button",
-                                        label = "Calculate!")
-                           
-                  ),
-                  tabPanel(title = "Map",
-                           leaflet::leafletOutput(outputId = "map",
-                                                  height = "80vh")),
-                  tabPanel(title = "Results",
-                           HTML("<br>"),
-                           conditionalPanel(condition = "output.results_table !== null",
-                                            downloadButton(outputId = 'downloadable_data',
-                                                           label = 'Download results')),
-                           HTML("<br>"),
-                           textOutput(outputId = "metadata_text"),
-                           HTML("<br>"),
-                           DT::DTOutput(outputId = "results_table")),
-                  tabPanel(title = "Help",
-                           HTML("For further help or to report a bug, please contact <a href='mailto:nelson.stauffer@usda.gov' target='_blank'>Nelson Stauffer</>."),
-                           includeHTML("help.html"))
-      )
-    )
+    #### Interface ###################################
+    ##### Tabs #######################################
+    ###### Start #####################################
+    tabPanel(title = "Start",
+             sidebarLayout(
+               sidebarPanel(
+                 HTML(
+                   "<div class = 'app-info'>
+                    <h3>About</h3>
+                    This application calculates ecological indicators from monitoring data collected following methods in the <a href='https://landscapetoolbox.org/methods-manuals/monitoring-manual-2nd-edition/' target='blank'>Monitoring Manual for Grassland, Shrubland, and Savannah Ecosystems</a> using the R package <a href='https://github.com/Landscape-Data-Commons/terradactyl' target='_blank'>terradactyl</a>.
+                    <br>
+                 </div>"
+                 ),
+                 # actionLink(inputId = "getting_data_tutorial",
+                 #            label = "Click here for a walkthrough on getting data from the LDC.",
+                 #            class = "action-link"),
+                 # actionLink(inputId = "full_tutorial",
+                 #            label = "Click here for a walkthrough on producing indicators.",
+                 #            class = "action-link"),
+                 br(),
+                 fluidRow(column(width = 10,
+                                 # You'll see a few of these calls to add a
+                                 # "_container" ID. This is so Cicerone will
+                                 # actually highlight the element. For some
+                                 # reason, the inputId doesn't consistently work
+                                 tags$div(id = "data_type_container",
+                                          selectInput(inputId = "data_type",
+                                                      label = "Data type",
+                                                      # choices = c("Line-Point Intercept" = "lpi",
+                                                      #             "Height" = "height",
+                                                      #             "Gap" = "gap",
+                                                      #             "Soil Stability" = "soilstability",
+                                                      #             "Species Richness" = "species"),
+                                                      choices = c("Line-Point Intercept" = "lpi",
+                                                                  "Height" = "height",
+                                                                  "Gap" = "gap",
+                                                                  "Soil Stability" = "soilstability"),
+                                                      selected = "lpi"))),
+                          column(width = 1,
+                                 actionButton(inputId = "data_type_info",
+                                              label = "",
+                                              class = "info-btn",
+                                              icon = icon("circle-question")))),
+                 fluidRow(column(width = 10,
+                                 radioButtons(inputId = "data_source",
+                                              label = "Data source",
+                                              choices = c("Query the Landscape Data Commons" = "ldc",
+                                                          "Upload tabular data file" = "upload"),
+                                              selected = character(0))),
+                          column(width = 1,
+                                 actionButton(inputId = "data_source_info",
+                                              label = "",
+                                              class = "info-btn",
+                                              icon = icon("circle-question")))),
+                 conditionalPanel(condition = "input.data_source == 'upload'",
+                                  fileInput(inputId = "raw_data",
+                                            label = "Data CSV",
+                                            multiple = FALSE,
+                                            accept = ".csv")
+                 ),
+                 # If the data are going to come from the LDC, give the option
+                 # to display all current data locations
+                 br(),
+                 fluidRow(column(width = 10,
+                                 uiOutput("get_headers_ui")),
+                          column(width = 1,
+                                 uiOutput("get_headers_info_ui"))),
+                 br(),
+                 # If the data are going to come from the LDC, display options for querying
+                 fluidRow(column(width = 10,
+                                 tags$div(id = "query_method_container",
+                                          uiOutput("query_method_ui"))),
+                          column(width = 1,
+                                 uiOutput("query_method_info_ui"))),
+                 # Should the polygons be uploaded or drawn?
+                 fluidRow(column(width = 10,
+                                 uiOutput("polygon_source_ui"))),
+                 # If the query will be key-based, show the text box input for keys
+                 fluidRow(column(width = 10,
+                                 uiOutput("keys_input_ui")),
+                          column(width = 1,
+                                 uiOutput("keys_input_info_ui"))),
+                 # If the query will be spatial, show the upload bar
+                 fluidRow(column(width = 10,
+                                 uiOutput("spatial_input_ui")),
+                          column(width = 1,
+                                 uiOutput("spatial_input_info_ui"))),
+                 # If there's an uploaded polygon file, show the options to select a feature
+                 fluidRow(column(width = 10,
+                                 uiOutput("select_polygon_ui")),
+                          column(width = 1,
+                                 uiOutput("select_polygon_info_ui"))),
+                 fluidRow(column(width = 11,
+                                 uiOutput("polygon_draw_prompt"))),
+                 # If there's an uploaded polygon file, show the option to repair the polygons
+                 fluidRow(column(width = 10,
+                                 uiOutput("repair_polygons_ui")),
+                          column(width = 1,
+                                 uiOutput("repair_polygons_info_ui"))),
+                 # If querying the LDC and the query criteria are selected, show
+                 # the fetch button
+                 # There are three because I have to render them separately depending
+                 # on different conditions and I'm not allowed to have multiple
+                 # situations render to the same output name. The UI elements
+                 # both contain identical fetch buttons though since they can
+                 # never coexist.
+                 tags$div(id = "fetch_and_busy_container",
+                          tags$div(id = "fetch_button_container",
+                                   HTML("<center>"),
+                                   uiOutput("fetch_ui1"),
+                                   HTML("</center>"),
+                                   HTML("<center>"),
+                                   uiOutput("fetch_ui2"),
+                                   HTML("</center>"),
+                                   HTML("<center>"),
+                                   uiOutput("fetch_ui3"),
+                                   HTML("</center>"),
+                                   uiOutput("data_available_ui")
+                          ),
+                          conditionalPanel(
+                            condition = "$('html').hasClass('shiny-busy')",
+                            br(),
+                            HTML(
+                              "<div class = 'busy-message' id = 'busy_message_start'><img src = 'busy_icon_complex.svg' height = '60rem'>Working! Please wait.<img src = 'busy_icon_complex.svg' height = '60rem'></div>"
+                            )
+                          )
+                 ),
+                 br(),
+                 HTML("<center>"),
+                 actionButton(inputId = "reset_button",
+                              label = "Reset this tool"),
+                 HTML("</center>"),
+               ),
+               mainPanel(
+                 class = "main-panel",
+                 uiOutput("drawing_map_ui"),
+                 uiOutput("main_map_ui"),
+                 # fluidRow(column(width = 11,
+                 #                 DT::DTOutput(outputId = "data"))),
+                 # includeHTML("instructions.html")
+               ))),
+    ###### Configure Data #####################################
+    tabPanel(title = "Configure Data",
+             # actionLink(inputId = "data_help",
+             #            label = "What do these options mean?"),
+             # Ooooooof. This is a pain to maintain, but it gets us a sidebar
+             # with tabs for the two different configuration options and all
+             # the options are conditional depending on the current data type
+             sidebarLayout(sidebarPanel = sidebarPanel(tabsetPanel(id = "data_config_tabs",
+                                                                   tabPanel(title = "Variable configuration",
+                                                                            # actionLink(inputId = "configuring_data_tutorial",
+                                                                            #            label = "Click here for a walkthrough on configuring your data.",
+                                                                            #            class = "action-link"),
+                                                                            tags$div(id = "variable_config_options",
+                                                                                     helpText("If a variable name is already selected, it should be correct."),
+                                                                                     fluidRow(column(width = 10,
+                                                                                                     tags$div(id = "primarykey_var_container",
+                                                                                                              selectInput(inputId = "primarykey_var",
+                                                                                                                          label = "Variable containing PrimaryKey values",
+                                                                                                                          choices = c("")))),
+                                                                                              column(width = 1,
+                                                                                                     actionButton(inputId = "primarykey_var_info",
+                                                                                                                  label = "",
+                                                                                                                  class = "info-btn",
+                                                                                                                  icon = icon("circle-question")))),
+                                                                                     # LineKey (potentially) matters to LPI, gap, and height
+                                                                                     conditionalPanel(condition = "input.data_type == 'gap' || input.data_type == 'lpi' || input.data_type == 'height'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "linekey_var",
+                                                                                                                                  label = "Variable containing LineKey values",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "linekey_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question"))))),
+                                                                                     # LPI-specific variables
+                                                                                     conditionalPanel(condition = "input.data_type == 'lpi'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "code_var",
+                                                                                                                                  label = "Variable containing hit codes",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "code_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "layer_var",
+                                                                                                                                  label = "Variable containing the hit record layers",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "layer_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "pointnbr_var",
+                                                                                                                                  label = "Variable containing the ordinal hit numbers",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "pointnbr_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question"))))
+                                                                                     ),
+                                                                                     # Gap-specific variables
+                                                                                     conditionalPanel(condition = "input.data_type == 'gap'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "linelengthamount_var",
+                                                                                                                                  label = "Variable containing line lengths",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "linelengthamount_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "measure_var",
+                                                                                                                                  label = "Variable containing the measurement units",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "measure_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "rectype_var",
+                                                                                                                                  label = "Variable containing the type of gaps",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "rectype_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "gap_var",
+                                                                                                                                  label = "Variable containing gap sizes",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "gap_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question"))))
+                                                                                     ),
+                                                                                     # Height-specific variables
+                                                                                     conditionalPanel(condition = "input.data_type == 'height'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "height_var",
+                                                                                                                                  label = "Variable containing heights",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "height_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "species_var",
+                                                                                                                                  label = "Variable containing the species",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "species_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question"))))),
+                                                                                     # Soil-specific variables
+                                                                                     conditionalPanel(condition = "input.data_type == 'soilstability'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "rating_var",
+                                                                                                                                  label = "Variable containing stability ratings",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "rating_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "veg_var",
+                                                                                                                                  label = "Variable containing vegetative cover type",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "veg_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question"))))),
+                                                                                     # ),
+                                                                            )
+                                                                   ),
+                                                                   tabPanel(title = "Species information",
+                                                                            # Species lookup table stuff
+                                                                            conditionalPanel(condition = "input.data_type != 'lpi' && input.data_type != 'height'",
+                                                                                             helpText("Only line-point intercept and height data can be attributed with species information.")),
+                                                                            conditionalPanel(condition = "input.data_type == 'lpi' || input.data_type == 'height'",
+                                                                                             # actionLink(inputId = "species_info_tutorial",
+                                                                                             #            label = "Click here for a walkthrough on adding species information to your data.",
+                                                                                             #            class = "action-link"),
+                                                                                             br(),
+                                                                                             fluidRow(column(width = 10,
+                                                                                                             radioButtons(inputId = "species_source",
+                                                                                                                          label = "Species lookup table source",
+                                                                                                                          choices = c("None" = "none",
+                                                                                                                                      "Default USDA Plants" = "default",
+                                                                                                                                      "Upload" = "upload"),
+                                                                                                                          selected = "none")),
+                                                                                                      column(width = 1,
+                                                                                                             actionButton(inputId = "species_source_info",
+                                                                                                                          label = "",
+                                                                                                                          class = "info-btn",
+                                                                                                                          icon = icon("circle-question")))),
+                                                                                             conditionalPanel(condition = "input.species_source != 'none'",
+                                                                                                              fluidRow(column(width = 10,
+                                                                                                                              tags$div(id = "add_generic_species_container",
+                                                                                                                                       checkboxInput(inputId = "add_generic_species",
+                                                                                                                                                     label = "Include generic species codes",
+                                                                                                                                                     value = TRUE))),
+                                                                                                                       column(width = 1,
+                                                                                                                              actionButton(inputId = "add_generic_species_info",
+                                                                                                                                           label = "",
+                                                                                                                                           class = "info-btn",
+                                                                                                                                           icon = icon("circle-question"))))),
+                                                                                             conditionalPanel(condition = "input.add_generic_species && input.species_source != 'none'",
+                                                                                                              tags$div(id = "growth_and_duration_var_container",
+                                                                                                                       fluidRow(column(width = 10,
+                                                                                                                                       selectInput(inputId = "growth_habit_var",
+                                                                                                                                                   label = "Growth habit variable in lookup table",
+                                                                                                                                                   choices = c(""),
+                                                                                                                                                   selected = "",
+                                                                                                                                                   multiple = FALSE)),
+                                                                                                                                column(width = 1,
+                                                                                                                                       actionButton(inputId = "growth_habit_var_info",
+                                                                                                                                                    label = "",
+                                                                                                                                                    class = "info-btn",
+                                                                                                                                                    icon = icon("circle-question")))),
+                                                                                                                       fluidRow(column(width = 10,
+                                                                                                                                       selectInput(inputId = "duration_var",
+                                                                                                                                                   label = "Duration variable in lookup table",
+                                                                                                                                                   choices = c(""),
+                                                                                                                                                   selected = "",
+                                                                                                                                                   multiple = FALSE)),
+                                                                                                                                column(width = 1,
+                                                                                                                                       actionButton(inputId = "duration_var_info",
+                                                                                                                                                    label = "",
+                                                                                                                                                    class = "info-btn",
+                                                                                                                                                    icon = icon("circle-question"))))
+                                                                                                              )#,
+                                                                                                              # uiOutput(outputId = "add_generic_species_button_ui")
+                                                                                             ),
+                                                                                             conditionalPanel(condition = "input.species_source != 'none'",
+                                                                                                              br(),
+                                                                                                              conditionalPanel(condition = "input.species_source == 'upload'",
+                                                                                                                               fluidRow(column(width = 10,
+                                                                                                                                               fileInput(inputId = "species_data",
+                                                                                                                                                         label = "Species CSV",
+                                                                                                                                                         multiple = FALSE,
+                                                                                                                                                         accept = ".csv")),
+                                                                                                                                        column(width = 1,
+                                                                                                                                               actionButton(inputId = "species_data_info",
+                                                                                                                                                            label = "",
+                                                                                                                                                            class = "info-btn",
+                                                                                                                                                            icon = icon("circle-question"))))),
+                                                                                                              tags$div(id = "species_joining_var_container",
+                                                                                                                       fluidRow(column(width = 10,
+                                                                                                                                       selectInput(inputId = "data_joining_var",
+                                                                                                                                                   label = "Species joining variable in data",
+                                                                                                                                                   choices = c(""),
+                                                                                                                                                   selected = "",
+                                                                                                                                                   multiple = FALSE)),
+                                                                                                                                column(width = 1,
+                                                                                                                                       actionButton(inputId = "data_joining_var_info",
+                                                                                                                                                    label = "",
+                                                                                                                                                    class = "info-btn",
+                                                                                                                                                    icon = icon("circle-question")))),
+                                                                                                                       fluidRow(column(width = 10,
+                                                                                                                                       selectInput(inputId = "species_joining_var",
+                                                                                                                                                   label = "Species joining variable in lookup table",
+                                                                                                                                                   choices = c(""),
+                                                                                                                                                   selected = "",
+                                                                                                                                                   multiple = FALSE)),
+                                                                                                                                column(width = 1,
+                                                                                                                                       actionButton(inputId = "species_joining_var_info",
+                                                                                                                                                    label = "",
+                                                                                                                                                    class = "info-btn",
+                                                                                                                                                    icon = icon("circle-question"))))
+                                                                                                              ),
+                                                                                                              conditionalPanel(condition = "input.data_joining_var != '' && input.species_joining_var != ''",
+                                                                                                                               fluidRow(column(width = 12,
+                                                                                                                                               align = "center",
+                                                                                                                                               actionButton(inputId = "join_species",
+                                                                                                                                                            label = "Join species information to data"))),
+                                                                                                                               HTML("<br>"),
+                                                                                                                               conditionalPanel(condition = "input.join_species > 0",
+                                                                                                                                                HTML("<br>"),
+                                                                                                                                                fluidRow(column(width = 1),
+                                                                                                                                                         column(width = 9,
+                                                                                                                                                                align = "center",
+                                                                                                                                                                downloadButton(outputId = 'downloadable_species',
+                                                                                                                                                                               label = 'Download current species information')),
+                                                                                                                                                         column(width = 1,
+                                                                                                                                                                actionButton(inputId = "downloadable_species_info",
+                                                                                                                                                                             label = "",
+                                                                                                                                                                             class = "info-btn",
+                                                                                                                                                                             icon = icon("circle-question")))),
+                                                                                                                                                HTML("<br>"))
+                                                                                                                               
+                                                                                                              )
+                                                                                             )
+                                                                            )
+                                                                   )),
+                                                       uiOutput(outputId = "proceed_to_calculate_lpi_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_height_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_gap_ui"),
+                                                       uiOutput(outputId = "proceed_to_calculate_soil_ui"),
+                                                       conditionalPanel(
+                                                         condition = "$('html').hasClass('shiny-busy')",
+                                                         br(),
+                                                         HTML(
+                                                           "<div class = 'busy-message' id = 'busy_message_configure'><img src = 'busy_icon_complex.svg' height = '60rem'>Working! Please wait.<img src = 'busy_icon_complex.svg' height = '60rem'></div>"
+                                                         )
+                                                       ),
+                                                       fluidRow(br(),
+                                                                column(width = 4,
+                                                                       offset = 1,
+                                                                       actionButton(inputId = "clear_data",
+                                                                                    label = "Clear Data")),
+                                                                column(width = 4,
+                                                                       actionButton(inputId = "reset_data",
+                                                                                    label = "Reset Data")),
+                                                                column(width = 1,
+                                                                       actionButton(inputId = "data_buttons_info",
+                                                                                    label = "",
+                                                                                    class = "info-btn",
+                                                                                    icon = icon("circle-question"))))
+             ),
+             mainPanel = mainPanel(
+               class = "main-panel",
+               fluidRow(column(width = 10,
+                               DT::DTOutput(outputId = "data"))),
+               conditionalPanel(condition = "input.join_species > 0",
+                                fluidRow(column(width = 10,
+                                                DT::DTOutput(outputId = "species_lut"))))
+             )
+             )
+    ),
+    ###### Calculate Indicators #####################################
+    tabPanel(title = "Calculate Indicators",
+             sidebarLayout(sidebarPanel(
+               # uiOutput(outputId = "calculate_indicators_tutorial_button"),
+               # br(),
+               tags$div(id = "calculation_config_container",
+                        conditionalPanel(condition = "input.data_type == 'lpi'",
+                                         fluidRow(column(width = 10,
+                                                         id = "lpi_hit_container",
+                                                         selectInput(inputId = "lpi_hit",
+                                                                     label = "Cover calculation type",
+                                                                     choices = c("Any hit" = "any",
+                                                                                 "First hit" = "first",
+                                                                                 "Basal hit" = "basal",
+                                                                                 "Species" = "species",
+                                                                                 "Bare soil" = "bare_ground",
+                                                                                 "Litter" = "litter",
+                                                                                 "Between-plant" = "between_plant",
+                                                                                 "Total foliar" = "total_foliar",
+                                                                                 "Non-plant surface" = "nonplant_ground"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "lpi_hit_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         # Grouping variables are only options for first, any, and basal
+                                         conditionalPanel(condition = "input.lpi_hit == 'any' | input.lpi_hit == 'first' | input.lpi_hit == 'basal'",
+                                                          fluidRow(column(width = 10,
+                                                                          selectInput(inputId = "lpi_grouping_vars",
+                                                                                      label = "Grouping variables",
+                                                                                      multiple = TRUE,
+                                                                                      choices = c(""))),
+                                                                   column(width = 1,
+                                                                          actionButton(inputId = "lpi_grouping_vars_info",
+                                                                                       label = "",
+                                                                                       class = "info-btn",
+                                                                                       icon = icon("circle-question"))))
+                                         ),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "lpi_unit",
+                                                                     label = "Summary unit",
+                                                                     choices = c("Plot" = "plot",
+                                                                                 "Line" = "line"),
+                                                                     selected = "plot")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "lpi_unit_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "lpi_output_format",
+                                                                     label = "Output format",
+                                                                     choices = c("Wide" = "wide",
+                                                                                 "Long" = "long"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "lpi_output_format_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question"))))
+                        ),
+                        conditionalPanel(condition = "input.data_type == 'gap'",
+                                         fluidRow(column(width = 10,
+                                                         textInput(inputId = "gap_breaks",
+                                                                   label = "Gap size breakpoints",
+                                                                   value = "25, 51, 101, 201")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "gap_breaks_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "gap_type",
+                                                                     label = "Gap type",
+                                                                     choices = c("Canopy" = "canopy",
+                                                                                 "Basal" = "basal",
+                                                                                 "Perennial canopy" = "perennial canopy"),
+                                                                     selected = "canopy")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "gap_type_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         checkboxGroupInput(inputId = "gap_indicator_types",
+                                                                            label = "Gap indicator types to calculate",
+                                                                            choices = c("Percent of line(s)" = "percent",
+                                                                                        "Number of gaps" = "n",
+                                                                                        "Length of gaps" = "length"),
+                                                                            selected = c("percent"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "gap_indicator_types_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "gap_unit",
+                                                                     label = "Summary unit",
+                                                                     choices = c("Plot" = "plot",
+                                                                                 "Line" = "line"),
+                                                                     selected = "plot")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "gap_unit_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "gap_output_format",
+                                                                     label = "Output format",
+                                                                     choices = c("Wide" = "wide",
+                                                                                 "Long" = "long"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "gap_output_format_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question"))))
+                        ),
+                        conditionalPanel(condition = "input.data_type == 'height'",
+                                         fluidRow(column(width = 10,
+                                                         checkboxInput(inputId = "height_omit_zero",
+                                                                       label = "Omit heights of 0 from calculation")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "height_omit_zero_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "height_grouping_vars",
+                                                                     label = "Grouping variables",
+                                                                     multiple = TRUE,
+                                                                     choices = c(""))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "height_grouping_vars_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "height_unit",
+                                                                     label = "Summary unit",
+                                                                     choices = c("Plot" = "plot",
+                                                                                 "Line" = "line"),
+                                                                     selected = "plot")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "height_unit_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "height_output_format",
+                                                                     label = "Output format",
+                                                                     choices = c("Wide" = "wide",
+                                                                                 "Long" = "long"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "height_output_format_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question"))))
+                        ),
+                        conditionalPanel(condition = "input.data_type == 'soilstability'",
+                                         fluidRow(column(width = 10,
+                                                         checkboxGroupInput(inputId = "soil_covergroups",
+                                                                            label = "Vegetative cover grouping",
+                                                                            choices = c("All cover types" = "all",
+                                                                                        "Perennial cover" = "covered",
+                                                                                        "No cover" = "uncovered",
+                                                                                        "By cover type" = "by_type"),
+                                                                            selected = "all")),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "soil_covergroups_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question")))),
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "soil_output_format",
+                                                                     label = "Output format",
+                                                                     choices = c("Wide" = "wide",
+                                                                                 "Long" = "long"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "soil_output_format_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question"))))
+                        ),
+                        fluidRow(column(width = 10,
+                                        selectInput(inputId = "additional_output_vars",
+                                                    label = "Additional metadata variables",
+                                                    choices = c(""),
+                                                    selected = "",
+                                                    multiple = TRUE)),
+                                 column(width = 1,
+                                        actionButton(inputId = "additional_output_vars_info",
+                                                     label = "",
+                                                     class = "info-btn",
+                                                     icon = icon("circle-question"))))
+               ),
+               br(),
+               fluidRow(column(width = 12,
+                               align = "center",
+                               actionButton(inputId = "calculate_button",
+                                            label = "Calculate!"))),
+               conditionalPanel(
+                 condition = "$('html').hasClass('shiny-busy')",
+                 br(),
+                 HTML(
+                   "<div class = 'busy-message' id = 'busy_message_calculate'><img src = 'busy_icon_complex.svg' height = '60rem'>Working! Please wait.<img src = 'busy_icon_complex.svg' height = '60rem'></div>"
+                 )
+               )),
+               mainPanel(class = "main-panel",
+                         fluidRow(column(width = 10,
+                                         uiOutput("download_button_ui"))),
+                         fluidRow(column(width = 10,
+                                         textOutput(outputId = "metadata_text"))),
+                         fluidRow(column(width = 10,
+                                         DT::DTOutput(outputId = "results_table")))))),
+    ###### Help #####################################
+    tabPanel(title = "Help",
+             sidebarLayout(
+               sidebarPanel = sidebarPanel(
+                 width = 3,
+                 htmlOutput("help_toc")
+               ),
+               # HTML("For further help or to report a bug, please contact <a href='mailto:nelson.stauffer@usda.gov' target='_blank'>Nelson Stauffer</>."),
+               # includeHTML("help.html")
+               mainPanel = mainPanel(class = "main-panel",
+                                     htmlOutput("help_body")
+               )
+             )
+    ),
   )
 )
-
 #### Server ######################
 server <- function(input, output, session) {
   ##### Intialization #####
@@ -401,9 +759,27 @@ server <- function(input, output, session) {
   # Our workspace list for storing stuff
   workspace <- reactiveValues(temp_directory = tempdir(),
                               original_directory = getwd(),
+                              # This is stupid and janky, but we need to clean
+                              # up the raw read of help.html
+                              character_replacement_lookup = list("—" = "â€”",
+                                                                  "," = "&nbsp;",
+                                                                  "'" = c("\\\"",
+                                                                          "â€™",
+                                                                          "â€œ",
+                                                                          "â€˜",
+                                                                          # This one seems doubled, but also
+                                                                          # might be secretly unique????
+                                                                          "â€™",
+                                                                          "â€\u009d"),
+                                                                  "ç" = "Ã§",
+                                                                  "ü" = "Ã¼"),
                               mapping_header_sf = NULL,
                               mapping_polygons = NULL,
                               header_sf = NULL,
+                              main_map = NULL,
+                              drawn_coordinates = NULL,
+                              drawn_polygon_sf = NULL,
+
                               metadata_lut = NULL,
                               polygons = NULL,
                               default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
@@ -430,22 +806,1106 @@ server <- function(input, output, session) {
                                                                        "Rating",
                                                                        "Veg")))
   
-  ##### Directing to help #####
-  observeEvent(eventExpr = input$indicator_help,
+  #### Wrangling the help TOC ##################################################
+  # This is a little silly, but we'll take apart the help.hml file to get just
+  # the table of contents and just the contents so that we can put the ToC into
+  # the sidebar and the contents into the main panel
+  output$help_toc <- renderText(expr = {
+    raw_help <- readLines(con = "help.html")
+    
+    cleaned_help <- raw_help
+    for (symbol in names(workspace$character_replacement_lookup)) {
+      current_bad_strings <- workspace$character_replacement_lookup[[symbol]]
+      for (string in current_bad_strings) {
+        cleaned_help <- gsub(cleaned_help,
+                             pattern = string,
+                             replacement = symbol)
+      }
+    }
+    
+    toc_start_index <- grep(cleaned_help,
+                            pattern = "toc-title")
+    toc_end_index <- grep(cleaned_help,
+                          pattern = "/nav")[1]
+    
+    trimws(paste(cleaned_help[toc_start_index:toc_end_index],
+                 collapse = ""))
+  })
+  
+  output$help_body <- renderText(expr = {
+    raw_help <- readLines(con = "help.html")
+    
+    cleaned_help <- raw_help
+    for (symbol in names(workspace$character_replacement_lookup)) {
+      current_bad_strings <- workspace$character_replacement_lookup[[symbol]]
+      for (string in current_bad_strings) {
+        cleaned_help <- gsub(cleaned_help,
+                             pattern = string,
+                             replacement = symbol)
+      }
+    }
+    
+    body_start_index <- grep(cleaned_help,
+                             pattern = "<main") + 1
+    body_end_index <- grep(cleaned_help,
+                           pattern = "</main") - 1
+    
+    trimws(paste(cleaned_help[body_start_index:body_end_index],
+                 collapse = ""))
+  })
+  
+  #### Guides ##################################################################
+  source("guides.R",
+         local = TRUE)
+  
+  ###### Activate the Start tab tutorial #######################################
+  observeEvent(eventExpr = input$getting_data_tutorial,
                handlerExpr = {
-                 message("Help button pressed. Switching tabs")
-                 updateTabsetPanel(session = session,
-                                   inputId = "maintabs",
-                                   selected = "Help")
-               })
-  observeEvent(eventExpr = input$data_help,
-               handlerExpr = {
-                 message("Help button pressed. Switching tabs")
-                 updateTabsetPanel(session = session,
-                                   inputId = "maintabs",
-                                   selected = "Help")
+                 message("Starting the tutorial on getting data")
+                 getting_data_tutorial$init()$start()
                })
   
+  ###### Activate the data config tutorial ######################################
+  observeEvent(eventExpr = req(input$configuring_data_tutorial),
+               handlerExpr = {
+                 message("Starting the tutorial on configuring data")
+                 configuring_data_tutorial$init()$start()
+               })
+  
+  ###### Activate the species info tutorials ###################################
+  observeEvent(eventExpr = req(input$species_info_tutorial),
+               handlerExpr = {
+                 message("Species info tutorial time!")
+                 if (is.null(workspace$data)) {
+                   message("Starting the tutorial on species info without data")
+                   species_info_nodata_tutorial$init()$start()
+                 } else {
+                   message("Starting the tutorial on species info with data")
+                   species_info_tutorial$init()$start()
+                 }
+               })
+  
+  ###### Activate the indicator calculation tutorials ##########################
+  observeEvent(eventExpr = req(input$full_tutorial),
+               handlerExpr = {
+                 message("Full tutorial time!")
+                 full_tutorial$init()$start()
+               })
+  observeEvent(eventExpr = req(input$calculate_lpi_tutorial),
+               handlerExpr = {
+                 message("LPI indicator calculation tutorial time!")
+                 if (is.null(workspace$data)) {
+                   message("Starting the tutorial without data")
+                   calculate_lpi_nodata_tutorial$init()$start()
+                 } else {
+                   message("Starting the tutorial with data")
+                   calculate_lpi_tutorial$init()$start()
+                 }
+               })
+  observeEvent(eventExpr = req(input$calculate_gap_tutorial),
+               handlerExpr = {
+                 message("Gap indicator calculation tutorial time!")
+                 if (is.null(workspace$data)) {
+                   message("Starting the tutorial without data")
+                   calculate_gap_nodata_tutorial$init()$start()
+                 } else {
+                   message("Starting the tutorial with data")
+                   calculate_gap_tutorial$init()$start()
+                 }
+               })
+  observeEvent(eventExpr = req(input$calculate_height_tutorial),
+               handlerExpr = {
+                 message("Height indicator calculation tutorial time!")
+                 if (is.null(workspace$data)) {
+                   message("Starting the tutorial without data")
+                   calculate_height_nodata_tutorial$init()$start()
+                 } else {
+                   message("Starting the tutorial with data")
+                   calculate_height_tutorial$init()$start()
+                 }
+               })
+  observeEvent(eventExpr = req(input$calculate_soilstability_tutorial),
+               handlerExpr = {
+                 message("Soil stability indicator calculation tutorial time!")
+                 if (is.null(workspace$data)) {
+                   message("Starting the tutorial without data")
+                   calculate_soilstability_nodata_tutorial$init()$start()
+                 } else {
+                   message("Starting the tutorial with data")
+                   calculate_soilstability_tutorial$init()$start()
+                 }
+               })
+  
+  ##### When the reset button is pressed #######################################
+  observeEvent(eventExpr = req(input$reset_button),
+               handlerExpr = {
+                 message("Reset button pressed!")
+                 shinyjs::refresh()
+                 message("Executed shinyjs::refresh()")
+               })
+  
+  observeEvent(eventExpr = req(input$clear_data),
+               handlerExpr = {
+                 message("Clear Data button pressed!")
+                 workspace$data <- NULL
+                 workspace$raw_data <- NULL
+                 message(paste0("is.null(workspace$data) is ",
+                                is.null(workspace$data)))
+                 message(paste0("is.null(workspace$raw_data) is ",
+                                is.null(workspace$raw_data)))
+                 output$data <- NULL
+               })
+  
+  ##### Conditional UI elements #####
+  ###### Start Sidebar ######
+  # Optionally get headers to populate the map
+  output$get_headers_ui <- renderUI(expr = if (req(input$data_source == "ldc")) {
+    message("data_source is 'ldc'. Rendering get_headers UI element.")
+    actionButton(inputId = "get_headers",
+                 label = "Display currently available data locations")
+  })
+  output$get_headers_info_ui <- renderUI(expr = if (req(input$data_source == "ldc")) {
+    message("data_source is 'ldc'. Rendering get_headers_info UI element.")
+    actionButton(inputId = "get_headers_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  
+  # Query method for when grabbing data from the LDC
+  output$query_method_ui <- renderUI(expr = if (req(input$data_source) == "ldc") {
+    message("data_source is 'ldc'. Rendering query_method UI element.")
+    selectInput(inputId = "query_method",
+                label = "Query method",
+                choices = c("Spatial" = "spatial",
+                            "By ecological site" = "EcologicalSiteID",
+                            "By PrimaryKey" = "PrimaryKey",
+                            "By ProjectKey" = "ProjectKey"),
+                selected = "spatial")
+  })
+  output$query_method_info_ui <- renderUI(expr = if (req(input$data_source) == "ldc") {
+    message("data_source is 'ldc'. Rendering query_method_info UI element.")
+    actionButton(inputId = "query_method_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  
+  output$polygon_source_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc") {
+    radioButtons(inputId = "polygon_source",
+                 label = "Polygon source",
+                 choices = c("Uploaded" = "upload",
+                             "Drawn" = "draw"),
+                 inline = TRUE)
+  })
+  
+  output$polygon_draw_prompt <- renderUI(expr = if(req(input$polygon_source) == "draw") {
+    HTML(text = paste0(img(src = "polygon_tool_icons.png",
+                           height = "60px",
+                           display = "inline",
+                           align = "left",
+                           hspace = "5px",
+                           vspace = "5px"),
+                       "Please use the buttons found on the left side of the map to draw your polygon boundary."))
+  })
+  
+  # Add a fetch button when grabbing data from the LDC and the query criteria
+  # are available
+  # Apparently since the tool will never have input$keys and input$polygons_layer
+  # at the same time, I can't capture them both in a single conditional, but I
+  # can do it in two separate ones rendering an identical element because I know
+  # they'll never come into conflict
+  output$fetch_ui1 <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey") & req(input$keys) != "") {
+    tagList(br(),
+            actionButton(inputId = "fetch_data",
+                         label = "Fetch data"))
+  })
+  output$fetch_ui2 <- renderUI(expr = if (req(input$query_method) == "spatial" & (req(input$polygon_source) == "upload" & req(input$polygons_layer) != "")) {
+    tagList(br(),
+            actionButton(inputId = "fetch_data",
+                         label = "Fetch data"))
+  })
+  output$fetch_ui3 <- renderUI(expr = if (req(input$query_method) == "spatial" & (req(input$polygon_source) == "draw" & !is.null(req(workspace$drawn_polygon_sf)))) {
+    tagList(br(),
+            actionButton(inputId = "fetch_data",
+                         label = "Fetch data"))
+  })
+  
+  # Building the links to other tabs!
+  # Note that we have to do this with a() and an onclick argument that calls the
+  # function defined way up at the top of all this. The a() is necessary because
+  # we can't nest another layer of quotes in a string, being limited to "" and ''
+  output$data_available_ui <- renderUI(if (req(!is.null(workspace$data))) {
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("You have data available! The next step is to check the configuration in the ",
+                                          a("Configure Data tab",
+                                            onclick = "tabJump('Configure Data')"),
+                                          "."))))))
+  })
+  
+  # Keys when grabbing data from the LDC by key values
+  output$keys_input_ui <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey")) {
+    message("query_method is in c('EcologicalSiteID', 'PrimaryKey', 'ProjectKey'). Rendering keys UI element.")
+    # Use different placeholders for different key types!
+    if (input$query_method == "EcologicalSiteID") {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "",
+                placeholder = "R042XB012NM")
+    } else if (input$query_method == "PrimaryKey") {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "")
+    } else {
+      textInput(inputId = "keys",
+                label = "Search key values",
+                value = "")
+    }
+  })
+  
+  output$keys_input_info_ui <- renderUI(expr = if (req(input$query_method) %in% c("EcologicalSiteID", "PrimaryKey", "ProjectKey")) {
+    message("data_source is 'ldc'. Rendering keys_input_info UI element.")
+    actionButton(inputId = "keys_input_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  
+  # Uploading spatial data
+  output$spatial_input_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("query_method is 'spatial'. Rendering spatial_input UI element.")
+    fileInput(inputId = "polygons",
+              label = "Polygons ZIP file",
+              multiple = FALSE,
+              accept = ".zip")
+  })
+  output$spatial_input_info_ui <- renderUI(expr = if (req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("query_method is 'spatial'. Rendering spatial_input_info UI element.")
+    actionButton(inputId = "spatial_input_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  # Only allow polygon selection if there's an uploaded polygon
+  output$select_polygon_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons available to select from. Rendering polygons_layer UI element.")
+    selectInput(inputId = "polygons_layer",
+                label = "Polygons name",
+                choices = c(""),
+                selected = "")
+  })
+  output$select_polygon_info_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons available to select from. Rendering polygons_layer UI element.")
+    actionButton(inputId = "select_polygons_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  # Only allow repair if there's an uploaded polygon
+  output$repair_polygons_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc" & req(input$polygon_source) == "upload") {
+    message("There are polygons selected. Rendering repair_polygons UI element")
+    checkboxInput(inputId = "repair_polygons",
+                  label = "Repair polygons",
+                  value = FALSE)
+  })
+  output$repair_polygons_info_ui <- renderUI(expr = if (!is.null(req(input$polygons)) & req(input$query_method) == "spatial" & req(input$data_source) == "ldc") {
+    message("There are polygons selected. Rendering repair_polygons_info UI element")
+    actionButton(inputId = "repair_polygons_info",
+                 label = "",
+                 class = "info-btn",
+                 icon = icon("circle-question"))
+  })
+  
+  ###### Configure Data tab ######
+  output$add_generic_species_button_ui <- renderUI( if(req(!is.null(workspace$data)) & req(input$add_generic_species) & req(input$growth_habit_var != "") & req(input$duration_var != "")) {
+    fluidRow(column(width = 12,
+                    align = "center",
+                    actionButton(inputId = "add_generic_species_button",
+                                 label = "Add generic species codes to lookup table")))
+  })
+  # Okay! So this is gnarly as hell, but we want to add a message directing the
+  # user to the Calculate Indicators tab if the configuration is set.
+  # That means different conditions for each data type because they have different
+  # required variables.
+  # We'll just render this for each data type
+  output$proceed_to_calculate_lpi_ui <- renderUI(if (input$data_type == "lpi" & !any(c(input$primarykey_var, input$linekey_var, input$code_var, input$pointnbr_var, input$layer_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for LPI!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("The data configuration appears to be complete! The next step is to calculate the indicators in the ",
+                                          a("Calculate Indicators tab",
+                                            onclick = "tabJump('Calculate Indicators')"),
+                                          "."))))))
+  })
+  output$proceed_to_calculate_gap_ui <- renderUI(if (input$data_type == "gap" & !any(c(input$primarykey_var, input$linekey_var, input$linelengthamount_var, input$measure_var, input$rectype_var, input$gap_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for gap!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("The data configuration appears to be complete! The next step is to calculate the indicators in the ",
+                                          a("Calculate Indicators tab",
+                                            onclick = "tabJump('Calculate Indicators')"),
+                                          "."))))))
+  })
+  output$proceed_to_calculate_height_ui <- renderUI(if (input$data_type == "height" & !any(c(input$primarykey_var, input$linekey_var, input$height_var, input$species_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for height!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("The data configuration appears to be complete! The next step is to calculate the indicators in the ",
+                                          a("Calculate Indicators tab",
+                                            onclick = "tabJump('Calculate Indicators')"),
+                                          "."))))))
+  })
+  output$proceed_to_calculate_soil_ui <- renderUI(if (input$data_type == "soilstability" & !any(c(input$primarykey_var, input$rating_var, input$veg_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for soil stability!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("The data configuration appears to be complete! The next step is to calculate the indicators in the ",
+                                          a("Calculate Indicators tab",
+                                            onclick = "tabJump('Calculate Indicators')"),
+                                          "."))))))
+  })
+  
+  ###### Calculate Indicators tab ######
+  # We'll present different tutorial buttons depending on the data type
+  output$calculate_indicators_tutorial_button <- renderUI(expr = switch(input$data_type,
+                                                                        "lpi" = {
+                                                                          actionLink(inputId = "calculate_lpi_tutorial",
+                                                                                     label = "Click here for a walkthrough on calculating LPI indicators.",
+                                                                                     class = "action-link")
+                                                                        },
+                                                                        "gap" = {
+                                                                          actionLink(inputId = "calculate_gap_tutorial",
+                                                                                     label = "Click here for a walkthrough on calculating gap indicators.",
+                                                                                     class = "action-link")
+                                                                        },
+                                                                        "height" = {
+                                                                          actionLink(inputId = "calculate_height_tutorial",
+                                                                                     label = "Click here for a walkthrough on calculating height indicators.",
+                                                                                     class = "action-link")
+                                                                        },
+                                                                        "soilstability" = {
+                                                                          actionLink(inputId = "calculate_soilstability_tutorial",
+                                                                                     label = "Click here for a walkthrough on calculating soil stability indicators.",
+                                                                                     class = "action-link")
+                                                                        }))
+  # output$full_tutorial_button <- renderUI(expr = {
+  #   actionLink(inputId = "full_tutorial",
+  #              label = "Click here for a full walkthrough on getting data and calculating percent cover of of plants by growth habit and duration.",
+  #              class = "action-link")
+  # })
+  
+  
+  ###### Results tab ######
+  # The handling for the download button is in the chunk that creates the
+  # the download file
+  
+  #### Help buttons ############################################################
+  ###### Start #################################################################
+  observeEvent(eventExpr = input$get_headers_info,
+               handlerExpr = {
+                 message("Displaying info about getting headers")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "You can retrieve and display the location of all currently available data in the Landscape Data Commons. This involves asking for the information from the LDC and may take a short time.",
+                                            br(),
+                                            br(),
+                                            "This may also cause map slowdown due to rendering tens of thousands of points.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$data_source_info,
+               handlerExpr = {
+                 message("Displaying info about data sources")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "If you want to retrieve data from the Landscape Data Commons to calculate indicators from, you can use this tool to query the database and fetch the relevant data.",
+                                            br(),
+                                            br(),
+                                            "If you already have tabular data as a CSV, you can upload that file.",
+                                            
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$data_type_info,
+               handlerExpr = {
+                 message("Displaying info about data type")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Different kinds of indicators can be calculated from the different data types.",
+                                            br(),
+                                            br(),
+                                            "Cover indicators (e.g., percent foliar cover, percent bare ground, percent cover by annual invasive forbs) can be calculated from line-point intercept data.",
+                                            br(),
+                                            br(),
+                                            "Mean heights (e.g., mean plant height, mean sagebrush height, mean graminoid height) can be calculated from height data.",
+                                            br(),
+                                            br(),
+                                            "Percent or amount of gaps by size class (e.g., percent of plot in gaps 25-50 cm across, length of transect in gaps greater than 200 cm across) can be calculated from gap data.",
+                                            br(),
+                                            br(),
+                                            "Mean soil aggregate stability ratings (e.g., mean soil stabilty, mean soil stability under perennial plant canopy) can be calculated from soil stability data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$query_method_info,
+               handlerExpr = {
+                 message("Displaying info about LDC query methods")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are multiple ways to retrieve data from the Landscape Data Commons.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data that falls within a polygon feature class.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more ecological site IDs. You may find these through the Ecosystem Dynamics Interpretive Tool.",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more PrimaryKeys (identifiers unique to each visit to each sampling location).",
+                                            br(),
+                                            br(),
+                                            "You can retrieve all data associated with one or more ProjectKeys (identifiers unique to sampling efforts).",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ###### Configure Data tab ####################################################
+  ####### Variable configuration ###############################################
+  observeEvent(eventExpr = input$keys_input_info,
+               handlerExpr = {
+                 message("Displaying info about keys")
+                 switch(input$query_method,
+                        "EcologicalSiteID" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "Ecological sites are areas on a landscape which are alike in terms of abiotic factors (e.g., topography, hydrology, climate) and the kind and amount of vegetation they support. More information and ecological site IDs can be found in the Ecosystem Dynamics Interpretive Tool.",
+                                                     footer = tagList(modalButton("Close"))))
+                        },
+                        "PrimaryKey" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "Each data collection event (i.e., visit) at a sampling location has a unique identifier stored as a value called a PrimaryKey. If you know the PrimaryKey values for the data you want, you can use them to retrieve only those data.",
+                                                     footer = tagList(modalButton("Close"))))
+                        },
+                        "ProjectKey" = {
+                          showModal(ui = modalDialog(size = "s",
+                                                     easyClose = TRUE,
+                                                     "Keys are values associated with data that can be used to filter and select data. You can query using one or more keys separated by commas.",
+                                                     br(),
+                                                     br(),
+                                                     "All data in the Landscape Data Commons is associated with a project. If you know the ProjectKey values associated with the data you want, you can use them to retrieve only those data.",
+                                                     footer = tagList(modalButton("Close"))))
+                        })
+               })
+  
+  observeEvent(eventExpr = input$spatial_input_info,
+               handlerExpr = {
+                 message("Displaying info about spatial inputs")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "You can retrieve all data from the Landscape Data Commons which fall within a polygon feature class, provided either as a shapefile or a feature class in a geodatabase.",
+                                            br(),
+                                            br(),
+                                            "The uploaded file must be a ZIP file containing either all the files making up a polygon shapefile (i.e., polygons.shp, polygons.shx, polygons.dbf, and polygons.prj) or a geodatabase containing at least one polygon feature class.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$select_polygons_info,
+               handlerExpr = {
+                 message("Displaying info about selecting the polygons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "If your uploaded polygons include more than one feature class (e.g., two shapefiles or a geodatabase with multiple feature classes), then you must select which to use to retrieve data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$repair_polygons_info,
+               handlerExpr = {
+                 message("Displaying info about repairing polygons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Polygons which appear fine in software suites like Arc may still have underlying geometry issues. In the case that your polygons have issues like ring self-intersections, you may use the 'Repair polygons' function to attempt to correct them.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$data_buttons_info,
+               handlerExpr = {
+                 message("Displaying info about data buttons")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "To remove all current data, use the Clear Data button.",
+                                            br(),
+                                            br(),
+                                            "To reset the data to its original state (e.g., before species information was added), use the Reset Data button.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$primarykey_var_info,
+               handlerExpr = {
+                 message("Displaying info about PrimaryKeys")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing unique identifiers for each sampling event and is called 'PrimaryKey' in the Landscape Data Commons. All data collected on a visit to a sampling location must share a PrimaryKey value. Separate sampling events (e.g., resampling a year later) must have their own PrimaryKey values.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$linekey_var_info,
+               handlerExpr = {
+                 message("Displaying info about PrimaryKeys")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing unique identifiers for each transect sampled and is called 'LineKey' in the Landscape Data Commons. All data collected on the same transect during a sampling event must share a LineKey value. LineKey values only need to be unique within a sampling event, i.e., every sampling event may have three transects with the LineKey values '1', '2', and '3'.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$code_var_info,
+               handlerExpr = {
+                 message("Displaying info about the code variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the species or other code (e.g. 'WL' for woody litter or 'S' for soil) associated with the records and is called 'code' in the Landscape Data Commons. See the Help tab for additional information.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$pointnbr_var_info,
+               handlerExpr = {
+                 message("Displaying info about the point number variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the point along the transect where the records come from, e.g., '1' for all records associated with the first pin drop, '2' for the second, '3' for the third. This variable is called 'PointNbr' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$layer_var_info,
+               handlerExpr = {
+                 message("Displaying info about layer variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the layer associated with each record, e.g., 'TopCanopy', 'Lower1', 'SoilSurface'. This variable is called 'layer' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$linelengthamount_var_info,
+               handlerExpr = {
+                 message("Displaying info about LineLengthAmount variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the length of the transect associated with the record. This variable is called 'LineLengthAmount' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$measure_var_info,
+               handlerExpr = {
+                 message("Displaying info about measure variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the measurement units associated with each record, i.e. 1 for metric (meters for line length and centimeters for gaps) and 2 for imperial (feet for line length and inches for gaps). This variable is called 'Measure' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$rectype_var_info,
+               handlerExpr = {
+                 message("Displaying info about rectype variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the type of gap associated with each record, i.e. 'C' for canopy gaps considering all foliage, 'P' for canopy gaps considering only perennial foliage, and 'B' for basal gaps. This variable is called 'RecType' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_var_info,
+               handlerExpr = {
+                 message("Displaying info about gap variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the size of the recorded gaps. This variable is called 'Gap' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_var_info,
+               handlerExpr = {
+                 message("Displaying info about height var")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the height measurement values and is called 'Height' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$species_var_info,
+               handlerExpr = {
+                 message("Displaying info about species var")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the species identities and is called 'Species' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$rating_var_info,
+               handlerExpr = {
+                 message("Displaying info about rating var")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the soil stability rating values and is called 'Rating' in the Landscape Data Commons.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$veg_var_info,
+               handlerExpr = {
+                 message("Displaying info about vegetation cover var")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing the cover type values and is called 'Veg' in the Landscape Data Commons.",
+                                            br(),
+                                            br(),
+                                            "See the",
+                                            a("Help tab",
+                                              onclick = "tabJump('Help')"),
+                                            "for details on valid values.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ###### Species information ###################################################
+  observeEvent(eventExpr = input$species_source_info,
+               handlerExpr = {
+                 message("Displaying info about species source")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "If you want to add additional information about species to the data (e.g., conservation status, forage quality, functional group) you can join a lookup table to the data.",
+                                            br(),
+                                            br(),
+                                            "The built-in lookup table is derived from USDA Plants and includes growth habit and duration for all species in the database. Note that many species may be listed in USDA Plants as having multiple growth habits or durations but the lookup table only includes one for each, the more persistent option.",
+                                            br(),
+                                            br(),
+                                            "If you have other attributes to add or wish to specify different growth habits and durations for species, you can instead upload a lookup table as a CSV. It must have a variable for the species code and only one observation/row per species code.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$add_generic_species_info,
+               handlerExpr = {
+                 message("Displaying info about adding generic species codes")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Data may contain generic species codes for plants which were not identified to species, e.g., an unidentifiable annual forb may have been recorded as AF02069. These codes are not in the USDA Plants lookup table and may not be in an uploaded lookup table, but can be added with growth habit and duration. This requires that the lookup table in use already has variables for growth habit and duration.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$growth_habit_var_info,
+               handlerExpr = {
+                 message("Displaying info about growth habit variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "In order to add generic species' growth habit information (e.g. forb, graminoid, tree) to a lookup table, you must specify the variable in the lookup table already containing the growth habit information.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$duration_var_info,
+               handlerExpr = {
+                 message("Displaying info about duration variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "In order to add generic species' duration information (i.e., annual or perennial) to a lookup table, you must specify the variable in the lookup table already containing the duration information.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$species_data_info,
+               handlerExpr = {
+                 message("Displaying info about uploaded species lookup tables")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "A valid species attribute lookup table must have a variable containing the species identities and a variable for each additional attribute you would like to add. For clarity in output, attributes will be most useful if they are human-meaningful strings rather than numeric or logical values.",
+                                            br(),
+                                            br(),
+                                            "Each species can occur only once in the lookup table and ideally would have a value for all attributes, e.g., if your additional attributes include a variable for whether a species is a forb preferred by Greater Sage-grouse then ever species would be designated as 'Preferred' or 'Not preferred'.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$data_joining_var_info,
+               handlerExpr = {
+                 message("Displaying info about lookup table attribute joining variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing species identities in the data which will be used to join the lookup table. This variable is called 'code' or 'Species' in the Landscape Data Commons, depending on the data type.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$species_joining_var_info,
+               handlerExpr = {
+                 message("Displaying info about lookup table attribute joining variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "This should be the variable containing species identities in the table of additional attributes. Attributes are joined to the data by species identity, so confirm that these values are correct, e.g., species codes recognized by USDA Plants.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$downloadable_species_info,
+               handlerExpr = {
+                 message("Displaying info about lookup table attribute joining variable")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Download the current lookup table. This will have any generic species added and additional attributes joined. It will also include species/codes from the data that did not have associated attributes.",
+                                            br(),
+                                            br(),
+                                            "The primary reason to download this lookup table would be to populate the missing attributes and then to use the corrected lookup table as an upload to join to the data. If you do this, remember to use the Reset Data button before joining the uploaded lookup table.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  ###### Calculate Indicators tab ##############################################
+  ####### LPI ##################################################################
+  observeEvent(eventExpr = input$lpi_hit_info,
+               handlerExpr = {
+                 message("Displaying info about LPI hit")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are main three ways to consider pin drop records for cover calculations.",
+                                            br(),
+                                            br(),
+                                            "Any hit means that cover can be contributed by any canopy layer. This means that a single point can contribute cover for each layer, potentially resulting in cover values that sum to over 100% for a sampling location.",
+                                            br(),
+                                            br(),
+                                            "First hit means that cover is only contributed by the first canopy layer to contain a code, e.g. a species code, rock fragment code, litter code. This means that cover values on a plot will never sum to more than 100%.",
+                                            br(),
+                                            br(),
+                                            "Basal hit means that cover is contributed only by the surface layer, not canopy layers. This means that cover on a plot will never sum to more than 100%.",
+                                            br(),
+                                            br(),
+                                            "Other options are specialized forms of these three.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_grouping_vars_info,
+               handlerExpr = {
+                 message("Displaying info about LPI grouping variables")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The variable or variables to group the data by for cover calculations. For example, grouping by the variable containing species would result in cover by species. Grouping by growth habit and duration would result in cover for each combination of values from those two variables, e.g., annual forbs or perennial grasses.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_unit_info,
+               handlerExpr = {
+                 message("Displaying info about summary units")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$lpi_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about output formats")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., annual forb cover) and another containing the indicator value (e.g., 69%).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### Height ###############################################################
+  observeEvent(eventExpr = input$height_omit_zero_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "Exclude or include heights of 0.",
+                                            br(),
+                                            br(),
+                                            "Including 0 heights will produce a mean height estimate for the whole summary unit, including the areas that have no measurable vegetation. This is most likely to be useful for remote sensing applications where the summary unit probably makes up a pixel.",
+                                            br(),
+                                            br(),
+                                            "Excluding 0 heights will produce a mean estimate for only measured vegetation. This is more likely to be useful for applications like habitat suitability assessments.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_grouping_vars_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The variable or variables to group the data by for indicator calculations. For example, grouping by the variable containing species would result in mean heights by species. Grouping by growth habit and duration would result in mean heights for each combination of values from those two variables, e.g., annual forbs or perennial grasses.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_unit_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$height_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., mean height of shrubs) and another containing the indicator value (e.g., 69 cm).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  
+  ####### Gap ##################################################################
+  observeEvent(eventExpr = input$gap_breaks_info,
+               handlerExpr = {
+                 message("Displaying info about gap sizes")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The gap size class breakpoints. These must be numeric values separated by commas.",
+                                            br(),
+                                            br(),
+                                            "If, for example, the breakpoints were '25, 51, 101, 201' then the gap size classes used for calculations would be 25 to 50, 51 to 100, 101 to 200, and 201 or greater.",
+                                            br(),
+                                            br(),
+                                            "For additional details see the",
+                                            a("Help tab.",
+                                              onclick = "tabJump('Help')"),
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_type_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are three types of gap that can be considered. These are indicated in the data with the variable selected for type of gap in the",
+                                            a("Configure Data tab.",
+                                              onclick = "tabJump('Configure Data')"),
+                                            br(),
+                                            br(),
+                                            "Canopy gap considers gaps in the canopy which are stopped by canopy contributed by any rooted vascular plant.",
+                                            br(),
+                                            br(),
+                                            "Perennial-only gap considers gaps in the canopy which are stopped only by perennial rooted vascular plants, ignoring annual or biennial plants.",
+                                            br(),
+                                            br(),
+                                            "Basal gap considers gaps along the soil surface which are stopped by rooted vascular plants emerging from the soil surface.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_indicator_types_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are three options for gap indicators which can be calculated. One or more may be calculated at once.",
+                                            br(),
+                                            br(),
+                                            "Percent of line(s) will produce the percentage of measured transects which fell within gaps of the defined size classes, e.g. 42% in gaps 25 to 50 cm across.",
+                                            br(),
+                                            br(),
+                                            "Number of gaps will produce a count of the gaps in each size class, e.g. 7 gaps 25 to 50 cm across.",
+                                            br(),
+                                            br(),
+                                            "Length of gaps will produce a count of the number of units of length recorded in each gap size class, e.g., 420 cm in gaps 25 to 50 cm across.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_unit_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "The unit over which to summarize data. If summarizing by plot, then the indicator values will be calculated per plot. If summarizing by line, then indicator values will be calculated for each transect within each plot.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$gap_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., percent in gaps 25 to 50 cm across) and another containing the indicator value (e.g., 69%).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### Soil stability########################################################
+  observeEvent(eventExpr = input$soil_covergroups_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are four options for how soil stability indicators can be calculated. One or more may be calculated at once.",
+                                            br(),
+                                            br(),
+                                            "Considering all cover types will find the mean rating, using all stability values regardless of the cover type they were collected from under.",
+                                            br(),
+                                            br(),
+                                            "'Perennial cover' will find the mean rating using only stability values collected from under perennial vegetative cover.",
+                                            br(),
+                                            br(),
+                                            "'No cover' will find the mean rating using only stability values collected from points without vegetative cover.",
+                                            br(),
+                                            br(),
+                                            "'By cover type' will find the mean rating for stability values by each recorded cover type, e.g., if some data were from under perennial forbs and some under shrubs then the indicators calculated would be mean ratings for under perennial forb cover and under shrubs.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  observeEvent(eventExpr = input$soil_output_format_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "There are two output formats: wide and tall.",
+                                            br(),
+                                            br(),
+                                            "A wide output format will contain one row for each summary unit (plot or transect) and one variable/column for each indicator calculated.",
+                                            br(),
+                                            br(),
+                                            "A tall output format will contain one row for each summary unit and indicator with one variable/column containing the indicator identities (e.g., mean rating) and another containing the indicator value (e.g., 4.2).",
+                                            br(),
+                                            br(),
+                                            "Both formats will contain the same data.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  ####### All indicators #######################################################
+  # Note that for some (presumably very good) reason, I have it so that each
+  # data type has its own version of shared inputs (e.g. LPI and heights have
+  # their own grouping variable input value) 
+  observeEvent(eventExpr = input$additional_output_vars_info,
+               handlerExpr = {
+                 message("Displaying info about")
+                 showModal(ui = modalDialog(size = "s",
+                                            easyClose = TRUE,
+                                            "By default, the results of indicator calculations will only contain the PrimaryKey values. In order to include additional metadata found in the data (e.g., coordinates, ecological site, habitat status), select those variables.",
+                                            footer = tagList(modalButton("Close")))
+                 )
+               })
+  
+  
+  ##### Grabbing the headers when asked ########################################
+  observeEvent(eventExpr = req(input$get_headers),
+               handlerExpr = {
+                 message("Headers requested to populate the map")
+                 current_headers <- tryCatch(fetch_ldc(data_type = "header",
+                                                       verbose = TRUE),
+                                             error = function(error){
+                                               gsub(x = error,
+                                                    pattern = "^Error.+[ ]:[ ]",
+                                                    replacement = "")
+                                             })
+                 
+                 message(paste0("class(current_headers) is: ",
+                                paste(class(current_headers),
+                                      collapse = ", ")))
+                 if ("character" %in% class(current_headers)) {
+                   showNotification(ui = paste0("Encountered the following API error retrieving header info for mapping: ",
+                                                current_headers),
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    type = "error",
+                                    id = "api_headers_error")
+                   workspace$mapping_header_sf <- NULL
+                 } else if ("data.frame" %in% class(current_headers)) {
+                   message("Converting header info to sf object")
+                   current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                      coords = c("Longitude_NAD83",
+                                                                 "Latitude_NAD83"),
+                                                      crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                   
+                   # This'll be useful so I can make a map
+                   workspace$mapping_header_sf <- current_headers_sf
+                 } else {
+                   showNotification(ui = "Unfortunately something went wrong retrieving the data from the Landscape Data Commons.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    type = "error",
+                                    id = "unknown_headers_error")
+                   workspace$mapping_header_sf <- NULL
+                 }
+               })
+  
+  
+
   ##### Polygon upload handling #####
   # When input$polygons updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$polygons,
@@ -482,7 +1942,8 @@ server <- function(input, output, session) {
                    message("File unzipped")
                    # Get the shapefile name
                    extracted_files <- list.files(dirname(input$polygons$datapath),
-                                                 full.names = TRUE)
+                                                 full.names = TRUE,
+                                                 recursive = TRUE)
                    
                    # Look for extracted shapefiles
                    shp_indices <- grepl(extracted_files,
@@ -494,13 +1955,21 @@ server <- function(input, output, session) {
                    upload_has_shp <- any(shp_indices)
                    
                    # Look for extracted geodatabases
+                   # Now because this is recursive, we're turning up the files
+                   # inside the GDBs, so we need to get just the GDB path
                    gdb_indices <- grepl(extracted_files,
-                                        pattern = "\\.gdb$",
+                                        pattern = "\\.gdb",
                                         ignore.case = TRUE)
+                   gdb_paths <- unique(stringr::str_extract(string = extracted_files[gdb_indices],
+                                                            pattern = ".*(?=\\.gdb/)"))
+                   gdb_paths <- paste0(gdb_paths,
+                                       ".gdb")
+                   gdb_paths <- gdb_paths[!(gdb_paths %in% c(".gdb"))]
+                   
                    message(paste0("Found ",
-                                  sum(gdb_indices),
+                                  length(gdb_paths),
                                   " geodatabases"))
-                   upload_has_gdb <- any(gdb_indices)
+                   upload_has_gdb <- length(gdb_paths) > 0
                    
                    # Prioritize geodatabases
                    if (upload_has_gdb) {
@@ -508,18 +1977,16 @@ server <- function(input, output, session) {
                      message("Working from extracted geodatabase")
                      # If there's more than one geodatabase, just use the first
                      # but warn the user
-                     if (sum(gdb_indices) > 1) {
+                     if (length(gdb_paths) > 1) {
                        message("Multiple GDBs detected. Using 'first' one")
-                       showNotification(ui = "More than one geodatabase found. Please upload one at a time.",
+                       showNotification(ui = "More than one geodatabase found in ZIP file. Please upload one at a time.",
                                         duration = NULL,
                                         closeButton = TRUE,
                                         type = "warning",
                                         id = "multiple_gdb_warning")
-                       current_gdb_path <- extracted_files[gdb_indices][1]
-                     } else {
-                       message("Only one GDB to work with")
-                       current_gdb_path <- extracted_files[gdb_indices]
                      }
+                     current_gdb_path <- gdb_paths[1]
+                     
                      # So I can reference this when reading in layers later
                      workspace$gdb_filepath <- current_gdb_path
                      # Find which layers are available
@@ -594,7 +2061,149 @@ server <- function(input, output, session) {
                  }
                })
   
-  #### Mapping freshly uploaded polygons ####
+  #### Map time ####
+  observeEvent(eventExpr = list(workspace$mapping_header_sf,
+                                workspace$mapping_polygons),
+               handlerExpr = {
+                 message("Something changed for mapping purposes.")
+                 # Initialize the map
+                 map <- leaflet::leaflet()
+                 
+                 # Add some basic info
+                 map <- leaflet::addTiles(map = map)
+                 
+                 # Add the polygons
+                 message("Checking to see if !is.null(workspace$mapping_polygons)")
+                 if (!is.null(workspace$mapping_polygons)) {
+                   message("!is.null(workspace$mapping_polygons) was TRUE")
+                   # Note that we have to manually remove Z dimensions with sf::st_zm()
+                   # otherwise if there's a Z dimension this fails with an
+                   # inscrutable error.
+                   map <- leaflet::addPolygons(map = map,
+                                               data = sf::st_transform(x = sf::st_zm(workspace$mapping_polygons),
+                                                                       crs = "+proj=longlat +datum=WGS84"),
+                                               fillColor = "coral",
+                                               stroke = FALSE,
+                                               fillOpacity = 0.5)
+                 }
+                 
+                 # Add in the retrieved points
+                 message("Checking to see if !is.null(workspace$mapping_header_sf)")
+                 if (!is.null(workspace$mapping_header_sf)) {
+                   message("!is.null(workspace$mapping_header_sf) was TRUE")
+                   map <- leaflet::addCircleMarkers(map = map,
+                                                    data = sf::st_transform(x = workspace$mapping_header_sf,
+                                                                            crs = "+proj=longlat +datum=WGS84"),
+                                                    stroke = TRUE,
+                                                    opacity = 0.9,
+                                                    color = "white",
+                                                    weight = 1,
+                                                    fillColor = "gray20",
+                                                    fillOpacity = 1,
+                                                    radius = 3,
+                                                    clusterOptions = leaflet::markerClusterOptions(showCoverageOnHover = TRUE,
+                                                                                                   zoomToBoundsOnClick = TRUE,
+                                                                                                   disableClusteringAtZoom = 8,
+                                                                                                   spiderfyOnMaxZoom = FALSE,
+                                                                                                   removeOutsideVisibleBounds = TRUE,
+                                                                                                   spiderLegPolylineOptions = list(weight = 1.5, color = "#222", opacity = 0.5),
+                                                                                                   freezeAtZoom = FALSE))
+                 }
+                 
+                 if (is.null(workspace$mapping_polygons) & is.null(workspace$mapping_header_sf)) {
+                   # Set the framing
+                   map <- setView(map = map,
+                                  lng = -119,
+                                  lat = 38.7,
+                                  zoom = 4.25)
+                   map <- setMaxBounds(map = map,
+                                       lng1 = -125.5,
+                                       lat1 = 25,
+                                       lng2 = -66,
+                                       lat2 = 49.5)
+                 }
+                 
+                 # Add in the drawing controls
+                 map_drawing <- addDrawToolbar(map = map,
+                                               targetGroup = "draw",
+                                               position = 'topleft',
+                                               polylineOptions = FALSE,
+                                               circleOptions = FALSE,
+                                               markerOptions = FALSE,
+                                               circleMarkerOptions = FALSE,
+                                               singleFeature = TRUE)
+                 
+                 message("Rendering map")
+                 output$drawing_map <- leaflet::renderLeaflet(map_drawing)
+                 output$main_map <- leaflet::renderLeaflet(map)
+                 message("Map rendered")
+               })
+  
+  output$main_map_ui <- renderUI({
+    if (req(input$polygon_source != "draw") & (!is.null(workspace$mapping_header_sf) | !is.null(workspace$mapping_polygons))) {
+      message("Attempting to render main_map_ui")
+      leafletOutput(outputId = "main_map",
+                    height = "80vh")
+    }
+  })
+  output$drawing_map_ui <- renderUI({
+    if (req(input$polygon_source == "draw")) {
+      message("Attempting to render drawing_map_ui")
+      leafletOutput(outputId = "drawing_map",
+                    height = "80vh")
+    }
+  })
+  
+  ###### Making a polygon sf object from the polygon drawn on the map ##########
+  # This is adapted from the RAP Production Explorer
+  # Character string of coordinates from drawn features on Leaflet map
+  observeEvent(input$drawing_map_draw_new_feature,{
+    message("There's a new polygon drawn on the map! Getting coordinates")
+    # This builds a neat little [x, y] string for each vertex
+    # Frankly, this is a little silly to do considering we're going to split them
+    # into a vector, but I can't be bothered to refactor beyond changing it to
+    # a sapply() because it works as-is and isn't hurting anyone
+    coords <- sapply(X = input$drawing_map_draw_new_feature$geometry$coordinates[1][[1]],
+                     FUN = function(X) {
+                       paste0("[", X[1], ", ", X[2], "]")
+                     })
+    coord_string <- paste0(coords,
+                           collapse = ", ")
+    workspace$drawn_coordinates <- coord_string
+    message("Coordinates saved to workspace$drawn_coordinates")
+  })
+  # Convert the coordinates of the vertices on the map into a polygon sf object!
+  observeEvent(eventExpr = workspace$drawn_coordinates,
+               handlerExpr = {
+                 if (!is.null(workspace$drawn_coordinates)) {
+                   coords <- workspace$drawn_coordinates
+                   message("workspace$drawn_coordinates has updated! Attempting to create a polygon sf object using the coordinates as vertices")
+                   print(coords)
+                   message("Cleaning coordinates and creating vector")
+                   coords_clean <- strsplit(x = gsub(x = coords,
+                                                     pattern = "\\[|\\]",
+                                                     replacement = ""),
+                                            split = ',') 
+                   print(coords_clean)
+                   message("Converting vector to numeric")
+                   coords_numeric <- as.numeric(coords_clean[[1]])
+                   print(coords_numeric)
+                   n_vertices <- length(coords_clean[[1]])/2
+                   message("Creating a matrix from the coordinates")
+                   coords_matrix <- matrix(coords_numeric, nrow = n_vertices, byrow = TRUE)
+                   coords_list <- list(coords_matrix)
+                   message("Making a polygon matrix thingy")
+                   print(coords_list)
+                   polygon <- sf::st_polygon(coords_list)
+                   message("Making an sf object")
+                   polygon <- st_sfc(polygon,
+                                     crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                   workspace$drawn_polygon_sf <- sf::st_sf(polygon)
+                   message("Polygon saved to workspace$drawn_polygon_sf")
+                 }
+               })
+  
+  ###### Getting freshly uploaded polygons set to map #####
   observeEvent(eventExpr = {input$polygons_layer},
                handlerExpr = {
                  message("input$polygons_layer has updated")
@@ -617,10 +2226,6 @@ server <- function(input, output, session) {
                                                                  dist = 0)
                    }
                  }
-                 # message("Jumping to map tab")
-                 # updateTabsetPanel(session = session,
-                 #                   inputId = "maintabs",
-                 #                   selected = "Map")
                })
   
   ##### CSV upload handling #####
@@ -772,11 +2377,6 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 showNotification(ui = HTML("Fetching data!"),
-                                  duration = NULL,
-                                  closeButton = FALSE,
-                                  id = "downloading",
-                                  type = "message")
                  
                  # Set this variable so we can handle the data appropriately based on source
                  # Since there are from the LDC, we'll also be looking for header info
@@ -824,6 +2424,14 @@ server <- function(input, output, session) {
                        if ("character" %in% class(current_headers)) {
                          results <- NULL
                        } else {
+                         current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                            coords = c("Longitude_NAD83",
+                                                                       "Latitude_NAD83"),
+                                                            crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                         
+                         # This'll be useful so I can make a map
+                         workspace$mapping_header_sf <- current_headers_sf
+
                          current_primary_keys <- current_headers$PrimaryKey
                          
                          # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
@@ -1018,204 +2626,247 @@ server <- function(input, output, session) {
                      
                    }
                  } else if (input$query_method == "spatial") {
-                   if (input$polygons_layer == "") {
-                     showNotification(ui = "Please upload and select polygons.",
-                                      duration = NULL,
-                                      closeButton = TRUE,
-                                      type = "warning",
-                                      id = "no_polygons_yet_warning")
-                   } else {
-                     message("Attempting to query spatially")
-                     message("Reading in polygons")
-                     if (workspace$polygon_filetype == "gdb") {
-                       workspace$polygons <- sf::st_read(dsn = workspace$gdb_filepath,
-                                                         layer = input$polygons_layer)
-                     } else if (workspace$polygon_filetype == "shp") {
-                       workspace$polygons <- sf::st_read(dsn = input$polygons_layer)
-                     }
-                     message("Making sure the polygons are in NAD83")
-                     workspace$polygons <- sf::st_transform(workspace$polygons,
-                                                            crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
-                     
-                     # If they've asked us to "repair" polygons, buffer by 0
-                     if (input$repair_polygons) {
-                       message("Attempting to repair polygons by buffering by 0")
-                       workspace$polygons <- sf::st_buffer(x = workspace$polygons,
-                                                           dist = 0)
-                     }
-                     message(paste0("Number of individual polygons in workspace$polygons is ",
-                                    nrow(workspace$polygons)))
-                     message("Adding unique_id variable to workspace$polygons")
-                     workspace$polygons[["unique_id"]] <- 1:nrow(workspace$polygons)
-                     
-                     # For mapping purposes
-                     message("Updating workspace$mapping_polygons")
-                     workspace$mapping_polygons <- workspace$polygons
-                     
-                     if (is.null(workspace$headers)) {
-                       message("Retrieving headers")
-                       workspace$headers <- tryCatch(fetch_ldc(keys = NULL,
-                                                               key_type = NULL,
-                                                               data_type = "header",
-                                                               verbose = TRUE),
-                                                     error = function(error){
-                                                       gsub(x = error,
-                                                            pattern = "^Error.+[ ]:[ ]",
-                                                            replacement = "")
-                                                     })
-                       message(paste0("class(workspace$headers) is ",
-                                      paste(class(workspace$headers),
-                                            collapse = ", ")))
-                     }
-                     
-                     current_headers <- workspace$headers
-                     
-                     
-                     # If there was an API error, display that
-                     if ("character" %in% class(current_headers)) {
-                       results <- NULL
-                       showNotification(ui = paste0("API error retrieving headers for spatial query: ",
-                                                    current_headers),
+                   message("Spatial query time!")
+                   
+                   if (input$polygon_source == "upload") {
+                     if (input$polygons_layer == "") {
+                       message("Currently expecting uploaded polygons but there are none selected.")
+                       showNotification(ui = "Please upload and select polygons or drawn a polygon instead.",
                                         duration = NULL,
                                         closeButton = TRUE,
-                                        id = "headers_for_sf_error",
-                                        type = "error")
+                                        type = "warning",
+                                        id = "no_polygons_yet_warning")
                      } else {
-                       # If there was no error, proceed
-                       message("Converting header info to sf object")
-                       current_headers_sf <- sf::st_as_sf(x = current_headers,
-                                                          coords = c("Longitude_NAD83",
-                                                                     "Latitude_NAD83"),
-                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                       message("Reading in polygons")
+                       if (workspace$polygon_filetype == "gdb") {
+                         workspace$polygons <- sf::st_read(dsn = workspace$gdb_filepath,
+                                                           layer = input$polygons_layer)
+                       } else if (workspace$polygon_filetype == "shp") {
+                         workspace$polygons <- sf::st_read(dsn = input$polygons_layer)
+                       }
+                       message("Making sure the polygons are in NAD83")
+                       workspace$polygons <- sf::st_transform(workspace$polygons,
+                                                              crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
                        
-                       # This'll be useful so I can make a map, if that feature is added
-                       workspace$header_sf <- current_headers_sf
-                       workspace$mapping_header_sf <- current_headers_sf
+                       # If they've asked us to "repair" polygons, buffer by 0
+                       if (input$repair_polygons) {
+                         message("Attempting to repair polygons by buffering by 0")
+                         workspace$polygons <- sf::st_buffer(x = workspace$polygons,
+                                                             dist = 0)
+                       }
+                     }
+                   } else {
+                     if (!is.null(workspace$drawn_polygon_sf)) {
+                       message("Using drawn polygon")
+                       workspace$polygons <- workspace$drawn_polygon_sf
+                     }
+                   }
+                   message("Attempting to query spatially")
+                   
+                   message(paste0("Number of individual polygons in workspace$polygons is ",
+                                  nrow(workspace$polygons)))
+                   message("Adding unique_id variable to workspace$polygons")
+                   workspace$polygons[["unique_id"]] <- 1:nrow(workspace$polygons)
+                   
+                   # For mapping purposes
+                   message("Updating workspace$mapping_polygons")
+                   workspace$mapping_polygons <- workspace$polygons
+                   
+                   if (is.null(workspace$headers)) {
+                     message("Retrieving headers")
+                     workspace$headers <- tryCatch(fetch_ldc(keys = NULL,
+                                                             key_type = NULL,
+                                                             data_type = "header",
+                                                             verbose = TRUE),
+                                                   error = function(error){
+                                                     gsub(x = error,
+                                                          pattern = "^Error.+[ ]:[ ]",
+                                                          replacement = "")
+                                                   })
+                     message(paste0("class(workspace$headers) is ",
+                                    paste(class(workspace$headers),
+                                          collapse = ", ")))
+                   }
+                   
+                   current_headers <- workspace$headers
+                   
+                   
+                   # If there was an API error, display that
+                   if ("character" %in% class(current_headers)) {
+                     results <- NULL
+                     showNotification(ui = paste0("API error retrieving headers for spatial query: ",
+                                                  current_headers),
+                                      duration = NULL,
+                                      closeButton = TRUE,
+                                      id = "headers_for_sf_error",
+                                      type = "error")
+                   } else {
+                     # If there was no error, proceed
+                     message("Converting header info to sf object")
+                     current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                        coords = c("Longitude_NAD83",
+                                                                   "Latitude_NAD83"),
+                                                        crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                     
+                     # This'll be useful so I can make a map, if that feature is added
+                     workspace$header_sf <- current_headers_sf
+                     workspace$mapping_header_sf <- current_headers_sf
+                     
+                     message("Performing sf_intersection()")
+                     points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
+                                                                                  y = sf::st_transform(workspace$polygons[, "unique_id"],
+                                                                                                       crs = sf::st_crs(current_headers_sf))),
+                                                              error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
+                     
+                     if ("character" %in% class(points_polygons_intersection)) {
+                       showNotification(ui = points_polygons_intersection,
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        type = "error",
+                                        id = "intersection_error")
+                     } else {
+                       current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
                        
-                       message("Performing sf_intersection()")
-                       points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
-                                                                                    y = sf::st_transform(workspace$polygons[, "unique_id"],
-                                                                                                         crs = sf::st_crs(current_headers_sf))),
-                                                                error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
-                       
-                       if ("character" %in% class(points_polygons_intersection)) {
-                         showNotification(ui = points_polygons_intersection,
+                       if (length(current_primary_keys) < 1) {
+                         message("No data were found")
+                         showNotification(ui = paste0("No data were found within your polygons."),
                                           duration = NULL,
                                           closeButton = TRUE,
-                                          type = "error",
-                                          id = "intersection_error")
+                                          id = "no_overlap",
+                                          type = "warning")
+                         results <- NULL
                        } else {
-                         current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
+                         message("Primary keys found. Querying now.")
+                         # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                         # 
+                         # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                         #                                keys_vector = current_primary_keys,
+                         #                                key_chunk_size = 100,
+                         #                                key_count = length(current_primary_keys),
+                         #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                         #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                         #                                  max_index <- min(c(key_count, X * key_chunk_size))
+                         #                                  indices <- min_index:max_index
+                         #                                  paste(keys_vector[indices],
+                         #                                        collapse = ",")
+                         #                                })
                          
-                         if (length(current_primary_keys) < 1) {
-                           message("No data were found")
-                           showNotification(ui = paste0("No data were found within your polygons."),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_overlap",
-                                            type = "warning")
-                           results <- NULL
-                         } else {
-                           message("Primary keys found. Querying now.")
-                           # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
-                           # 
-                           # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                           #                                keys_vector = current_primary_keys,
-                           #                                key_chunk_size = 100,
-                           #                                key_count = length(current_primary_keys),
-                           #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                           #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                           #                                  max_index <- min(c(key_count, X * key_chunk_size))
-                           #                                  indices <- min_index:max_index
-                           #                                  paste(keys_vector[indices],
-                           #                                        collapse = ",")
-                           #                                })
-                           
-                           message("Retrieving data using PrimaryKey values from spatial intersection")
-                           results <- tryCatch(fetch_ldc(keys = current_primary_keys,
-                                                         key_type = "PrimaryKey",
-                                                         data_type = input$data_type,
-                                                         key_chunk_size = 100,
-                                                         verbose = TRUE),
-                                               error = function(error){
-                                                 gsub(x = error,
-                                                      pattern = "^Error.+[ ]:[ ]",
-                                                      replacement = "")
-                                               })
-                           message("Querying by primary key complete.")
-                           message(paste0("Number of records retrieved: ",
-                                          length(results)))
-                         }
+                         message("Retrieving data using PrimaryKey values from spatial intersection")
+                         results <- tryCatch(fetch_ldc(keys = current_primary_keys,
+                                                       key_type = "PrimaryKey",
+                                                       data_type = input$data_type,
+                                                       key_chunk_size = 100,
+                                                       verbose = TRUE),
+                                             error = function(error){
+                                               gsub(x = error,
+                                                    pattern = "^Error.+[ ]:[ ]",
+                                                    replacement = "")
+                                             })
+                         message("Querying by primary key complete.")
+                         message(paste0("Number of records retrieved: ",
+                                        length(results)))
+                       }
+                       
+                       # Only keep going if there are results!!!!
+                       if (length(results) > 0 & "data.frame" %in% class(results)) {
+                         message("Making workspace$mapping_header_sf")
+                         workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
                          
-                         # Only keep going if there are results!!!!
-                         if (length(results) > 0 & "data.frame" %in% class(results)) {
-                           message("Making workspace$mapping_header_sf")
-                           workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
-                           
-                           message("Coercing variables to numeric.")
-                           # Convert from character to numeric variables where possible
-                           data_corrected <- lapply(X = names(results),
-                                                    data = results,
-                                                    FUN = function(X, data){
-                                                      # Get the current variable values as a vector
-                                                      vector <- data[[X]]
-                                                      # Try to coerce into numeric
-                                                      numeric_vector <- as.numeric(vector)
-                                                      # If that works without introducing NAs, return the numeric vector
-                                                      # Otherwise, return the original character vector
-                                                      if (all(!is.na(numeric_vector))) {
-                                                        return(numeric_vector)
-                                                      } else {
-                                                        return(vector)
-                                                      }
-                                                    })
-                           
-                           # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
-                           # so I'm resorting to using dplyr
-                           data <- dplyr::bind_cols(data_corrected)
-                           # Correct the names of the variables
-                           names(data) <- names(results)
-                           
-                           # Put it in the workspace list
-                           message("Setting data_fresh to TRUE because we just downloaded it")
-                           workspace$data_fresh <- TRUE
-                           workspace$raw_data <- data
-                         } else if (length(results) == 0) {
-                           message("No records found for those PrimaryKeys")
-                           if (length(current_primary_keys) > 0) {
-                             no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
-                           } else {
-                             no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
-                           }
-                           showNotification(ui = paste0(no_data_spatial_error_message,
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_data_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
+                         message("Coercing variables to numeric.")
+                         # Convert from character to numeric variables where possible
+                         data_corrected <- lapply(X = names(results),
+                                                  data = results,
+                                                  FUN = function(X, data){
+                                                    # Get the current variable values as a vector
+                                                    vector <- data[[X]]
+                                                    # Try to coerce into numeric
+                                                    numeric_vector <- as.numeric(vector)
+                                                    # If that works without introducing NAs, return the numeric vector
+                                                    # Otherwise, return the original character vector
+                                                    if (all(!is.na(numeric_vector))) {
+                                                      return(numeric_vector)
+                                                    } else {
+                                                      return(vector)
+                                                    }
+                                                  })
+                         
+                         # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
+                         # so I'm resorting to using dplyr
+                         data <- dplyr::bind_cols(data_corrected)
+                         # Correct the names of the variables
+                         names(data) <- names(results)
+                         
+                         # Put it in the workspace list
+                         message("Setting data_fresh to TRUE because we just downloaded it")
+                         workspace$data_fresh <- TRUE
+                         workspace$raw_data <- data
+                       } else if (length(results) == 0) {
+                         message("No records found for those PrimaryKeys")
+                         if (length(current_primary_keys) > 0) {
+                           no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
                          } else {
-                           showNotification(ui = paste0("API error retrieving data based on spatial query: ",
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "primarykey_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
+                           no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
                          }
+                         showNotification(ui = paste0(no_data_spatial_error_message,
+                                                      results),
+                                          duration = NULL,
+                                          closeButton = TRUE,
+                                          id = "no_data_spatial_error",
+                                          type = "error")
+                         workspace$raw_data <- NULL
+                       } else {
+                         showNotification(ui = paste0("API error retrieving data based on spatial query: ",
+                                                      results),
+                                          duration = NULL,
+                                          closeButton = TRUE,
+                                          id = "primarykey_spatial_error",
+                                          type = "error")
+                         workspace$raw_data <- NULL
                        }
                      }
                    }
                  }
-                 removeNotification(id = "downloading")
                })
   
   ##### When raw_data updates #####
   observeEvent(eventExpr = workspace$raw_data,
                handlerExpr = {
                  message("workspace$raw_data has updated")
-                 # If the data source is the LDC, just update workspace$data
-                 # with workspace$raw_data because header info is already included
+                 
+                 # Checking for valid records.
+                 # If all the variables that aren't these ID variables are NULL
+                 # then it's a fake record
+                 
+                 message("Finding and attempting to remove any NULL/NA data entries.")
+                 id_vars <- c("rid", "PrimaryKey", "DBKey", "ProjectKey", "DateLoadedInDb", "DateVisited")
+                 id_vars_present <- id_vars[id_vars %in% names(workspace$raw_data)]
+                 non_id_vars <- names(workspace$raw_data)[!(names(workspace$raw_data) %in% id_vars)]
+                 
+                 valid_indices <- apply(X = workspace$raw_data[, non_id_vars],
+                                          MARGIN = 1,
+                                          FUN = function(X){
+                                            nulls <- sapply(X = X,
+                                                            is.null)
+                                            nas <- sapply(X = X,
+                                                          is.na)
+                                            
+                                            !all(mapply(X = nulls,
+                                                        Y = nas,
+                                                        FUN = function(X, Y){
+                                                          X | Y
+                                                        }))
+                                          })
+                 
+                 if (!all(valid_indices)) {
+                   showNotification(ui = "Some of the retrieved data had NULL values rendering them unusuable and have therefore been removed.",
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    id = "null_data_warning",
+                                    type = "warning")
+                 }
+                 
+                 workspace$raw_data <- workspace$raw_data[valid_indices, ]
+                 
                  if (workspace$current_data_source == "ldc") {
                    message("Current data source is the LDC, using workspace$raw_data as workspace$data")
                    workspace$data <- workspace$raw_data
@@ -1226,7 +2877,6 @@ server <- function(input, output, session) {
                    workspace$data_fresh <- TRUE
                    message("No headers needed. Writing workspace$raw_data to workspace$data")
                    workspace$data <- workspace$raw_data
-                   # }
                  }
                })
   
@@ -1273,9 +2923,12 @@ server <- function(input, output, session) {
                  
                  message("Rendering display data")
                  output$data <- DT::renderDT(display_data,
-                                                    options = list(pageLength = 100,
-                                                                   fixedHeader = TRUE), 
-                                                    extensions = "FixedHeader")
+                                             width = "100%",
+                                             rownames = FALSE,
+                                             options = list(pageLength = 10,
+                                                            fixedHeader = TRUE,
+                                                            scrollX = TRUE), 
+                                             extensions = "FixedHeader")
                  
                  if (is.null(workspace$data)) {
                    # If the data aren't ready, there can't be variables selected
@@ -1509,66 +3162,64 @@ server <- function(input, output, session) {
                  }
                })
   
-  
-  ##### When adding generic/unknown species #####
-  observeEvent(eventExpr = input$add_generic_species_button,
-               handlerExpr = {
-                 message("Generic species button was pressed!")
-                 if (length(workspace$raw_data) < 1) {
-                   showNotification(ui = "You must upload or download data before generic species can be added.",
-                                    duration = NULL,
-                                    closeButton = TRUE,
-                                    id = "no_data_for_generics_error",
-                                    type = "error")
-                 } else if (input$species_joining_var == "" | input$data_joining_var == "") {
-                   showNotification(ui = "You must identify the variable containing species codes in both your data and species list before generic species can be added.",
-                                    duration = NULL,
-                                    closeButton = TRUE,
-                                    id = "no_data_for_generics_error",
-                                    type = "error")
-                 } else if (input$growth_habit_var == "" | input$duration_var == "") {
-                   showNotification(ui = "You must specify the growth habit and duration variables in order to add generic species codes.",
-                                    duration = NULL,
-                                    closeButton = TRUE,
-                                    type = "error",
-                                    id = "undefined_unknown_vars_error")
-                 } else {
-                   # In case there are generic codes to accommodate
-                   message("Getting ready to add generic codes")
-                   message(paste0("length(workspace$data) is ",
-                                  length(workspace$data)))
-                   species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
-                                                                                           data_code = input$data_joining_var,
-                                                                                           species_list = workspace$species_data,
-                                                                                           species_code = input$species_joining_var,
-                                                                                           species_growth_habit_code = input$growth_habit_var,
-                                                                                           species_duration = input$duration_var))
-                   # Make sure that the growth habit and duration information is
-                   # in the correct variables
-                   # Which indices have the attributed generic codes?
-                   unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
-                   
-                   # At those indices, write in the growth habit and duration info
-                   # from the default variables to the user's selected variables
-                   if (any(unknown_indices)) {
-                     species_list_with_generics[[input$growth_habit_var]][unknown_indices] <- as.character(species_list_with_generics[["GrowthHabitSub"]][unknown_indices])
-                     species_list_with_generics[[input$duration_var]][unknown_indices] <- as.character(species_list_with_generics[["Duration"]][unknown_indices])
-                   }
-                   
-                   # Reduce to only the variables we had coming into this
-                   species_list_with_generics <- select(species_list_with_generics,
-                                                        names(workspace$species_data))
-                   
-                   workspace$species_data <- species_list_with_generics
-                 }
-               })
-  
   ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
                  message("Join species button was pressed!")
                  if (input$species_joining_var != "" & input$data_joining_var != "") {
                    message("Joining variable is defined for both the data and the lookup table")
+                   
+                   message("Dealing with the generic species situation")
+                   if (input$add_generic_species) {
+                     if (length(workspace$raw_data) < 1) {
+                       showNotification(ui = "You must upload or download data before generic species can be added.",
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        id = "no_data_for_generics_error",
+                                        type = "error")
+                     } else if (input$species_joining_var == "" | input$data_joining_var == "") {
+                       showNotification(ui = "You must identify the variable containing species codes in both your data and species list before generic species can be added.",
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        id = "no_data_for_generics_error",
+                                        type = "error")
+                     } else if (input$growth_habit_var == "" | input$duration_var == "") {
+                       showNotification(ui = "You must specify the growth habit and duration variables in order to add generic species codes.",
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        type = "error",
+                                        id = "undefined_unknown_vars_error")
+                     } else {
+                       # In case there are generic codes to accommodate
+                       message("Getting ready to add generic codes")
+                       message(paste0("length(workspace$data) is ",
+                                      length(workspace$data)))
+                       species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
+                                                                                               data_code = input$data_joining_var,
+                                                                                               species_list = workspace$species_data,
+                                                                                               species_code = input$species_joining_var,
+                                                                                               species_growth_habit_code = input$growth_habit_var,
+                                                                                               species_duration = input$duration_var))
+                       # Make sure that the growth habit and duration information is
+                       # in the correct variables
+                       # Which indices have the attributed generic codes?
+                       unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
+                       
+                       # At those indices, write in the growth habit and duration info
+                       # from the default variables to the user's selected variables
+                       if (any(unknown_indices)) {
+                         species_list_with_generics[[input$growth_habit_var]][unknown_indices] <- as.character(species_list_with_generics[["GrowthHabitSub"]][unknown_indices])
+                         species_list_with_generics[[input$duration_var]][unknown_indices] <- as.character(species_list_with_generics[["Duration"]][unknown_indices])
+                       }
+                       
+                       # Reduce to only the variables we had coming into this
+                       species_list_with_generics <- select(species_list_with_generics,
+                                                            names(workspace$species_data))
+                       
+                       workspace$species_data <- unique(species_list_with_generics)
+                     }
+                   }
+                   
                    # Check to see if there're repeat species, which is forbidden
                    species_summary_vector <- table(workspace$species_data[[input$species_joining_var]])
                    
@@ -1616,7 +3267,7 @@ server <- function(input, output, session) {
                        workspace$species_data <- rbind(missing_species_df,
                                                        workspace$species_data)
                        
-                       showNotification(ui = "Not all codes/species in the data appeared in the species table provided; see the table in the Data Configuration tab. You can download the species table with the added codes to populate as appropriate, reupload, and recalculate.",
+                       showNotification(ui = "Not all codes/species in the data appeared in the species table provided; see the table at the bottom of the Configure Data tab. You can download the species table with the added codes to populate as appropriate, reupload, and recalculate.",
                                         duration = NULL,
                                         closeButton = TRUE,
                                         type = "warning")
@@ -1627,9 +3278,10 @@ server <- function(input, output, session) {
                      
                      # Render the species list
                      output$species_lut <- DT::renderDT(workspace$species_data,
-                                                               options = list(pageLength = 25,
-                                                                              fixedHeader = TRUE), 
-                                                               extensions = "FixedHeader")
+                                                        options = list(pageLength = 10,
+                                                                       fixedHeader = TRUE,
+                                                                       scrollX = TRUE), 
+                                                        extensions = "FixedHeader")
                      
                      
                      message("Joining species information to data.")
@@ -1688,54 +3340,6 @@ server <- function(input, output, session) {
                  
                })
   
-  
-  ##### When mapping elements update #####
-  observeEvent(eventExpr = list(workspace$mapping_header_sf,
-                                workspace$mapping_polygons),
-               handlerExpr = {
-                 message("Initializing a fresh map")
-                 # Initialize the map
-                 map <- leaflet::leaflet()
-                 
-                 # Add some basic info
-                 map <- leaflet::addTiles(map = map)
-                 
-                 # Add the polygons
-                 message("Checking to see if !is.null(workspace$mapping_polygons)")
-                 if (!is.null(workspace$mapping_polygons)) {
-                   message("!is.null(workspace$mapping_polygons) was TRUE")
-                   # Note that we have to manually remove Z dimensions with sf::st_zm()
-                   # otherwise if there's a Z dimension this fails with an
-                   # inscrutable error.
-                   map <- leaflet::addPolygons(map = map,
-                                               data = sf::st_transform(x = sf::st_zm(workspace$mapping_polygons),
-                                                                       crs = "+proj=longlat +datum=WGS84"),
-                                               fillColor = "coral",
-                                               stroke = FALSE,
-                                               fillOpacity = 0.5)
-                 }
-                 
-                 # Add in the retrieved points
-                 message("Checking to see if !is.null(workspace$mapping_header_sf)")
-                 if (!is.null(workspace$mapping_header_sf)) {
-                   message("!is.null(workspace$mapping_header_sf) was TRUE")
-                   map <- leaflet::addCircleMarkers(map = map,
-                                                    data = sf::st_transform(x = workspace$mapping_header_sf,
-                                                                            crs = "+proj=longlat +datum=WGS84"),
-                                                    stroke = TRUE,
-                                                    opacity = 0.9,
-                                                    color = "white",
-                                                    weight = 1,
-                                                    fillColor = "gray20",
-                                                    fillOpacity = 1,
-                                                    radius = 3)
-                 }
-                 
-                 message("Rendering map")
-                 output$map <- leaflet::renderLeaflet(map)
-                 message("Map rendered")
-               })
-  
   ##### Calculating #####
   observeEvent(eventExpr = input$calculate_button,
                handlerExpr = {
@@ -1770,11 +3374,11 @@ server <- function(input, output, session) {
                    
                  } else {
                    message("Should be good to go. Calculating!")
-                   showNotification(ui = "Calculating!",
-                                    id = "calculating",
-                                    duration = NULL,
-                                    closeButton = FALSE,
-                                    type = "message")
+                   # showNotification(ui = "Calculating!",
+                   #                  id = "calculating",
+                   #                  duration = NULL,
+                   #                  closeButton = FALSE,
+                   #                  type = "message")
                    
                    message("Copying workspace$data to workspace$calc_data")
                    workspace$calc_data <- workspace$data
@@ -1926,7 +3530,7 @@ server <- function(input, output, session) {
                               gap_results <- "No indicator types selected to calculate."
                             } else {
                               message("Gap breaks are all good and at least one indicator type is selected")
-                              message("Calcaulating gap")
+                              message("Calculating gap")
                               gap_results <- tryCatch(terradactyl::gap_cover(gap_tall = workspace$calc_data,
                                                                              tall = input$gap_output_format == "long",
                                                                              breaks = current_gap_breaks,
@@ -1939,11 +3543,21 @@ server <- function(input, output, session) {
                               message(paste0("Remaining names of gap results are: ",
                                              paste(names(gap_results),
                                                    collapse = ", ")))
+                              message(head(gap_results))
                               message("Gaps calculated")
                             }
                             
+                            
+                            
                             # Only if we actually calculated anything!
-                            if (!is.character(gap_results)) {
+                            if (any(sapply(gap_results, is.null))) {
+                              showNotification(ui = "The incoming data were malformed and no results could be calculated.",
+                                               duration = NULL,
+                                               closeButton = TRUE,
+                                               id = "gap_data_malformed_warning",
+                                               type = "error")
+                              current_results <- NULL
+                            } else if (!is.character(gap_results)) {
                               message("Gap results aren't character")
                               # Apparently gap_cover() returns a list of data frames
                               # when tall = FALSE so let's combine them
@@ -2135,9 +3749,6 @@ server <- function(input, output, session) {
                                        inputId = "maintabs",
                                        selected = "Results")
                    }
-                   
-                   removeNotification(session = session,
-                                      id = "calculating")
                  }
                })
   
@@ -2175,9 +3786,11 @@ server <- function(input, output, session) {
                    }
                    
                    output$results_table <- DT::renderDT(display_results,
-                                                               options = list(pageLength = 100,
-                                                                              fixedHeader = TRUE), 
-                                                               extensions = "FixedHeader")
+                                                        options = list(pageLength = 10,
+                                                                       fixedHeader = TRUE,
+                                                                       scrollX = TRUE), 
+                                                        extensions = "FixedHeader")
+
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
                                                      packageVersion("terradactyl"),
@@ -2225,12 +3838,19 @@ server <- function(input, output, session) {
                                         workspace$current_results_filename), file)
                      })
                    message("downloadHandler() call complete.")
+                   # Display download button only if there are data for download
+                   output$download_button_ui <- renderUI(expr = {
+                     downloadButton(outputId = 'downloadable_data',
+                                    label = 'Download results')
+                   })
                  } else {
                    message("workspace$results is NULL")
+                   output$download_button_ui <- renderUI(expr = {return(NULL)})
                  }
                })
   
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
