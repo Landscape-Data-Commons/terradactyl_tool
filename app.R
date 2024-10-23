@@ -779,6 +779,7 @@ server <- function(input, output, session) {
                               main_map = NULL,
                               drawn_coordinates = NULL,
                               drawn_polygon_sf = NULL,
+
                               metadata_lut = NULL,
                               polygons = NULL,
                               default_species_filename = "usda_plants_characteristics_lookup_20210830.csv",
@@ -1904,6 +1905,7 @@ server <- function(input, output, session) {
                })
   
   
+
   ##### Polygon upload handling #####
   # When input$polygons updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$polygons,
@@ -2375,11 +2377,6 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 # showNotification(ui = HTML("Fetching data!"),
-                 #                  duration = NULL,
-                 #                  closeButton = FALSE,
-                 #                  id = "downloading",
-                 #                  type = "message")
                  
                  # Set this variable so we can handle the data appropriately based on source
                  # Since there are from the LDC, we'll also be looking for header info
@@ -2434,6 +2431,7 @@ server <- function(input, output, session) {
                          
                          # This'll be useful so I can make a map
                          workspace$mapping_header_sf <- current_headers_sf
+
                          current_primary_keys <- current_headers$PrimaryKey
                          
                          # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
@@ -3164,60 +3162,6 @@ server <- function(input, output, session) {
                  }
                })
   
-  
-  ##### When adding generic/unknown species #####
-  # observeEvent(eventExpr = input$add_generic_species_button,
-  #              handlerExpr = {
-  #                message("Generic species button was pressed!")
-  #                if (length(workspace$raw_data) < 1) {
-  #                  showNotification(ui = "You must upload or download data before generic species can be added.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   id = "no_data_for_generics_error",
-  #                                   type = "error")
-  #                } else if (input$species_joining_var == "" | input$data_joining_var == "") {
-  #                  showNotification(ui = "You must identify the variable containing species codes in both your data and species list before generic species can be added.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   id = "no_data_for_generics_error",
-  #                                   type = "error")
-  #                } else if (input$growth_habit_var == "" | input$duration_var == "") {
-  #                  showNotification(ui = "You must specify the growth habit and duration variables in order to add generic species codes.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   type = "error",
-  #                                   id = "undefined_unknown_vars_error")
-  #                } else {
-  #                  # In case there are generic codes to accommodate
-  #                  message("Getting ready to add generic codes")
-  #                  message(paste0("length(workspace$data) is ",
-  #                                 length(workspace$data)))
-  #                  species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
-  #                                                                                          data_code = input$data_joining_var,
-  #                                                                                          species_list = workspace$species_data,
-  #                                                                                          species_code = input$species_joining_var,
-  #                                                                                          species_growth_habit_code = input$growth_habit_var,
-  #                                                                                          species_duration = input$duration_var))
-  #                  # Make sure that the growth habit and duration information is
-  #                  # in the correct variables
-  #                  # Which indices have the attributed generic codes?
-  #                  unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
-  #                  
-  #                  # At those indices, write in the growth habit and duration info
-  #                  # from the default variables to the user's selected variables
-  #                  if (any(unknown_indices)) {
-  #                    species_list_with_generics[[input$growth_habit_var]][unknown_indices] <- as.character(species_list_with_generics[["GrowthHabitSub"]][unknown_indices])
-  #                    species_list_with_generics[[input$duration_var]][unknown_indices] <- as.character(species_list_with_generics[["Duration"]][unknown_indices])
-  #                  }
-  #                  
-  #                  # Reduce to only the variables we had coming into this
-  #                  species_list_with_generics <- select(species_list_with_generics,
-  #                                                       names(workspace$species_data))
-  #                  
-  #                  workspace$species_data <- species_list_with_generics
-  #                }
-  #              })
-  
   ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
@@ -3275,6 +3219,7 @@ server <- function(input, output, session) {
                        workspace$species_data <- unique(species_list_with_generics)
                      }
                    }
+                   
                    # Check to see if there're repeat species, which is forbidden
                    species_summary_vector <- table(workspace$species_data[[input$species_joining_var]])
                    
@@ -3804,9 +3749,6 @@ server <- function(input, output, session) {
                                        inputId = "maintabs",
                                        selected = "Results")
                    }
-                   
-                   # removeNotification(session = session,
-                   #                    id = "calculating")
                  }
                })
   
@@ -3848,6 +3790,7 @@ server <- function(input, output, session) {
                                                                        fixedHeader = TRUE,
                                                                        scrollX = TRUE), 
                                                         extensions = "FixedHeader")
+
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
                                                      packageVersion("terradactyl"),
