@@ -103,11 +103,15 @@ ui <- fluidPage(
                                  tags$div(id = "data_type_container",
                                           selectInput(inputId = "data_type",
                                                       label = "Data type",
+                                                      # choices = c("Line-Point Intercept" = "lpi",
+                                                      #             "Height" = "height",
+                                                      #             "Gap" = "gap",
+                                                      #             "Soil Stability" = "soilstability",
+                                                      #             "Species Richness" = "species"),
                                                       choices = c("Line-Point Intercept" = "lpi",
                                                                   "Height" = "height",
                                                                   "Gap" = "gap",
-                                                                  "Soil Stability" = "soilstability",
-                                                                  "Species Richness" = "speciesrichness"),
+                                                                  "Soil Stability" = "soilstability"),
                                                       selected = "lpi"))),
                           column(width = 1,
                                  actionButton(inputId = "data_type_info",
@@ -1968,6 +1972,7 @@ server <- function(input, output, session) {
                  message(paste0("class(current_headers) is: ",
                                 paste(class(current_headers),
                                       collapse = ", ")))
+                 
                  if (is.null(current_headers)) {
                    showNotification(ui = "Unfortunately something went wrong retrieving the data from the Landscape Data Commons.",
                                     duration = NULL,
@@ -1996,8 +2001,7 @@ server <- function(input, output, session) {
                    }
                  }
                })
-  
-  
+
   ##### Polygon upload handling #####
   # When input$polygons updates, look at its filepath and read in the CSV
   observeEvent(eventExpr = input$polygons,
@@ -2470,11 +2474,6 @@ server <- function(input, output, session) {
   observeEvent(eventExpr = input$fetch_data,
                handlerExpr = {
                  message("Fetch data button pressed!")
-                 # showNotification(ui = HTML("Fetching data!"),
-                 #                  duration = NULL,
-                 #                  closeButton = FALSE,
-                 #                  id = "downloading",
-                 #                  type = "message")
                  
                  # Set this variable so we can handle the data appropriately based on source
                  # Since there are from the LDC, we'll also be looking for header info
@@ -2594,8 +2593,7 @@ server <- function(input, output, session) {
                          #                  type = "error",
                          #                  id = "unknown_headers_error")
                          results <- NULL
-                       } else {
-                         if ("character" %in% class(current_headers)) {
+                       } else if ("character" %in% class(current_headers)) {
                            results <- NULL
                          } else {
                            current_headers_sf <- sf::st_as_sf(x = current_headers,
@@ -2886,158 +2884,148 @@ server <- function(input, output, session) {
                    }
                    
                    current_headers <- workspace$headers
-                   
+
                    if (is.null(current_headers)) {
-                     results <- NULL
-                     showNotification(ui = paste0("No matching data were found in the Landscape Data Commons."),
+                 results <- NULL
+                 showNotification(ui = paste0("No matching data were found in the Landscape Data Commons."),
+                                  duration = NULL,
+                                  closeButton = TRUE,
+                                  id = "headers_for_sf_error",
+                                  type = "error")
+               } else if ("character" %in% class(current_headers)) {
+                 results <- NULL
+                 showNotification(ui = paste0("API error retrieving headers for spatial query: ",
+                                              current_headers),
+                                  duration = NULL,
+                                  closeButton = TRUE,
+                                  id = "api_header_error",
+                                  type = "error")
+               } else {
+                 # If there was no error, proceed
+                 message("Converting header info to sf object")
+                 current_headers_sf <- sf::st_as_sf(x = current_headers,
+                                                    coords = c("Longitude_NAD83",
+                                                               "Latitude_NAD83"),
+                                                    crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
+                 
+                 # This'll be useful so I can make a map, if that feature is added
+                 workspace$header_sf <- current_headers_sf
+                 workspace$mapping_header_sf <- current_headers_sf
+                 
+                 message("Performing sf_intersection()")
+                 points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
+                                                                              y = sf::st_transform(workspace$polygons[, "unique_id"],
+                                                                                                   crs = sf::st_crs(current_headers_sf))),
+                                                          error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
+                 
+                 if ("character" %in% class(points_polygons_intersection)) {
+                   showNotification(ui = points_polygons_intersection,
+                                    duration = NULL,
+                                    closeButton = TRUE,
+                                    type = "error",
+                                    id = "intersection_error")
+                   results <- NULL
+                 } else {
+                   current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
+                   
+                   if (length(current_primary_keys) < 1) {
+                     message("No data were found")
+                     showNotification(ui = paste0("No data were found within your polygons."),
                                       duration = NULL,
                                       closeButton = TRUE,
-                                      id = "headers_for_sf_error",
-                                      type = "error")
+                                      id = "no_overlap",
+                                      type = "warning")
+                     results <- NULL
                    } else {
-                     # If there was an API error, display that
-                     if ("character" %in% class(current_headers)) {
-                       results <- NULL
-                       showNotification(ui = paste0("API error retrieving headers for spatial query: ",
-                                                    current_headers),
+                     # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
+                     # 
+                     # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
+                     #                                keys_vector = current_primary_keys,
+                     #                                key_chunk_size = 100,
+                     #                                key_count = length(current_primary_keys),
+                     #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
+                     #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
+                     #                                  max_index <- min(c(key_count, X * key_chunk_size))
+                     #                                  indices <- min_index:max_index
+                     #                                  paste(keys_vector[indices],
+                     #                                        collapse = ",")
+                     #                                })
+                     message("Retrieving data using PrimaryKey values from spatial intersection")
+                     results <- tryCatch(fetch_ldc(keys = current_primary_keys,
+                                                   key_type = "PrimaryKey",
+                                                   data_type = input$data_type,
+                                                   key_chunk_size = 100,
+                                                   verbose = TRUE),
+                                         error = function(error){
+                                           gsub(x = error,
+                                                pattern = "^Error.+[ ]:[ ]",
+                                                replacement = "")
+                                         })
+                     
+                     # Only keep going if there are results!!!!
+                     if (length(results) > 0 & "data.frame" %in% class(results)) {
+                       message("Making workspace$mapping_header_sf")
+                       workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
+                       
+                       message("Coercing variables to numeric.")
+                       # Convert from character to numeric variables where possible
+                       data_corrected <- lapply(X = names(results),
+                                                data = results,
+                                                FUN = function(X, data){
+                                                  # Get the current variable values as a vector
+                                                  vector <- data[[X]]
+                                                  # Try to coerce into numeric
+                                                  numeric_vector <- as.numeric(vector)
+                                                  # If that works without introducing NAs, return the numeric vector
+                                                  # Otherwise, return the original character vector
+                                                  if (all(!is.na(numeric_vector))) {
+                                                    return(numeric_vector)
+                                                  } else {
+                                                    return(vector)
+                                                  }
+                                                })
+                       
+                       
+                       # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
+                       # so I'm resorting to using dplyr
+                       data <- dplyr::bind_cols(data_corrected)
+                       # Correct the names of the variables
+                       names(data) <- names(results)
+                       
+                       # Put it in the workspace list
+                       message("Setting data_fresh to TRUE because we just downloaded it")
+                       workspace$data_fresh <- TRUE
+                       workspace$raw_data <- data
+                     } else if (length(results) == 0) {
+                       message("No records found for those PrimaryKeys")
+                       if (length(current_primary_keys) > 0) {
+                         no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
+                       } else {
+                         no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
+                       }
+                       showNotification(ui = paste0(no_data_spatial_error_message,
+                                                    results),
                                         duration = NULL,
                                         closeButton = TRUE,
-                                        id = "headers_for_sf_error",
+                                        id = "no_data_spatial_error",
                                         type = "error")
+                       workspace$raw_data <- NULL
                      } else {
-                       # If there was no error, proceed
-                       message("Converting header info to sf object")
-                       current_headers_sf <- sf::st_as_sf(x = current_headers,
-                                                          coords = c("Longitude_NAD83",
-                                                                     "Latitude_NAD83"),
-                                                          crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
-                       
-                       # This'll be useful so I can make a map, if that feature is added
-                       workspace$header_sf <- current_headers_sf
-                       workspace$mapping_header_sf <- current_headers_sf
-                       
-                       message("Performing sf_intersection()")
-                       points_polygons_intersection <- tryCatch(sf::st_intersection(x = current_headers_sf[, "PrimaryKey"],
-                                                                                    y = sf::st_transform(workspace$polygons[, "unique_id"],
-                                                                                                         crs = sf::st_crs(current_headers_sf))),
-                                                                error = function(error){"There was a geoprocessing error. Please try using the 'repair polygons' option."})
-                       
-                       if ("character" %in% class(points_polygons_intersection)) {
-                         showNotification(ui = points_polygons_intersection,
-                                          duration = NULL,
-                                          closeButton = TRUE,
-                                          type = "error",
-                                          id = "intersection_error")
-                       } else {
-                         current_primary_keys <- unique(points_polygons_intersection$PrimaryKey)
-                         
-                         if (length(current_primary_keys) < 1) {
-                           message("No data were found")
-                           showNotification(ui = paste0("No data were found within your polygons."),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_overlap",
-                                            type = "warning")
-                           results <- NULL
-                         } else {
-                           message("Primary keys found. Querying now.")
-                           # current_key_chunk_count <- ceiling(length(current_primary_keys) / 100)
-                           # 
-                           # current_primary_keys <- sapply(X = 1:current_key_chunk_count,
-                           #                                keys_vector = current_primary_keys,
-                           #                                key_chunk_size = 100,
-                           #                                key_count = length(current_primary_keys),
-                           #                                FUN = function(X, keys_vector, key_chunk_size, key_count) {
-                           #                                  min_index <- max(c(1, (X - 1) * key_chunk_size + 1))
-                           #                                  max_index <- min(c(key_count, X * key_chunk_size))
-                           #                                  indices <- min_index:max_index
-                           #                                  paste(keys_vector[indices],
-                           #                                        collapse = ",")
-                           #                                })
-                           
-                           message("Retrieving data using PrimaryKey values from spatial intersection")
-                           results <- tryCatch(fetch_ldc(keys = current_primary_keys,
-                                                         key_type = "PrimaryKey",
-                                                         data_type = input$data_type,
-                                                         key_chunk_size = 100,
-                                                         username = workspace[["username"]],
-                                                         password = workspace[["password"]],
-                                                         token = workspace[["token"]],
-                                                         verbose = TRUE),
-                                               error = function(error){
-                                                 gsub(x = error,
-                                                      pattern = "^Error.+[ ]:[ ]",
-                                                      replacement = "")
-                                               })
-                           message("Querying by primary key complete.")
-                           message(paste0("Number of records retrieved: ",
-                                          length(results)))
-                         }
-                         
-                         # Only keep going if there are results!!!!
-                         if (length(results) > 0 & "data.frame" %in% class(results)) {
-                           message("Making workspace$mapping_header_sf")
-                           workspace$mapping_header_sf <- current_headers_sf[current_headers_sf$PrimaryKey %in% results$PrimaryKey,]
-                           
-                           message("Coercing variables to numeric.")
-                           # Convert from character to numeric variables where possible
-                           data_corrected <- lapply(X = names(results),
-                                                    data = results,
-                                                    FUN = function(X, data){
-                                                      # Get the current variable values as a vector
-                                                      vector <- data[[X]]
-                                                      # Try to coerce into numeric
-                                                      numeric_vector <- as.numeric(vector)
-                                                      # If that works without introducing NAs, return the numeric vector
-                                                      # Otherwise, return the original character vector
-                                                      if (all(!is.na(numeric_vector))) {
-                                                        return(numeric_vector)
-                                                      } else {
-                                                        return(vector)
-                                                      }
-                                                    })
-                           
-                           # From some reason co.call(cbind, data_corrected) was returning a list not a data frame
-                           # so I'm resorting to using dplyr
-                           data <- dplyr::bind_cols(data_corrected)
-                           # Correct the names of the variables
-                           names(data) <- names(results)
-                           
-                           # Put it in the workspace list
-                           message("Setting data_fresh to TRUE because we just downloaded it")
-                           workspace$data_fresh <- TRUE
-                           workspace$raw_data <- data
-                         } else if (length(results) == 0) {
-                           message("No records found for those PrimaryKeys")
-                           if (length(current_primary_keys) > 0) {
-                             no_data_spatial_error_message <- paste0("Although sampling locations were found within your polygons, they did not have associated data of the type requested.")
-                           } else {
-                             no_data_spatial_error_message <- paste0("No sampling locations were found within your polygons.")
-                           }
-                           showNotification(ui = paste0(no_data_spatial_error_message,
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "no_data_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
-                         } else {
-                           showNotification(ui = paste0("API error retrieving data based on spatial query: ",
-                                                        results),
-                                            duration = NULL,
-                                            closeButton = TRUE,
-                                            id = "primarykey_spatial_error",
-                                            type = "error")
-                           workspace$raw_data <- NULL
-                         }
-                       }
+                       showNotification(ui = paste0("API error retrieving data based on spatial query: ",
+                                                    results),
+                                        duration = NULL,
+                                        closeButton = TRUE,
+                                        id = "primarykey_spatial_error",
+                                        type = "error")
+                       workspace$raw_data <- NULL
                      }
                    }
-                   
                  }
-               })
-  
-  ##### When raw_data updates #####
+                 
+               }
+             })
+
+##### When raw_data updates #####
   observeEvent(eventExpr = workspace$raw_data,
                handlerExpr = {
                  message("workspace$raw_data has updated")
@@ -3052,19 +3040,19 @@ server <- function(input, output, session) {
                  non_id_vars <- names(workspace$raw_data)[!(names(workspace$raw_data) %in% id_vars)]
                  
                  valid_indices <- apply(X = workspace$raw_data[, non_id_vars],
-                                        MARGIN = 1,
-                                        FUN = function(X){
-                                          nulls <- sapply(X = X,
-                                                          is.null)
-                                          nas <- sapply(X = X,
-                                                        is.na)
-                                          
-                                          !all(mapply(X = nulls,
-                                                      Y = nas,
-                                                      FUN = function(X, Y){
-                                                        X | Y
-                                                      }))
-                                        })
+                                          MARGIN = 1,
+                                          FUN = function(X){
+                                            nulls <- sapply(X = X,
+                                                            is.null)
+                                            nas <- sapply(X = X,
+                                                          is.na)
+                                            
+                                            !all(mapply(X = nulls,
+                                                        Y = nas,
+                                                        FUN = function(X, Y){
+                                                          X | Y
+                                                        }))
+                                          })
                  
                  if (!all(valid_indices)) {
                    showNotification(ui = "Some of the retrieved data had NULL values rendering them unusuable and have therefore been removed.",
@@ -3370,61 +3358,7 @@ server <- function(input, output, session) {
                    message("Right now current_metadata_vars can't be used to make a lookup table")
                  }
                })
-  
-  
-  ##### When adding generic/unknown species #####
-  # observeEvent(eventExpr = input$add_generic_species_button,
-  #              handlerExpr = {
-  #                message("Generic species button was pressed!")
-  #                if (length(workspace$raw_data) < 1) {
-  #                  showNotification(ui = "You must upload or download data before generic species can be added.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   id = "no_data_for_generics_error",
-  #                                   type = "error")
-  #                } else if (input$species_joining_var == "" | input$data_joining_var == "") {
-  #                  showNotification(ui = "You must identify the variable containing species codes in both your data and species list before generic species can be added.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   id = "no_data_for_generics_error",
-  #                                   type = "error")
-  #                } else if (input$growth_habit_var == "" | input$duration_var == "") {
-  #                  showNotification(ui = "You must specify the growth habit and duration variables in order to add generic species codes.",
-  #                                   duration = NULL,
-  #                                   closeButton = TRUE,
-  #                                   type = "error",
-  #                                   id = "undefined_unknown_vars_error")
-  #                } else {
-  #                  # In case there are generic codes to accommodate
-  #                  message("Getting ready to add generic codes")
-  #                  message(paste0("length(workspace$data) is ",
-  #                                 length(workspace$data)))
-  #                  species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
-  #                                                                                          data_code = input$data_joining_var,
-  #                                                                                          species_list = workspace$species_data,
-  #                                                                                          species_code = input$species_joining_var,
-  #                                                                                          species_growth_habit_code = input$growth_habit_var,
-  #                                                                                          species_duration = input$duration_var))
-  #                  # Make sure that the growth habit and duration information is
-  #                  # in the correct variables
-  #                  # Which indices have the attributed generic codes?
-  #                  unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
-  #                  
-  #                  # At those indices, write in the growth habit and duration info
-  #                  # from the default variables to the user's selected variables
-  #                  if (any(unknown_indices)) {
-  #                    species_list_with_generics[[input$growth_habit_var]][unknown_indices] <- as.character(species_list_with_generics[["GrowthHabitSub"]][unknown_indices])
-  #                    species_list_with_generics[[input$duration_var]][unknown_indices] <- as.character(species_list_with_generics[["Duration"]][unknown_indices])
-  #                  }
-  #                  
-  #                  # Reduce to only the variables we had coming into this
-  #                  species_list_with_generics <- select(species_list_with_generics,
-  #                                                       names(workspace$species_data))
-  #                  
-  #                  workspace$species_data <- species_list_with_generics
-  #                }
-  #              })
-  
+
   ##### When join_species is clicked #####
   observeEvent(eventExpr = input$join_species,
                handlerExpr = {
@@ -3482,6 +3416,7 @@ server <- function(input, output, session) {
                        workspace$species_data <- unique(species_list_with_generics)
                      }
                    }
+
                    # Check to see if there're repeat species, which is forbidden
                    species_summary_vector <- table(workspace$species_data[[input$species_joining_var]])
                    
@@ -4011,9 +3946,6 @@ server <- function(input, output, session) {
                                        inputId = "maintabs",
                                        selected = "Results")
                    }
-                   
-                   # removeNotification(session = session,
-                   #                    id = "calculating")
                  }
                })
   
@@ -4055,6 +3987,7 @@ server <- function(input, output, session) {
                                                                        fixedHeader = TRUE,
                                                                        scrollX = TRUE), 
                                                         extensions = "FixedHeader")
+
                    message("output$results_table rendered")
                    software_version_string <- paste0("These results were calculated using terradactyl v",
                                                      packageVersion("terradactyl"),
