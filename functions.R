@@ -830,44 +830,6 @@ fetch_ldc_spatial <- function(polygons,
   output
 }
 
-# This is here because the implementation in terradactyl (as of 2024-10-17) is
-# inconvenient in how it handles grouping variables and forces grouping by
-# PrimaryKey and DBKey
-species_count <- function(data,
-                          species_var,
-                          grouping_vars,
-                          tall = TRUE) {
-  if (class(species_var) != "character" | length(species_var) != 1) {
-    stop("species_var must be a character string")
-  }
-  
-  if (class(grouping_vars) != "character") {
-    stop("grouping_vars must be a character vector")
-  }
-  
-  missing_variables <- setdiff(x = c(species_var,
-                                     grouping_variables),
-                               y = names(data))
-  if (length(missing_variables) > 0) {
-    stop(paste0("The following variables are missing from the data: ",
-                paste(missing_variables,
-                      collapse = ", ")))
-  }
-  
-  summary <- dplyr::summarize(.data = data,
-                              .by = grouping_variables,
-                              species_count = length(unique(species_var)))
-  
-  if (!tall) {
-    summary <- tidyr::pivot_wider(data = summary,
-                                  names_from = tidyselect::all_of(grouping_variables),
-                                  names_sep = "_",
-                                  values_from = species_count,
-                                  values_fill = 0)
-  }
-  
-  summary
-}
 
 #' Fetching data from the Landscape Data Commons via API query using ecological site IDs
 #' @description This is a wrapper for \code{\link[=fetch_ldc]{fetch_ldc()}} which streamlines retrieving data by ecological site IDs.
@@ -944,4 +906,43 @@ fetch_ldc_ecosite <- function(keys,
             delay = delay,
             exact_match = TRUE,
             verbose = verbose)
+}
+
+# This is here because the implementation in terradactyl (as of 2024-10-17) is
+# inconvenient in how it handles grouping variables and forces grouping by
+# PrimaryKey and DBKey
+species_count <- function(data,
+                          species_var,
+                          grouping_vars,
+                          tall = TRUE) {
+  if (class(species_var) != "character" | length(species_var) != 1) {
+    stop("species_var must be a character string")
+  }
+  
+  if (class(grouping_vars) != "character") {
+    stop("grouping_vars must be a character vector")
+  }
+  
+  missing_variables <- setdiff(x = c(species_var,
+                                     grouping_variables),
+                               y = names(data))
+  if (length(missing_variables) > 0) {
+    stop(paste0("The following variables are missing from the data: ",
+                paste(missing_variables,
+                      collapse = ", ")))
+  }
+  
+  summary <- dplyr::summarize(.data = data,
+                              .by = grouping_variables,
+                              species_count = length(unique(species_var)))
+  
+  if (!tall) {
+    summary <- tidyr::pivot_wider(data = summary,
+                                  names_from = tidyselect::all_of(grouping_variables),
+                                  names_sep = "_",
+                                  values_from = species_count,
+                                  values_fill = 0)
+  }
+  
+  summary
 }
