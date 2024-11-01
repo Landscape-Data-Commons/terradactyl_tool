@@ -367,6 +367,26 @@ ui <- fluidPage(
                                                                                                                                    label = "",
                                                                                                                                    class = "info-btn",
                                                                                                                                    icon = icon("circle-question"))))),
+                                                                                     # Species-specific variables
+                                                                                     conditionalPanel(condition = "input.data_type == 'species'",
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "species_var",
+                                                                                                                                  label = "Variable containing species",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "species_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))),
+                                                                                                      fluidRow(column(width = 10,
+                                                                                                                      selectInput(inputId = "veg_var",
+                                                                                                                                  label = "Variable containing vegetative cover type",
+                                                                                                                                  choices = c(""))),
+                                                                                                               column(width = 1,
+                                                                                                                      actionButton(inputId = "veg_var_info",
+                                                                                                                                   label = "",
+                                                                                                                                   class = "info-btn",
+                                                                                                                                   icon = icon("circle-question")))))
                                                                                      # ),
                                                                             )
                                                                    ),
@@ -707,6 +727,18 @@ ui <- fluidPage(
                                                                       class = "info-btn",
                                                                       icon = icon("circle-question"))))
                         ),
+                        conditionalPanel(condition = "input.data_type == 'species'",
+                                         fluidRow(column(width = 10,
+                                                         selectInput(inputId = "species_output_format",
+                                                                     label = "Output format",
+                                                                     choices = c("Wide" = "wide",
+                                                                                 "Long" = "long"))),
+                                                  column(width = 1,
+                                                         actionButton(inputId = "species_output_format_info",
+                                                                      label = "",
+                                                                      class = "info-btn",
+                                                                      icon = icon("circle-question"))))
+                        ),
                         fluidRow(column(width = 10,
                                         selectInput(inputId = "additional_output_vars",
                                                     label = "Additional metadata variables",
@@ -814,10 +846,12 @@ server <- function(input, output, session) {
                                                                 "Species"),
                                                    "soilstability" = c("PrimaryKey",
                                                                        "Rating",
-                                                                       "Veg")))
+                                                                       "Veg"),
+                                                   "species" = c("PrimaryKey",
+                                                                 "Species")))
   
-  #### Wrangling the help TOC ##################################################
-  # This is a little silly, but we'll take apart the help.hml file to get just
+  #### Wrangling the help ToC ##################################################
+  # This is a little silly, but we'll take apart the help.html file to get just
   # the table of contents and just the contents so that we can put the ToC into
   # the sidebar and the contents into the main panel
   output$help_toc <- renderText(expr = {
@@ -1219,6 +1253,16 @@ server <- function(input, output, session) {
                                           "."))))))
   })
   output$proceed_to_calculate_soil_ui <- renderUI(if (input$data_type == "soilstability" & !any(c(input$primarykey_var, input$rating_var, input$veg_var) %in% c(""))) {
+    message("Looks like data config is ready to rumble for soil stability!")
+    tagList(br(),
+            fluidRow(column(width = 10,
+                            p(class = "next-step-prompt",
+                              HTML(paste0("The data configuration appears to be complete! The next step is to calculate the indicators in the ",
+                                          a("Calculate Indicators tab",
+                                            onclick = "tabJump('Calculate Indicators')"),
+                                          "."))))))
+  })
+  output$proceed_to_calculate_species_ui <- renderUI(if (input$data_type == "species" & !any(c(input$species_species_var, input$spcies_grouping_vars) %in% c(""))) {
     message("Looks like data config is ready to rumble for soil stability!")
     tagList(br(),
             fluidRow(column(width = 10,
@@ -1878,7 +1922,7 @@ server <- function(input, output, session) {
                  )
                })
   
-  ####### Soil stability########################################################
+  ####### Soil stability #######################################################
   observeEvent(eventExpr = input$soil_covergroups_info,
                handlerExpr = {
                  message("Displaying info about")
@@ -1920,6 +1964,8 @@ server <- function(input, output, session) {
                  )
                })
   
+  ####### Species richness #####################################################
+  
   ####### All indicators #######################################################
   # Note that for some (presumably very good) reason, I have it so that each
   # data type has its own version of shared inputs (e.g. LPI and heights have
@@ -1938,12 +1984,12 @@ server <- function(input, output, session) {
   ##### Grabbing the headers when asked ########################################
   observeEvent(eventExpr = req(input$get_headers),
                handlerExpr = {
-                   message("LDC username updated")
-                   workspace[["username"]] <- input$ldc_credentials_email
-                   if (workspace[["username"]] == "") {
-                     workspace[["username"]] <- NULL
-                   }
-                   message(paste("workspace$username is:", workspace[["username"]]))
+                 message("The get headers button was pressed.")
+                 # if (req(!identical(input$ldc_credentials_email, workspace[["username"]]))) {
+                 # message("LDC username updated")
+                 workspace[["username"]] <- input$ldc_credentials_email
+                 if (workspace[["username"]] == "") {
+                   workspace[["username"]] <- NULL
                  }
                  # }
                  message(paste("workspace$username is:", workspace[["username"]]))
@@ -2296,6 +2342,19 @@ server <- function(input, output, session) {
                                      crs = "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs +type=crs")
                    workspace$drawn_polygon_sf <- sf::st_sf(polygon)
                    message("Polygon saved to workspace$drawn_polygon_sf")
+                   message(paste("input$query_method == 'spatial' resolves to",
+                                 input$query_method == "spatial"))
+                   message(paste("input$polygon_source == 'draw' resolves to",
+                                 input$polygon_source == "draw"))
+                   message(paste("!is.null(workspace$drawn_polygon_sf) resolves to",
+                                 !is.null(workspace$drawn_polygon_sf)))
+                   
+                   message(paste("input$ldc_no_credentials_confirmation is currently",
+                                 input$ldc_no_credentials_confirmation))
+                   message(paste("nchar(input$ldc_credentials_email) > 4 resolves to",
+                                 nchar(input$ldc_credentials_email) > 4))
+                   message(paste("nchar(input$ldc_credentials_password) > 0 resolves to",
+                                 nchar(input$ldc_credentials_password) > 0))
                  }
                })
   
@@ -3103,7 +3162,7 @@ server <- function(input, output, session) {
                  if (is.null(display_data)) {
                    message("display_data is NULL")
                  } else {
-                   message("display_Data is not NULL")
+                   message("display_data is not NULL")
                    # Which indices are numeric variables?
                    numeric_var_indices <- which(sapply(X = display_data,
                                                        FUN = is.numeric))
@@ -3888,6 +3947,16 @@ server <- function(input, output, session) {
                                                                                     uncovered = "uncovered" %in% input$soil_covergroups,
                                                                                     all_cover_type = "by_type" %in% input$soil_covergroups,
                                                                                     tall = input$soil_output_format == "long"),
+                                                        error = function(error){
+                                                          error
+                                                        })
+                          },
+                          "species" = {
+                            message("Calculating species counts from species richness")
+                            current_results <- tryCatch(terradactyl::species_count(data = workspace$calc_data,
+                                                                                   species_var = input$species_species_var,
+                                                                                   grouping_vars = input$species_grouping_vars,
+                                                                                   tall = input$species_output_format == "long"),
                                                         error = function(error){
                                                           error
                                                         })
