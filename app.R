@@ -8,6 +8,11 @@ library(leaflet.extras)
 library(sf)
 library(shinyjs)
 source("functions.R")
+terradactyl_scripts <- list.files(path = "terradactyl",
+                                  pattern = "R$")
+for (script in terradactyl_scripts) {
+  source(paste0("terradactyl/", script))
+}
 
 # Define UI for application
 ui <- fluidPage(
