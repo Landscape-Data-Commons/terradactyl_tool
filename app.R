@@ -3472,7 +3472,7 @@ server <- function(input, output, session) {
                                                                                                species_growth_habit_code = input$growth_habit_var,
                                                                                                species_duration = input$duration_var))
                        # Make sure that the growth habit and duration information is
-                       # in the correct variables
+                       # in the correct variables.
                        # Which indices have the attributed generic codes?
                        unknown_indices <- is.na(species_list_with_generics[[input$growth_habit_var]]) & !is.na(species_list_with_generics[["GrowthHabitSub"]])
                        
