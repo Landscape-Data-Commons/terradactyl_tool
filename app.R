@@ -3470,7 +3470,7 @@ server <- function(input, output, session) {
                        message("Getting ready to add generic codes")
                        message(paste0("length(workspace$data) is ",
                                       length(workspace$data)))
-                       species_list_with_generics <- unique(terradactyl::generic_growth_habits(data = workspace$data,
+                       species_list_with_generics <- unique(generic_growth_habits(data = workspace$data,
                                                                                                data_code = input$data_joining_var,
                                                                                                species_list = workspace$species_data,
                                                                                                species_code = input$species_joining_var,
@@ -3704,7 +3704,7 @@ server <- function(input, output, session) {
                                 
                                 if (length(missing_lpi_grouping_vars) < 1) {
                                   message("No variables missing!")
-                                  lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
+                                  lpi_cover_string <- paste0("tryCatch(pct_cover(",
                                                              "lpi_tall = workspace$calc_data,",
                                                              "tall = input$lpi_output_format == 'long',",
                                                              "hit = input$lpi_hit,",
@@ -3723,7 +3723,7 @@ server <- function(input, output, session) {
                                                    closeButton = TRUE,
                                                    id = "missing_lpi_grouping_vars",
                                                    type = "warning")
-                                  lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
+                                  lpi_cover_string <- paste0("tryCatch(pct_cover(",
                                                              "lpi_tall = workspace$calc_data,",
                                                              "tall = input$lpi_output_format == 'long',",
                                                              "hit = input$lpi_hit,",
@@ -3733,7 +3733,7 @@ server <- function(input, output, session) {
                                 
                               } else {
                                 message("No grouping variables.")
-                                lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover(",
+                                lpi_cover_string <- paste0("tryCatch(pct_cover(",
                                                            "lpi_tall = workspace$calc_data,",
                                                            "tall = input$lpi_output_format == 'long',",
                                                            "hit = input$lpi_hit,",
@@ -3744,42 +3744,42 @@ server <- function(input, output, session) {
                               message("This is a specialized LPI call and will be using a wrapper for pct_cover()")
                               switch(input$lpi_hit,
                                      "species" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_species(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_species(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
                                                                   "),error = function(error){error})")
                                      },
                                      "bare_ground" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_bare_soil(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_bare_soil(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
                                                                   "),error = function(error){error})")
                                      },
                                      "litter" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_litter(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_litter(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
                                                                   "),error = function(error){error})")
                                      },
                                      "between_plant" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_between_plant(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_between_plant(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
                                                                   "),error = function(error){error})")
                                      },
                                      "total_foliar" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_total_foliar(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_total_foliar(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
                                                                   "),error = function(error){error})")
                                      },
                                      "nonplant_ground" = {
-                                       lpi_cover_string <- paste0("tryCatch(terradactyl::pct_cover_all_ground(",
+                                       lpi_cover_string <- paste0("tryCatch(pct_cover_all_ground(",
                                                                   "lpi_tall = workspace$calc_data,",
                                                                   "tall = input$lpi_output_format == 'long',",
                                                                   "by_line = input$lpi_unit == 'line'",
@@ -3807,7 +3807,7 @@ server <- function(input, output, session) {
                             } else {
                               message("Gap breaks are all good and at least one indicator type is selected")
                               message("Calculating gap")
-                              gap_results <- tryCatch(terradactyl::gap_cover(gap_tall = workspace$calc_data,
+                              gap_results <- tryCatch(gap_cover(gap_tall = workspace$calc_data,
                                                                              tall = input$gap_output_format == "long",
                                                                              breaks = current_gap_breaks,
                                                                              type = input$gap_type,
@@ -3896,7 +3896,7 @@ server <- function(input, output, session) {
                                                    collapse = ", ")))
                               
                               if (length(missing_height_grouping_vars) < 1) {
-                                height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
+                                height_cover_string <- paste0("tryCatch(mean_height(",
                                                               "height_tall = workspace$calc_data,",
                                                               "method = 'mean',",
                                                               "omit_zero = input$height_omit_zero,",
@@ -3916,7 +3916,7 @@ server <- function(input, output, session) {
                                                  closeButton = TRUE,
                                                  id = "missing_height_grouping_vars",
                                                  type = "warning")
-                                height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
+                                height_cover_string <- paste0("tryCatch(mean_height(",
                                                               "height_tall = workspace$calc_data,",
                                                               "method = 'mean',",
                                                               "omit_zero = input$height_omit_zero,",
@@ -3928,7 +3928,7 @@ server <- function(input, output, session) {
                               
                             } else {
                               message("No grouping vars!")
-                              height_cover_string <- paste0("tryCatch(terradactyl::mean_height(",
+                              height_cover_string <- paste0("tryCatch(mean_height(",
                                                             "height_tall = workspace$calc_data,",
                                                             "method = 'mean',",
                                                             "omit_zero = input$height_omit_zero,",
@@ -3946,7 +3946,7 @@ server <- function(input, output, session) {
                           },
                           "soilstability" = {
                             message("Calculating soil stability")
-                            current_results <- tryCatch(terradactyl::soil_stability(soil_stability_tall = workspace$calc_data,
+                            current_results <- tryCatch(soil_stability(soil_stability_tall = workspace$calc_data,
                                                                                     all = "all" %in% input$soil_covergroups,
                                                                                     cover = "covered" %in% input$soil_covergroups,
                                                                                     uncovered = "uncovered" %in% input$soil_covergroups,
@@ -3958,7 +3958,7 @@ server <- function(input, output, session) {
                           },
                           "species" = {
                             message("Calculating species counts from species richness")
-                            current_results <- tryCatch(terradactyl::species_count(data = workspace$calc_data,
+                            current_results <- tryCatch(species_count(data = workspace$calc_data,
                                                                                    species_var = input$species_species_var,
                                                                                    grouping_vars = input$species_grouping_vars,
                                                                                    tall = input$species_output_format == "long"),
